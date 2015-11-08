@@ -1,0 +1,14 @@
+*.so
+*.o
+*.pyc
+*/__pycache__
+*.swp
+*.swo
+*.pyd
+build
+dist
+blaze.egg-info
+
+
+__conda_version__.txt
+.cache/
