@@ -7,9 +7,5 @@
 *.pyd
 build
 dist
-blaze.egg-info
-
-
-__conda_version__.txt
-.cache/
+*.egg-info
 cysqlite3/cysqlite3.c
