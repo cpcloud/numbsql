@@ -3,16 +3,14 @@ from libc.stdint cimport int32_t, int64_t
 
 
 cdef extern from "sqlite3.h":
-    struct sqlite3:
+    ctypedef struct sqlite3:
         pass
 
-    struct sqlite3_context:
+    ctypedef struct sqlite3_context:
         pass
 
-    struct Mem:
+    ctypedef struct sqlite3_value:
         pass
-
-    ctypedef Mem sqlite3_value
 
     ctypedef void (*scalarfunc)(sqlite3_context*, int, sqlite3_value**)
     ctypedef void (*stepfunc)(sqlite3_context*, int, sqlite3_value**)
@@ -30,19 +28,24 @@ cdef extern from "sqlite3.h":
     )
 
 
-# cdef extern from "connection.h":
-    # struct pysqlite_Connection:
-        # pass
+cdef extern from "/home/phillip/Documents/code/py/cpython/Modules/_sqlite/connection.h":
+    ctypedef class sqlite3.Connection [object pysqlite_Connection]:
+        cdef sqlite3 *db
 
 
-cpdef int register_function_pointer(pysqlite_Connection *con) except -1:
+cpdef int register_function_pointer(
+    Connection con,
+    const char *name,
+    int narg,
+    Py_ssize_t address
+) except -1:
     return sqlite3_create_function(
         con.db,
-        "foo",
-        1,
-        1,
+        name,
+        narg,
+        1, # SQLITE_UTF8,
         NULL,
-        NULL,
+        <void (*)(sqlite3_context*, int, sqlite3_value**)> address,
         NULL,
         NULL,
     )

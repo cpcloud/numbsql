@@ -1,6 +1,5 @@
-from .cysqlite3 import sqlite3_connection, register
+from .cysqlite3 import register_function_pointer
 
 __all__ = [
-    'sqlite3_connection',
-    'register'
+    'register_function_pointer',
 ]
