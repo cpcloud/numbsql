@@ -36,28 +36,60 @@ cdef extern from "pysqlite/connection.h":
         cdef sqlite3 *db
 
 
-cpdef object register_function_pointer(
+cpdef object register_scalar_function(
     Connection con,
     const char *name,
     int narg,
-    Py_ssize_t address,
-    bint is_deterministic=True
+    Py_ssize_t address
 ):
     assert -1 <= narg <= SQLITE_LIMIT_FUNCTION_ARG, \
         'Number of arguments must be between -1 and {:d}'.format(
             SQLITE_LIMIT_FUNCTION_ARG
         )
+    assert address > 0, 'Invalid value for address, must be greater than 0'
 
     cdef int result = sqlite3_create_function(
         con.db,
         name,
         narg,
-        SQLITE_UTF8 | (is_deterministic & SQLITE_DETERMINISTIC),
+        SQLITE_UTF8,
         NULL,
         # for some reason Cython fails when using the `scalarfunc` type
         <void (*)(sqlite3_context*, int, sqlite3_value**)> address,
         NULL,
         NULL,
+    )
+
+    if result != SQLITE_OK:
+        raise RuntimeError(sqlite3_errmsg(con.db))
+
+
+
+cpdef object register_aggregate_function(
+    Connection con,
+    const char *name,
+    int narg,
+    Py_ssize_t step_address,
+    Py_ssize_t finalize_address
+):
+    assert -1 <= narg <= SQLITE_LIMIT_FUNCTION_ARG, \
+        'Number of arguments must be between -1 and {:d}'.format(
+            SQLITE_LIMIT_FUNCTION_ARG
+        )
+    assert step_address > 0, \
+        'Invalid value for step_address, must be greater than 0'
+    assert finalize_address > 0, \
+        'Invalid value for finalize_address, must be greater than 0'
+
+    cdef int result = sqlite3_create_function(
+        con.db,
+        name,
+        narg,
+        SQLITE_UTF8,
+        NULL,
+        NULL,
+        <void (*)(sqlite3_context*, int, sqlite3_value**)> step_address,
+        <void (*)(sqlite3_context*)> finalize_address,
     )
 
     if result != SQLITE_OK:
