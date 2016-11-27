@@ -1,8 +1,6 @@
-from libc.stdio cimport printf
-from libc.stdint cimport int32_t, int64_t
-
-
 cdef extern from "sqlite3.h":
+    int SQLITE_UTF8
+
     ctypedef struct sqlite3:
         pass
 
@@ -18,14 +16,14 @@ cdef extern from "sqlite3.h":
 
     int sqlite3_create_function(
         sqlite3 *db,
-        const char *zFunctionName,
-        int nArg,
-        int eTextRep,
-        void *pApp,
-        scalarfunc,
-        stepfunc,
-        finalfunc
-    )
+        const char *function_name,
+        int number_of_arguments,
+        int test_representation,
+        void *application_data,
+        scalarfunc scalar_function,
+        stepfunc step_function,
+        finalfunc final_function
+    ) nogil
 
 
 cdef extern from "pysqlite/connection.h":
@@ -38,14 +36,15 @@ cpdef int register_function_pointer(
     const char *name,
     int narg,
     Py_ssize_t address
-) except -1:
-    return sqlite3_create_function(
-        con.db,
-        name,
-        narg,
-        1, # SQLITE_UTF8,
-        NULL,
-        <void (*)(sqlite3_context*, int, sqlite3_value**)> address,
-        NULL,
-        NULL,
-    )
+) nogil except -1:
+    with nogil:
+        return sqlite3_create_function(
+            con.db,
+            name,
+            narg,
+            SQLITE_UTF8,
+            NULL,
+            <void (*)(sqlite3_context*, int, sqlite3_value**)> address,
+            NULL,
+            NULL,
+        )
