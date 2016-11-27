@@ -61,7 +61,7 @@ RESULT_SETTERS = {
 }
 
 
-def gen_result(func):
+def generate_function_body(func):
     sig, = func.nopython_signatures
     converters = [CONVERTERS[arg] for arg in sig.args]
     resulter = RESULT_SETTERS[sig.return_type]
@@ -93,7 +93,7 @@ def gen_def(func, wrapper_name='wrapper'):
                     kwargs=None,
                     defaults=[],
                 ),
-                body=[ast.Expr(value=gen_result(func))],
+                body=[ast.Expr(value=generate_function_body(func))],
                 decorator_list=[
                     call.cfunc(
                         call.void(
