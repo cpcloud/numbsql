@@ -1,3 +1,7 @@
+"""
+Constructing Python ASTs in Python is quite verbose, let's clean it up a bit.
+"""
+
 import ast
 
 
@@ -90,6 +94,7 @@ sub = Subscript()
 
 TRUE = ast.NameConstant(value=True)
 FALSE = ast.NameConstant(value=False)
+NONE = ast.NameConstant(value=None)
 
 
 ## API
