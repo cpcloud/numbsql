@@ -14,12 +14,6 @@ from numba import float64, int64
 libsqlite3 = CDLL(find_library('sqlite3'))
 
 
-CONVERTERS = {
-    float64: libsqlite3.sqlite3_value_double,
-    int64: libsqlite3.sqlite3_value_int64,
-}
-
-
 sqlite3_result_double = libsqlite3.sqlite3_result_double
 sqlite3_result_int64 = libsqlite3.sqlite3_result_int64
 
@@ -28,6 +22,12 @@ sqlite3_result_double.restype = None
 
 sqlite3_result_int64.argtypes = c_void_p, c_int64
 sqlite3_result_int64.restype = None
+
+
+RESULT_SETTERS = {
+    float64: sqlite3_result_double,
+    int64: sqlite3_result_int64,
+}
 
 
 value_methods = {
@@ -54,9 +54,10 @@ locals().update({
 })
 
 
-RESULT_SETTERS = {
-    float64: sqlite3_result_double,
-    int64: sqlite3_result_int64,
+# TODO: these are introduced by the locals() update above, find a better way
+CONVERTERS = {
+    float64: sqlite3_value_double,
+    int64: sqlite3_value_int64,
 }
 
 
@@ -177,14 +178,9 @@ if __name__ == '__main__':
     from math import pi, sqrt, exp
     from numba import jit
 
-    @jit(float64(float64, float64, float64), nopython=True)
-    def f(x, mu, sigma):
-        c = 1.0 / (sigma * sqrt(2 * pi))
-        return c * exp(-0.5 * ((x - mu) / sigma) ** 2)
-
-
     @jit(float64(int64, int64), nopython=True)
     def g(x, y):
         return x + y * 1.0
 
+    # this shows what the compiled function looks like
     print(sourcify(g))
