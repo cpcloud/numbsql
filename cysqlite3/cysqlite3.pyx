@@ -44,6 +44,7 @@ cpdef int register_function_pointer(
             narg,
             SQLITE_UTF8,
             NULL,
+            # for some reason Cython fails when using the `scalarfunc` type
             <void (*)(sqlite3_context*, int, sqlite3_value**)> address,
             NULL,
             NULL,
