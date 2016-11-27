@@ -1,4 +1,3 @@
-from pprint import pprint
 import sqlite3
 import functools
 
@@ -8,11 +7,8 @@ from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte
 from ctypes.util import find_library
 
 from math import sqrt, exp, pi
-from pprint import pprint
 
 from numba import cfunc, int64, float64, jit, i1, f8, i8, void, int32
-
-import pandas as pd
 
 from gen import *
 
@@ -68,6 +64,6 @@ if __name__ == '__main__':
     con.create_function('oldnormal', 3, oldnormal)
     query1 = 'select normal(double_col, 0.0, 1.0) as sine from functional_alltypes'
     query2 = 'select oldnormal(double_col, 0.0, 1.0) as oldsine from functional_alltypes'
-    result1 = pd.DataFrame(list(con.execute(query1))).loc[:, 0]
-    result2 = pd.DataFrame(list(con.execute(query2))).loc[:, 0]
-    print(result1.eq(result2).all())
+    result1 = list(con.execute(query1))
+    result2 = list(con.execute(query2))
+    print(result1 == result2)
