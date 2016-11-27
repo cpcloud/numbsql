@@ -6,14 +6,14 @@ from Cython.Build import cythonize
 
 
 setup(
-    name='cysqlite3',
+    name='slumba',
     packages=find_packages(),
     ext_modules=cythonize([
         Extension(
-            'cysqlite3.cysqlite3',
-            sources=[os.path.join('cysqlite3', 'cysqlite3.pyx')],
+            'slumba.slumba',
+            sources=[os.path.join('slumba', 'slumba.pyx')],
             libraries=['sqlite3'],
-            include_dirs=[os.path.join('cysqlite3')]
+            include_dirs=[os.path.join('slumba')]
         )
     ]),
 )
