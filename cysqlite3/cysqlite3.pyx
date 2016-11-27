@@ -28,7 +28,7 @@ cdef extern from "sqlite3.h":
     )
 
 
-cdef extern from "connection.h":
+cdef extern from "pysqlite/connection.h":
     ctypedef class sqlite3.Connection [object pysqlite_Connection]:
         cdef sqlite3 *db
 
