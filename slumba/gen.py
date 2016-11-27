@@ -54,7 +54,6 @@ locals().update({
 })
 
 
-
 RESULT_SETTERS = {
     float64: sqlite3_result_double,
     int64: sqlite3_result_int64,
