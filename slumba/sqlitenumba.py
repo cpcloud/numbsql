@@ -56,7 +56,7 @@ def register_cfunc(con, func):
 if __name__ == '__main__':
     import random
 
-    from slumba import register_function_pointer
+    from slumba import register_scalar_function
 
     @sqlite_udf(float64(float64, float64, float64))
     def normal(x, mu, sigma):
