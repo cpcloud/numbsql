@@ -12,6 +12,8 @@ from numba import cfunc, int64, float64, jit, i1, f8, i8, void, int32
 
 from gen import *  # we can probably do better than a star import here
 
+from .slumba import register_scalar_function
+
 
 class SQLiteUDF(object):
     __slots__ = 'wrapper', 'pyfunc'
@@ -45,18 +47,16 @@ def sqlite_udf(signature):
     return wrapped
 
 
-def register_cfunc(con, func):
+def register_scalar(con, func):
     pyfunc = func.pyfunc
     narg = len(inspect.getargspec(pyfunc).args)
-    register_function_pointer(
+    register_scalar_function(
         con, pyfunc.__name__.encode('utf8'), narg, func.address
     )
 
 
 if __name__ == '__main__':
     import random
-
-    from slumba import register_scalar_function
 
     @sqlite_udf(float64(float64, float64, float64))
     def normal(x, mu, sigma):
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     con.execute('CREATE TABLE t (random_numbers DOUBLE PRECISION, random_strings VARCHAR)')
 
     random_numbers = [
-        (random.random(), str(random.random())) for _ in range(500000)
+        (random.random(), str(random.random())) for _ in range(50000)
     ]
     con.executemany('INSERT INTO t VALUES (?, ?)', random_numbers)
 
