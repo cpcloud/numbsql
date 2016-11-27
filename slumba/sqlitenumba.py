@@ -68,7 +68,7 @@ if __name__ == '__main__':
         c = 1.0 / (sigma * sqrt(2.0 * pi))
         return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
 
-    con = sqlite3.connect('foo.db')
+    con = sqlite3.connect(':memory:')
     con.execute('CREATE TABLE t (random_numbers DOUBLE PRECISION, random_strings VARCHAR)')
 
     random_numbers = [
