@@ -36,7 +36,7 @@ cdef extern from "pysqlite/connection.h":
         cdef sqlite3 *db
 
 
-cpdef object register_function_pointer(
+cpdef object register_scalar_function(
     Connection con,
     const char *name,
     int narg,
