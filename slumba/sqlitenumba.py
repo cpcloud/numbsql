@@ -12,7 +12,7 @@ from numba import cfunc, int64, float64, jit, i1, f8, i8, void, int32
 
 from gen import *  # we can probably do better than a star import here
 
-from .slumba import register_scalar_function
+from slumba import register_scalar_function
 
 
 class SQLiteUDF(object):
@@ -47,7 +47,7 @@ def sqlite_udf(signature):
     return wrapped
 
 
-def register_scalar(con, func):
+def register_scalar_cfunc(con, func):
     pyfunc = func.pyfunc
     narg = len(inspect.getargspec(pyfunc).args)
     register_scalar_function(
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     con.executemany('INSERT INTO t VALUES (?, ?)', random_numbers)
 
     # new way of registering C functions
-    register_cfunc(con, normal)
+    register_scalar_cfunc(con, normal)
 
     # old way
     con.create_function('oldnormal', 3, oldnormal)
