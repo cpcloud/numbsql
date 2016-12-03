@@ -72,39 +72,3 @@ def sqlite_udaf(signature):
         )
 
     return cls_wrapper
-
-
-def main():
-    con = sqlite3.connect(':memory:')
-    con.execute('CREATE TABLE t (random_numbers DOUBLE PRECISION)')
-    random_numbers = [(random.random(),) for _ in range(5000000)]
-
-    con.executemany('INSERT INTO t VALUES (?)', random_numbers)
-
-    # new way of registering C functions
-    register_aggregate_function(con, b'myavg', 1,
-            Avg.step.address, Avg.finalize.address)
-
-    con.create_aggregate('myavg2', 1, Avg.numba_class.class_type.class_def)
-
-    query1 = 'select myavg(random_numbers) as myavg from t'
-    query2 = 'select myavg2(random_numbers) as oldavg from t'
-
-
-    start1 = time.time()
-    exe1 = con.execute(query1)
-    t1 = time.time() - start1
-    result1 = list(exe1)
-
-    start2 = time.time()
-    exe2 = con.execute(query2)
-    t2 = time.time() - start2
-    result2 = list(exe2)
-
-    print(result1 == result2)
-    print('t1 == {:.2f}'.format(t1))
-    print('t2 == {:.2f}'.format(t2))
-
-
-if __name__ == '__main__':
-    main()
