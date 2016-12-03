@@ -4,6 +4,7 @@ from itertools import chain
 
 import re
 import ast
+import textwrap
 
 from slumba.miniast import (
     call, store, load, TRUE, arg, sub, idx, import_from, alias, attr
@@ -77,7 +78,7 @@ def generate_function_body(func):
     return call[resulter.__name__](load.ctx, result)
 
 
-def gen_scalar(func, name='wrapper'):
+def gen_scalar(func, name):
     return ast.Module(
         body=[
             import_from.numba[alias.cfunc],
@@ -118,19 +119,77 @@ def camel_to_snake(name):
     return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', result).lower()
 
 
-def gen_step(cls):
+def gen_step(cls, name):
     class_name = cls.__name__
-    name = '{}_step'.format(camel_to_snake(class_name))
     sig, = cls.class_type.jitmethods['step'].nopython_signatures
     args = sig.args[1:]
 
-    arg_values = [
+    body = [
         ast.Assign(
             targets=[store['value_{:d}'.format(i)]],
             value=sub(load.argv, idx(i))
         )
         for i, arg in enumerate(args)
     ]
+    body.append(
+        ast.If(
+            test=ast.BoolOp(
+                op=ast.And(),
+                values=[
+                    ast.Compare(
+                        left=call.sqlite3_value_type(
+                            load['value_{:d}'.format(i)]
+                        ),
+                        ops=[ast.NotEq()],
+                        comparators=[load.SQLITE_NULL]
+                    ) for i in range(len(args))
+                ]
+            ) if len(args) > 1 else ast.Compare(
+                left=call.sqlite3_value_type(load.value_0),
+                ops=[ast.NotEq()],
+                comparators=[load.SQLITE_NULL]
+            ),
+            body=[
+                ast.Assign(
+                    targets=[
+                        store.agg_ctx
+                    ],
+                    value=call.unsafe_cast(
+                        call.sqlite3_aggregate_context(
+                            load.ctx,
+                            call.sizeof(load[class_name])
+                        ),
+                        load[class_name]
+                    )
+                ),
+                ast.Expr(
+                    value=call(
+                        attr.agg_ctx.step,
+                        *(
+                            call[VALUE_EXTRACTORS[arg].__name__](
+                                load['value_{:d}'.format(i)]
+                            ) for i, arg in enumerate(args)
+                        )
+                    )
+                ),
+            ],
+            orelse=[]
+        ),
+    )
+    decorator_list = [
+        call.cfunc(
+            call.void(load.voidptr, load.intc, call.CPointer(load.voidptr)),
+            nopython=TRUE
+        )
+    ]
+    function_signature = ast.arguments(
+        args=[arg.ctx, arg.argc, arg.argv],
+        vararg=None,
+        kwonlyargs=[],
+        kw_defaults=[],
+        kwargs=None,
+        defaults=[],
+    )
     return ast.Module(
         body=[
             import_from.numba[alias.cfunc],
@@ -139,68 +198,22 @@ def gen_step(cls):
             ],
             ast.FunctionDef(
                 name=name,
-                args=ast.arguments(
-                    args=[
-                        arg.ctx,
-                        arg.argc,
-                        arg.argv,
-                    ],
-                    vararg=None,
-                    kwonlyargs=[],
-                    kw_defaults=[],
-                    kwargs=None,
-                    defaults=[],
-                ),
-                body=arg_values + [
-                    ast.Assign(
-                        targets=[
-                            store.agg_ctx
-                        ],
-                        value=call.unsafe_cast(
-                            call.sqlite3_aggregate_context(
-                                load.ctx,
-                                call.sizeof(load[class_name])
-                            ),
-                            load[class_name]
-                        )
-                    ),
-                    ast.Expr(
-                        value=call(
-                            attr.agg_ctx.step,
-                            *(
-                                call[VALUE_EXTRACTORS[arg].__name__](
-                                    load['value_{:d}'.format(i)]
-                                ) for i, arg in enumerate(args)
-                            )
-                        )
-                    ),
-                ],
-                decorator_list=[
-                    call.cfunc(
-                        call.void(
-                            load.voidptr,
-                            load.intc,
-                            call.CPointer(load.voidptr)
-                        ),
-                        nopython=TRUE
-                    )
-                ],
+                args=function_signature,
+                body=body,
+                decorator_list=decorator_list,
                 returns=None
             )
         ]
     )
 
 
-def gen_finalize(cls):
+def gen_finalize(cls, name):
     class_name = cls.__name__
-    name = '{}_finalize'.format(camel_to_snake(class_name))
     sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
     return ast.Module(
         body=[
-            import_from.numba[alias.cfunc],
-            import_from.numba.types[
-                alias.void, alias.voidptr, alias.intc, alias.CPointer
-            ],
+            # no imports because this is always defined with a step function,
+            # which has the imports
             ast.FunctionDef(
                 name=name,
                 args=ast.arguments(
@@ -219,7 +232,7 @@ def gen_finalize(cls):
                         value=call.unsafe_cast(
                             call.sqlite3_aggregate_context(
                                 load.ctx,
-                                call.sizeof(load[class_name])
+                                ast.Num(n=0)
                             ),
                             load[class_name]
                         )
@@ -250,6 +263,45 @@ class SourceVisitor(ast.NodeVisitor):
     """An AST visitor to show what our generated function looks like.
     """
 
+    def visit(self, node):
+        node_type = type(node)
+        node_typename = node_type.__name__
+        method = getattr(self, 'visit_{}'.format(node_typename), None)
+        if method is None:
+            raise TypeError(
+                'Node of type {} has no visit method'.format(node_typename)
+            )
+        return method(node)
+
+    def visit_If(self, node):
+        test = self.visit(node.test)
+        spaces = ' ' * 4
+        body = textwrap.indent('\n'.join(map(self.visit, node.body)), spaces)
+        if node.orelse:
+            orelse = textwrap.indent(self.visit(node.orelse), spaces)
+            return 'if {}:\n{}\nelse:\n{}'.format(test, body, orelse)
+        return 'if {}:\n{}'.format(test, body)
+
+    def visit_And(self, node):
+        return 'and'
+
+    def visit_NotEq(self, node):
+        return '!='
+
+    def visit_Compare(self, node):
+        left = self.visit(node.left)
+        return left + ' '.join(
+            ' {} {}'.format(self.visit(op), self.visit(comparator))
+            for op, comparator in zip(node.ops, node.comparators)
+        )
+
+    def visit_BoolOp(self, node):
+        op = self.visit(node.op)
+        return ' {} '.format(op).join(map(self.visit, node.values))
+
+    def visit_Attribute(self, node):
+        return '{}.{}'.format(self.visit(node.value), node.attr)
+
     def visit_ImportFrom(self, node):
         return 'from {} import {}'.format(
             node.module,
@@ -259,19 +311,28 @@ class SourceVisitor(ast.NodeVisitor):
             )
         )
 
+    def visit_Assign(self, node):
+        return '{} = {}'.format(
+            ', '.join(map(self.visit, node.targets)),
+            self.visit(node.value)
+        )
+
     def visit_FunctionDef(self, node):
-        template = '{}def {}({}):\n    {}'
-        s = template.format(
-            '@{}\n'.format('\n'.join(map(self.visit, node.decorator_list))) if node.decorator_list else '',
+        return '\n{}def {}({}):\n{}'.format(
+            '@{}\n'.format(
+                '\n'.join(map(self.visit, node.decorator_list))
+            ) if node.decorator_list else '',
             node.name,
             ', '.join(map(self.visit, node.args.args)),
-            '    \n'.join(map(self.visit, node.body))
+            textwrap.indent(
+                '\n'.join(map(self.visit, node.body)),
+                ' ' * 4
+            )
         )
-        return s
 
     def visit_Call(self, node):
         return '{}({})'.format(
-            node.func.id,
+            self.visit(node.func),
             ', '.join(chain(
                 map(self.visit, node.args),
                 (
@@ -306,10 +367,6 @@ class SourceVisitor(ast.NodeVisitor):
         return '\n'.join(map(self.visit, node.body))
 
 
-def sourcify(func):
-    return SourceVisitor().visit(gen_def(func))
-
-
 if __name__ == '__main__':
     from math import pi, sqrt, exp
     from numba import jit
@@ -319,4 +376,4 @@ if __name__ == '__main__':
         return x + y * 1.0
 
     # this shows what the compiled function looks like
-    print(sourcify(g))
+    print(SourceVisitor().visit(gen_def(g)))
