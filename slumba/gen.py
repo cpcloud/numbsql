@@ -1,9 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 from itertools import chain
+
+import re
 import ast
 
-from miniast import call, load, TRUE, arg, sub, idx, import_from, alias
+from slumba.miniast import (
+    call, store, load, TRUE, arg, sub, idx, import_from, alias, attr
+)
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
 from ctypes.util import find_library
@@ -31,12 +35,12 @@ RESULT_SETTERS = {
 
 
 value_methods = {
-    # 'blob': c_void_p,
-    # 'bytes': c_int,
+    'blob': c_void_p,
+    'bytes': c_int,
     'double': c_double,
     'int': c_int,
     'int64': c_int64,
-    # 'text': POINTER(c_ubyte),
+    'text': POINTER(c_ubyte),
     'type': c_int,
 }
 
@@ -48,22 +52,21 @@ def add_value_method(typename, restype):
     return method
 
 
-locals().update({
+VALUE_EXTRACTORS = {
+    float64: add_value_method('double', c_double),
+    int64: add_value_method('int64', c_int64),
+}
+
+
+CONVERTERS = {
     'sqlite3_value_{}'.format(typename): add_value_method(typename, restype)
     for typename, restype in value_methods.items()
-})
-
-
-# TODO: these are introduced by the locals() update above, find a better way
-CONVERTERS = {
-    float64: sqlite3_value_double,
-    int64: sqlite3_value_int64,
 }
 
 
 def generate_function_body(func):
     sig, = func.nopython_signatures
-    converters = [CONVERTERS[arg] for arg in sig.args]
+    converters = [VALUE_EXTRACTORS[arg] for arg in sig.args]
     resulter = RESULT_SETTERS[sig.return_type]
 
     args = [
@@ -74,13 +77,13 @@ def generate_function_body(func):
     return call[resulter.__name__](load.ctx, result)
 
 
-def gen_def(func, wrapper_name='wrapper'):
+def gen_scalar(func, name='wrapper'):
     return ast.Module(
         body=[
             import_from.numba[alias.cfunc],
             import_from.numba.types[alias.void, alias.voidptr, alias.intc, alias.CPointer],
             ast.FunctionDef(
-                name=wrapper_name,
+                name=name,
                 args=ast.arguments(
                     args=[
                         arg.ctx,
@@ -103,6 +106,139 @@ def gen_def(func, wrapper_name='wrapper'):
                         ),
                         nopython=TRUE
                     )
+                ],
+                returns=None
+            )
+        ]
+    )
+
+
+def camel_to_snake(name):
+    result = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', result).lower()
+
+
+def gen_step(cls):
+    class_name = cls.__name__
+    name = '{}_step'.format(camel_to_snake(class_name))
+    sig, = cls.class_type.jitmethods['step'].nopython_signatures
+    args = sig.args[1:]
+
+    arg_values = [
+        ast.Assign(
+            targets=[store['value_{:d}'.format(i)]],
+            value=sub(load.argv, idx(i))
+        )
+        for i, arg in enumerate(args)
+    ]
+    return ast.Module(
+        body=[
+            import_from.numba[alias.cfunc],
+            import_from.numba.types[
+                alias.void, alias.voidptr, alias.intc, alias.CPointer
+            ],
+            ast.FunctionDef(
+                name=name,
+                args=ast.arguments(
+                    args=[
+                        arg.ctx,
+                        arg.argc,
+                        arg.argv,
+                    ],
+                    vararg=None,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    kwargs=None,
+                    defaults=[],
+                ),
+                body=arg_values + [
+                    ast.Assign(
+                        targets=[
+                            store.agg_ctx
+                        ],
+                        value=call.unsafe_cast(
+                            call.sqlite3_aggregate_context(
+                                load.ctx,
+                                call.sizeof(load[class_name])
+                            ),
+                            load[class_name]
+                        )
+                    ),
+                    ast.Expr(
+                        value=call(
+                            attr.agg_ctx.step,
+                            *(
+                                call[VALUE_EXTRACTORS[arg].__name__](
+                                    load['value_{:d}'.format(i)]
+                                ) for i, arg in enumerate(args)
+                            )
+                        )
+                    ),
+                ],
+                decorator_list=[
+                    call.cfunc(
+                        call.void(
+                            load.voidptr,
+                            load.intc,
+                            call.CPointer(load.voidptr)
+                        ),
+                        nopython=TRUE
+                    )
+                ],
+                returns=None
+            )
+        ]
+    )
+
+
+def gen_finalize(cls):
+    class_name = cls.__name__
+    name = '{}_finalize'.format(camel_to_snake(class_name))
+    sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
+    return ast.Module(
+        body=[
+            import_from.numba[alias.cfunc],
+            import_from.numba.types[
+                alias.void, alias.voidptr, alias.intc, alias.CPointer
+            ],
+            ast.FunctionDef(
+                name=name,
+                args=ast.arguments(
+                    args=[arg.ctx],
+                    vararg=None,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    kwargs=None,
+                    defaults=[],
+                ),
+                body=[
+                    ast.Assign(
+                        targets=[
+                            store.agg_ctx
+                        ],
+                        value=call.unsafe_cast(
+                            call.sqlite3_aggregate_context(
+                                load.ctx,
+                                call.sizeof(load[class_name])
+                            ),
+                            load[class_name]
+                        )
+                    ),
+                    ast.Assign(
+                        targets=[
+                            store.final_value,
+                        ],
+                        value=call(attr.agg_ctx.finalize)
+                    ),
+                    ast.Expr(
+                        value=call[RESULT_SETTERS[sig.return_type].__name__](
+                            load.ctx,
+                            load.final_value
+                        )
+                    ),
+                ],
+                decorator_list=[
+                    call.cfunc(call.void(load.voidptr), nopython=TRUE)
                 ],
                 returns=None
             )
