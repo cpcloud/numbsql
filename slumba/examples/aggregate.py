@@ -1,6 +1,9 @@
 import sqlite3
+import time
 
-from slumba import sqlite_udaf
+from numba import float64, int64, jitclass
+
+from slumba import sqlite_udaf, register_aggregate_function
 
 
 @sqlite_udaf(float64(float64))
@@ -73,6 +76,8 @@ class Avg(object):
 
 
 def main():
+    import random
+
     con = sqlite3.connect(':memory:')
     con.execute('CREATE TABLE t (random_numbers DOUBLE PRECISION)')
     random_numbers = [(random.random(),) for _ in range(5000000)]

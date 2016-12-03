@@ -17,7 +17,7 @@ from slumba.gen import (
     RESULT_SETTERS, CONVERTERS, libsqlite3, gen_finalize, gen_step,
     camel_to_snake
 )
-from casting import unsafe_cast, sizeof
+from slumba.casting import unsafe_cast, sizeof
 
 from slumba.cyslumba import (
     register_scalar_function,
