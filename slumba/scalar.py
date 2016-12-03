@@ -1,13 +1,12 @@
 import ast
 
-from numba import njit
-
-from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
+from numba import njit, optional
 
 from slumba.gen import CONVERTERS, RESULT_SETTERS, gen_scalar
 
 
 def sqlite_udf(signature):
+    # SQL functions can always return None
     new_signature = optional(signature.return_type)(*signature.args)
 
     def wrapped(func):
@@ -17,7 +16,7 @@ def sqlite_udf(signature):
         scope.update(CONVERTERS)
         scope.update((f.__name__, f) for f in RESULT_SETTERS.values())
         final_func_name = '{}_scalar'.format(func_name)
-        genmod = gen_scalar(jitted, final_func_name)
+        genmod = gen_scalar(jitted_func, final_func_name)
         mod = ast.fix_missing_locations(genmod)
         bytecode = compile(mod, __file__, 'exec')
         exec(bytecode, scope)

@@ -23,12 +23,11 @@ def _unsafe_cast_ptr_to_class(int_type, class_type):
 
     return sig, codegen
 
-#
-# Make an intrinsic for our unsafe_cast function
-#
 
 @extending.intrinsic
 def unsafe_cast(typingctx, src, dst):
+    """Cast a voidptr to a jitclass
+    """
     if isinstance(src, types.RawPointer) and isinstance(dst, types.ClassType):
         return _unsafe_cast_ptr_to_class(src, dst)
     raise TypeError(
@@ -39,6 +38,7 @@ def unsafe_cast(typingctx, src, dst):
 @extending.intrinsic
 def sizeof(typingctx, src):
     sig = types.int64(src)
+
     def codegen(context, builder, signature, args):
         return context.get_constant(
             sig.return_type,

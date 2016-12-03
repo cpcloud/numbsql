@@ -6,6 +6,11 @@ import ast
 
 
 class Load(object):
+    """
+    API
+    ---
+    load.foo == ast.Name('foo', ctx=ast.Load())
+    """
     __slots__ = ()
 
     def __getitem__(self, key):
@@ -42,6 +47,11 @@ arg = Arg()
 
 
 class Call(object):
+    """
+    API
+    ---
+    call.func(load.foo, nopython=TRUE)
+    """
     __slots__ = ()
 
     def __getitem__(self, key):
@@ -67,13 +77,7 @@ class Call(object):
         )
 
 
-### API
-# load.foo == ast.Name('foo', ctx=ast.Load())
-
 call = Call()
-
-### API
-# call.func(load.foo, nopython=TRUE)
 
 
 class Attributable(object):
@@ -96,7 +100,6 @@ class Attr(object):
 
 
 attr = Attr()
-
 
 
 class Index(object):
@@ -130,12 +133,13 @@ FALSE = ast.NameConstant(value=False)
 NONE = ast.NameConstant(value=None)
 
 
-## API
-# alias.foo
-# alias.foo
-
-
 class Alias(object):
+    """Shorter version of aliases used in `from foo import bar as baz`.
+
+    API
+    ---
+    alias.foo == ast.alias(name=name, asname=None)
+    """
     __slots__ = ()
 
     def __getattr__(self, name):

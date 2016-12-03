@@ -82,7 +82,12 @@ def gen_scalar(func, name):
     return ast.Module(
         body=[
             import_from.numba[alias.cfunc],
-            import_from.numba.types[alias.void, alias.voidptr, alias.intc, alias.CPointer],
+            import_from.numba.types[
+                alias.void,
+                alias.voidptr,
+                alias.intc,
+                alias.CPointer,
+            ],
             ast.FunctionDef(
                 name=name,
                 args=ast.arguments(
@@ -368,7 +373,6 @@ class SourceVisitor(ast.NodeVisitor):
 
 
 if __name__ == '__main__':
-    from math import pi, sqrt, exp
     from numba import jit
 
     @jit(float64(int64, int64), nopython=True)
@@ -376,4 +380,4 @@ if __name__ == '__main__':
         return x + y * 1.0
 
     # this shows what the compiled function looks like
-    print(SourceVisitor().visit(gen_def(g)))
+    print(SourceVisitor().visit(gen_scalar(g, 'g_unit')))

@@ -6,7 +6,6 @@ from numba import float64
 from slumba import register_scalar_function, sqlite_udf
 
 
-
 def register_scalar_cfunc(con, func):
     pyfunc = func.pyfunc
     narg = len(inspect.getargspec(pyfunc).args)
@@ -23,7 +22,6 @@ if __name__ == '__main__':
     def normal(x, mu, sigma):
         c = 1.0 / (sigma * sqrt(2.0 * pi))
         return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
-
 
     def oldnormal(x, mu, sigma):
         c = 1.0 / (sigma * sqrt(2.0 * pi))
@@ -44,7 +42,6 @@ if __name__ == '__main__':
     con.create_function('oldnormal', 3, oldnormal)
     query1 = 'select normal(random_numbers, 0.0, 1.0) as sine from t'
     query2 = 'select oldnormal(random_numbers, 0.0, 1.0) as oldsine from t'
-
 
     start1 = time.time()
     exe1 = con.execute(query1)
