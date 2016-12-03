@@ -1,17 +1,8 @@
-import sqlite3
-import inspect
 import ast
-import time
-import random
 
-from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte
-from ctypes.util import find_library
+from ctypes import c_void_p, c_int
 
-from math import sqrt, exp, pi
-
-from numba import cfunc, int64, float64, jit, i1, f8, i8, void, int32
-from numba import jitclass, float64, int64
-from numba.types import voidptr, CPointer, intc
+from numba import void, optional
 
 from slumba.gen import (
     RESULT_SETTERS, CONVERTERS, libsqlite3, gen_finalize, gen_step,
@@ -19,23 +10,12 @@ from slumba.gen import (
 )
 from slumba.casting import unsafe_cast, sizeof
 
-from slumba.cyslumba import (
-    register_scalar_function,
-    register_aggregate_function,
-    _SQLITE_NULL as SQLITE_NULL
-)
+from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
 
 sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
 sqlite3_aggregate_context.argtypes = c_void_p, c_int
 sqlite3_aggregate_context.restype = c_void_p
-
-
-class SQLiteUDAF(object):
-    def __init__(self, numba_class, step, finalize):
-        self.numba_class = numba_class
-        self.step = step
-        self.finalize = finalize
 
 
 def sqlite_udaf(signature):
@@ -44,11 +24,20 @@ def sqlite_udaf(signature):
         instance_type = class_type.instance_type
         jitmethods = class_type.jitmethods
 
-        jitmethods['step'].compile(void(instance_type, *signature.args))
-        jitmethods['finalize'].compile(signature.return_type(instance_type))
+        # don't make decisions about what to do with NULL values for users
+        step_signature = void(instance_type, *map(optional, signature.args))
+        jitmethods['step'].compile(step_signature)
 
-        step_mod = gen_step(cls)
-        finalize_mod = gen_finalize(cls)
+        # aggregates can always return a NULL value
+        finalize_signature = optional(signature.return_type)(instance_type)
+        jitmethods['finalize'].compile(finalize_signature)
+
+        func_name = camel_to_snake(cls.__name__)
+        step_name = '{}_step'.format(func_name)
+        finalize_name = '{}_finalize'.format(func_name)
+
+        step_mod = gen_step(cls, step_name)
+        finalize_mod = gen_finalize(cls, finalize_name)
 
         genmod = ast.Module(body=step_mod.body + finalize_mod.body)
 
@@ -59,16 +48,14 @@ def sqlite_udaf(signature):
             'sqlite3_aggregate_context': sqlite3_aggregate_context,
             'unsafe_cast': unsafe_cast,
             'sizeof': sizeof,
+            'SQLITE_NULL': SQLITE_NULL,
         }
         scope.update(CONVERTERS)
         scope.update((func.__name__, func) for func in RESULT_SETTERS.values())
         exec(code, scope)
 
-        func_name = camel_to_snake(cls.__name__)
-        return SQLiteUDAF(
-            cls,
-            scope['{}_step'.format(func_name)],
-            scope['{}_finalize'.format(func_name)],
-        )
+        cls.step.address = scope[step_name].address
+        cls.finalize.address = scope[finalize_name].address
+        return cls
 
     return cls_wrapper
