@@ -13,8 +13,8 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     ext_modules=cythonize([
         Extension(
-            'slumba.slumba',
-            sources=[os.path.join('slumba', 'slumba.pyx')],
+            name='slumba.cyslumba',
+            sources=[os.path.join('slumba', 'cyslumba.pyx')],
             libraries=['sqlite3'],
             include_dirs=[os.path.join('slumba')]
         )

@@ -3,6 +3,11 @@ cdef extern from "sqlite3.h":
     int SQLITE_DETERMINISTIC
     int SQLITE_LIMIT_FUNCTION_ARG
     int SQLITE_OK
+    int SQLITE_INTEGER
+    int SQLITE_FLOAT
+    int SQLITE_TEXT
+    int SQLITE_BLOB
+    int SQLITE_NULL
 
     ctypedef struct sqlite3:
         pass
@@ -13,19 +18,15 @@ cdef extern from "sqlite3.h":
     ctypedef struct sqlite3_value:
         pass
 
-    ctypedef void (*scalarfunc)(sqlite3_context*, int, sqlite3_value**)
-    ctypedef void (*stepfunc)(sqlite3_context*, int, sqlite3_value**)
-    ctypedef void (*finalfunc)(sqlite3_context*)
-
     int sqlite3_create_function(
         sqlite3 *db,
         const char *function_name,
         int number_of_arguments,
         int text_representation,
         void *application_data,
-        scalarfunc scalar_function,
-        stepfunc step_function,
-        finalfunc final_function
+        void (*scalar_function)(sqlite3_context*, int, sqlite3_value**),
+        void (*step_function)(sqlite3_context*, int, sqlite3_value**),
+        void (*final_function)(sqlite3_context*)
     )
 
     const char *sqlite3_errmsg(sqlite3 *db)
@@ -94,3 +95,10 @@ cpdef object register_aggregate_function(
 
     if result != SQLITE_OK:
         raise RuntimeError(sqlite3_errmsg(con.db))
+
+
+_SQLITE_INTEGER = SQLITE_INTEGER
+_SQLITE_FLOAT = SQLITE_FLOAT
+_SQLITE_TEXT = SQLITE_TEXT
+_SQLITE_BLOB = SQLITE_BLOB
+_SQLITE_NULL = SQLITE_NULL
