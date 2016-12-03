@@ -1,12 +1,6 @@
-import sqlite3
-import inspect
 import ast
-import time
 
-# from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte
-# from ctypes.util import find_library
-
-from numba import jit
+from numba import njit
 
 from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
@@ -14,13 +8,12 @@ from slumba.gen import CONVERTERS, RESULT_SETTERS, gen_scalar
 
 
 def sqlite_udf(signature):
+    new_signature = optional(signature.return_type)(*signature.args) 
+
     def wrapped(func):
-        jitted = jit(
-            optional(signature.return_type)(*signature.args),
-            nopython=True
-        )(func)
+        jitted_func = njit(new_signature)(func)
         func_name = func.__name__
-        scope = {func_name: jitted}
+        scope = {func_name: jitted_func}
         scope.update(CONVERTERS)
         scope.update((f.__name__, f) for f in RESULT_SETTERS.values())
         final_func_name = '{}_scalar'.format(func_name)
