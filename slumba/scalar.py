@@ -8,7 +8,7 @@ from slumba.gen import CONVERTERS, RESULT_SETTERS, gen_scalar
 
 
 def sqlite_udf(signature):
-    new_signature = optional(signature.return_type)(*signature.args) 
+    new_signature = optional(signature.return_type)(*signature.args)
 
     def wrapped(func):
         jitted_func = njit(new_signature)(func)
