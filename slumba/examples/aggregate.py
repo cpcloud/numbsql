@@ -5,7 +5,7 @@ import string
 from operator import attrgetter
 from collections import namedtuple
 
-from numba import float64, int64, jitclass
+from numba import float64, int64, boolean, jitclass
 
 from slumba import sqlite_udaf, register_aggregate_function
 
@@ -47,13 +47,14 @@ class Cov(object):
         self.count = 0
 
     def step(self, x, y):
-        self.count += 1
-        n = self.count
-        delta1 = (x - self.mean1) / n
-        self.mean1 += delta1
-        delta2 = (y - self.mean2) / n
-        self.mean2 += delta2
-        self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
+        if x is not None and y is not None:
+            self.count += 1
+            n = self.count
+            delta1 = (x - self.mean1) / n
+            self.mean1 += delta1
+            delta2 = (y - self.mean2) / n
+            self.mean2 += delta2
+            self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
 
     def finalize(self):
         n = self.count
@@ -81,18 +82,22 @@ class Avg(object):
 
 
 @sqlite_udaf(float64(float64))
-@jitclass([('total', float64), ('count', int64)])
+@jitclass([
+    ('total', float64),
+    ('has_values', boolean),
+])
 class Sum(object):
     def __init__(self):
         self.total = 0.0
-        self.count = 0
+        self.has_values = False
 
     def step(self, value):
-        self.total += value
-        self.count += 1
+        if value is not None:
+            self.total += value
+            self.has_values = True
 
     def finalize(self):
-        return None if not self.count else self.total
+        return self.total if self.has_values else None
 
 
 def main():
@@ -112,7 +117,7 @@ def main():
         (
             random.choice(string.ascii_lowercase[:2]),
             random.random()
-        ) for _ in range(5000000)
+        ) for _ in range(500000)
     ]
 
     con.executemany(
@@ -149,9 +154,9 @@ def main():
         python_defined
     )
 
-    # query1 = 'select {0}(value) as builtin_{0} from t'.format(builtin)
-    # query2 = 'select {0}(value) as cfunc_{0} from t'.format(cfunc_defined)
-    # query3 = 'select {0}(value) as python_{0} from t'.format(python_defined)
+    query1 = 'select {0}(value) as builtin_{0} from t'.format(builtin)
+    query2 = 'select {0}(value) as cfunc_{0} from t'.format(cfunc_defined)
+    query3 = 'select {0}(value) as python_{0} from t'.format(python_defined)
 
     queries = {
         builtin + '_builtin': query1,
@@ -170,11 +175,16 @@ def main():
         result = list(exe)
         results.append(Result(name=name, result=result, duration=duration))
 
+    builtin_value = results[0].result
+
     results.sort(key=attrgetter('duration'))
 
     strings = [
-        '{} duration == {:.2f}s | {:d}x faster'.format(
-            name, duration, round(results[-1].duration / duration)
+        '{} duration == {:.2f}s | {:d}x faster | values equal? {}'.format(
+            name,
+            duration,
+            round(results[-1].duration / duration),
+            'yes' if builtin_value == result else 'no'
         )
         for name, result, duration in results
     ]

@@ -7,13 +7,13 @@ import ast
 import textwrap
 
 from slumba.miniast import (
-    call, store, load, TRUE, arg, sub, idx, import_from, alias, attr
+    call, store, load, TRUE, NONE, arg, sub, idx, import_from, alias, attr
 )
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
 from ctypes.util import find_library
 
-from numba import float64, int64
+from numba import float64, int64, optional
 
 
 libsqlite3 = CDLL(find_library('sqlite3'))
@@ -30,8 +30,8 @@ sqlite3_result_int64.restype = None
 
 
 RESULT_SETTERS = {
-    float64: sqlite3_result_double,
-    int64: sqlite3_result_int64,
+    optional(float64): sqlite3_result_double,
+    optional(int64): sqlite3_result_int64,
 }
 
 
@@ -54,8 +54,8 @@ def add_value_method(typename, restype):
 
 
 VALUE_EXTRACTORS = {
-    float64: add_value_method('double', c_double),
-    int64: add_value_method('int64', c_int64),
+    optional(float64): add_value_method('double', c_double),
+    optional(int64): add_value_method('int64', c_int64),
 }
 
 
@@ -65,13 +65,26 @@ CONVERTERS = {
 }
 
 
+def unnullify(value, true_function):
+    return ast.IfExp(
+        test=ast.Compare(
+            left=call.sqlite3_value_type(value),
+            ops=[ast.NotEq()],
+            comparators=[load.SQLITE_NULL]
+        ),
+        body=true_function(value),
+        orelse=NONE,
+    )
+
+
+
 def generate_function_body(func):
     sig, = func.nopython_signatures
     converters = [VALUE_EXTRACTORS[arg] for arg in sig.args]
     resulter = RESULT_SETTERS[sig.return_type]
 
     args = [
-        call[converter.__name__](sub(load.argv, idx(i)))
+        unnullify(sub(load.argv, idx(i)), call[converter.__name__])
         for i, converter in enumerate(converters)
     ]
     result = call[func.__name__](*args)
@@ -136,51 +149,31 @@ def gen_step(cls, name):
         )
         for i, arg in enumerate(args)
     ]
-    body.append(
-        ast.If(
-            test=ast.BoolOp(
-                op=ast.And(),
-                values=[
-                    ast.Compare(
-                        left=call.sqlite3_value_type(
-                            load['value_{:d}'.format(i)]
-                        ),
-                        ops=[ast.NotEq()],
-                        comparators=[load.SQLITE_NULL]
-                    ) for i in range(len(args))
-                ]
-            ) if len(args) > 1 else ast.Compare(
-                left=call.sqlite3_value_type(load.value_0),
-                ops=[ast.NotEq()],
-                comparators=[load.SQLITE_NULL]
-            ),
-            body=[
-                ast.Assign(
-                    targets=[
-                        store.agg_ctx
-                    ],
-                    value=call.unsafe_cast(
-                        call.sqlite3_aggregate_context(
-                            load.ctx,
-                            call.sizeof(load[class_name])
-                        ),
-                        load[class_name]
-                    )
-                ),
-                ast.Expr(
-                    value=call(
-                        attr.agg_ctx.step,
-                        *(
-                            call[VALUE_EXTRACTORS[arg].__name__](
-                                load['value_{:d}'.format(i)]
-                            ) for i, arg in enumerate(args)
-                        )
-                    )
-                ),
+    body.extend([
+        ast.Assign(
+            targets=[
+                store.agg_ctx
             ],
-            orelse=[]
+            value=call.unsafe_cast(
+                call.sqlite3_aggregate_context(
+                    load.ctx,
+                    call.sizeof(load[class_name])
+                ),
+                load[class_name]
+            )
         ),
-    )
+        ast.Expr(
+            value=call(
+                attr.agg_ctx.step,
+                *(
+                    unnullify(
+                        load['value_{:d}'.format(i)],
+                        call[VALUE_EXTRACTORS[arg].__name__]
+                    ) for i, arg in enumerate(args)
+                )
+            )
+        )
+    ])
     decorator_list = [
         call.cfunc(
             call.void(load.voidptr, load.intc, call.CPointer(load.voidptr)),
@@ -287,6 +280,13 @@ class SourceVisitor(ast.NodeVisitor):
             return 'if {}:\n{}\nelse:\n{}'.format(test, body, orelse)
         return 'if {}:\n{}'.format(test, body)
 
+    def visit_IfExp(self, node):
+        return '{} if {} else {}'.format(
+            self.visit(node.body),
+            self.visit(node.test),
+            self.visit(node.orelse),
+        )
+
     def visit_And(self, node):
         return 'and'
 
@@ -336,16 +336,28 @@ class SourceVisitor(ast.NodeVisitor):
         )
 
     def visit_Call(self, node):
-        return '{}({})'.format(
-            self.visit(node.func),
-            ', '.join(chain(
+        if isinstance(node.func, ast.Attribute):
+            func = self.visit(node.func)
+            args = ',\n'.join(chain(
                 map(self.visit, node.args),
                 (
                     '{}={!r}'.format(kw.arg, self.visit(kw.value))
                     for kw in node.keywords
                 )
             ))
-        )
+            template = '{}(\n{}\n)' if node.args else '{}({})'
+            return template.format(func, textwrap.indent(args, ' ' * 4))
+        else:
+            return '{}({})'.format(
+                self.visit(node.func),
+                ', '.join(chain(
+                    map(self.visit, node.args),
+                    (
+                        '{}={!r}'.format(kw.arg, self.visit(kw.value))
+                        for kw in node.keywords
+                    )
+                ))
+            )
 
     def visit_NameConstant(self, node):
         return node.value

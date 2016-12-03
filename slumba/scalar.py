@@ -6,8 +6,10 @@ from slumba.gen import CONVERTERS, RESULT_SETTERS, gen_scalar
 
 
 def sqlite_udf(signature):
-    # SQL functions can always return None
-    new_signature = optional(signature.return_type)(*signature.args)
+    # SQL functions can always return and accept None
+    new_signature = optional(signature.return_type)(
+        *map(optional, signature.args)
+    )
 
     def wrapped(func):
         jitted_func = njit(new_signature)(func)
