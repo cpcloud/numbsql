@@ -38,7 +38,7 @@ if __name__ == '__main__':
     con.executemany('INSERT INTO t VALUES (?)', random_numbers)
 
     # new way of registering C functions
-    register_scalar_cfunc(con, normal)
+    register_scalar_function(con, b'normal', 3, normal.address)
 
     # old way
     con.create_function('oldnormal', 3, oldnormal)
