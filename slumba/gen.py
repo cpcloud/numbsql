@@ -77,7 +77,6 @@ def unnullify(value, true_function):
     )
 
 
-
 def generate_function_body(func):
     sig, = func.nopython_signatures
     converters = [VALUE_EXTRACTORS[arg] for arg in sig.args]
