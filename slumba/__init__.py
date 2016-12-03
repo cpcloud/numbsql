@@ -1,8 +1,10 @@
-from .slumba import register_function_pointer
+from .cyslumba import register_scalar_function, register_aggregate_function
+from . import miniast
 
 __all__ = [
     'register_scalar_function',
     'register_aggregate_function',
+    'miniast',
 ]
 
 from ._version import get_versions
