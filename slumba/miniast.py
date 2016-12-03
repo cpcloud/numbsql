@@ -56,6 +56,16 @@ class Call(object):
 
     __getattr__ = __getitem__
 
+    def __call__(self, callable, *args, **kwargs):
+        return ast.Call(
+            func=callable,
+            args=list(args),
+            keywords=[
+                ast.keyword(arg=key, value=value)
+                for key, value in kwargs.items()
+            ]
+        )
+
 
 ### API
 # load.foo == ast.Name('foo', ctx=ast.Load())
@@ -64,6 +74,29 @@ call = Call()
 
 ### API
 # call.func(load.foo, nopython=TRUE)
+
+
+class Attributable(object):
+    __slots__ = 'parent',
+
+    def __init__(self, parent):
+        self.parent = parent
+
+    def __getattr__(self, name):
+        return ast.Attribute(value=self.parent, attr=name, ctx=ast.Load())
+
+
+class Attr(object):
+    __slots__ = ()
+
+    def __getitem__(self, key):
+        return Attributable(load[key])
+
+    __getattr__ = __getitem__
+
+
+attr = Attr()
+
 
 
 class Index(object):
