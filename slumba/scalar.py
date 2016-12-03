@@ -3,6 +3,7 @@ import ast
 from numba import njit, optional
 
 from slumba.gen import CONVERTERS, RESULT_SETTERS, gen_scalar
+from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
 
 def sqlite_udf(signature):
@@ -14,7 +15,10 @@ def sqlite_udf(signature):
     def wrapped(func):
         jitted_func = njit(new_signature)(func)
         func_name = func.__name__
-        scope = {func_name: jitted_func}
+        scope = {
+            func_name: jitted_func,
+            'SQLITE_NULL': SQLITE_NULL
+        }
         scope.update(CONVERTERS)
         scope.update((f.__name__, f) for f in RESULT_SETTERS.values())
         final_func_name = '{}_scalar'.format(func_name)
