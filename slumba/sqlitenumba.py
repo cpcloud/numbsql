@@ -12,7 +12,14 @@ from numba import cfunc, int64, float64, jit, i1, f8, i8, void, int32
 
 from gen import *  # we can probably do better than a star import here
 
-from slumba import register_scalar_function
+from slumba import (
+    register_scalar_function,
+    _SQLITE_INTEGER as SQLITE_INTEGER,
+    _SQLITE_FLOAT as SQLITE_FLOAT,
+    _SQLITE_TEXT as SQLITE_TEXT,
+    _SQLITE_BLOB as SQLITE_BLOB,
+    _SQLITE_NULL as SQLITE_NULL,
+)
 
 
 class SQLiteUDF(object):
@@ -38,7 +45,7 @@ def sqlite_udf(signature):
                 func.__name__
             )
         globals()[func.__name__] = jitted
-        genmod = gen_def(jitted)
+        genmod = gen_scalar(jitted)
         mod = ast.fix_missing_locations(genmod)
         bytecode = compile(mod, __file__, 'exec')
         exec(bytecode)
