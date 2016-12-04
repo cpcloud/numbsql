@@ -7,6 +7,12 @@ from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
 
 def sqlite_udf(signature):
+    """Generate a SQLite compatible cfunc wrapper for a numba compiled function
+
+    Parameters
+    ----------
+    signature : numba.Signature
+    """
     # SQL functions can always return and accept None
     new_signature = optional(signature.return_type)(
         *map(optional, signature.args)
