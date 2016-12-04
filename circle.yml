@@ -3,7 +3,9 @@ machine:
     version: 3.5.2
   pre:
     - sudo apt-get install --only-upgrade sqlite3
-    - sudo apt-get install --only-upgrade libllvm-3.8-ocaml-dev libllvm3.8 llvm-3.8 llvm-3.8-dev llvm-3.8-runtime
+    - sudo apt-get install libllvm-3.8-ocaml-dev libllvm3.8 llvm-3.8 llvm-3.8-dev llvm-3.8-runtime
+    - sudo apt-get uninstall libllvm-3.4-ocaml-dev libllvm3.4 llvm-3.4 llvm-3.4-dev llvm-3.4-runtime
+    - sudo apt-get autoremove
 
 dependencies:
   override:
