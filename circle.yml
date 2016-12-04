@@ -1,0 +1,14 @@
+machine:
+  python:
+    version: 3.5
+  pre:
+    - sudo apt-get install --only-upgrade sqlite3
+
+dependencies:
+  override:
+    - pip install -U pip
+    - pip install -r requirements.txt
+
+test:
+  override:
+    - py.test --tb=short --junitxml="$CIRCLE_TEST_REPORTS/junit.xml"
