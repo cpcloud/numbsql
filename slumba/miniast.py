@@ -145,6 +145,17 @@ class Alias(object):
     def __getattr__(self, name):
         return ast.alias(name=name, asname=None)
 
+    def __getitem__(self, key):
+        try:
+            name, asname = key
+        except ValueError:
+            raise ValueError(
+                'Only as imports are allowed with __getitem__, '
+                'key length must be 2'
+            )
+        else:
+            return ast.alias(name=name, asname=asname)
+
 
 alias = Alias()
 
