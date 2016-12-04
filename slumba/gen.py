@@ -7,8 +7,7 @@ import ast
 import textwrap
 
 from slumba.miniast import (
-    call, store, load, TRUE, NONE, arg, sub, idx, import_from, alias, attr,
-    not_none
+    call, store, load, TRUE, NONE, arg, sub, idx, import_from, alias, attr
 )
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
