@@ -7,7 +7,8 @@ import ast
 import textwrap
 
 from slumba.miniast import (
-    call, store, load, TRUE, NONE, arg, sub, idx, import_from, alias, attr
+    call, store, load, TRUE, NONE, arg, sub, idx, import_from, alias, attr,
+    not_none
 )
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
@@ -161,16 +162,22 @@ def gen_step(cls, name):
                 load[class_name]
             )
         ),
-        ast.Expr(
-            value=call(
-                attr.agg_ctx.step,
-                *(
-                    unnullify(
-                        load['value_{:d}'.format(i)],
-                        call[VALUE_EXTRACTORS[arg].__name__]
-                    ) for i, arg in enumerate(args)
+        ast.If(
+            test=call.not_null(load.agg_ctx),
+            body=[
+                ast.Expr(
+                    value=call(
+                        attr.agg_ctx.step,
+                        *(
+                            unnullify(
+                                load['value_{:d}'.format(i)],
+                                call[VALUE_EXTRACTORS[arg].__name__]
+                            ) for i, arg in enumerate(args)
+                        )
+                    )
                 )
-            )
+            ],
+            orelse=[]
         )
     ])
     decorator_list = [
@@ -234,18 +241,24 @@ def gen_finalize(cls, name):
                             load[class_name]
                         )
                     ),
-                    ast.Assign(
-                        targets=[
-                            store.final_value,
+                    ast.If(
+                        test=call.not_null(load.agg_ctx),
+                        body=[
+                            ast.Assign(
+                                targets=[
+                                    store.final_value,
+                                ],
+                                value=call(attr.agg_ctx.finalize)
+                            ),
+                            ast.Expr(
+                                value=call[RESULT_SETTERS[sig.return_type].__name__](
+                                    load.ctx,
+                                    load.final_value
+                                )
+                            ),
                         ],
-                        value=call(attr.agg_ctx.finalize)
-                    ),
-                    ast.Expr(
-                        value=call[RESULT_SETTERS[sig.return_type].__name__](
-                            load.ctx,
-                            load.final_value
-                        )
-                    ),
+                        orelse=[],
+                    )
                 ],
                 decorator_list=[
                     call.cfunc(call.void(load.voidptr), nopython=TRUE)
@@ -291,6 +304,12 @@ class SourceVisitor(ast.NodeVisitor):
 
     def visit_NotEq(self, node):
         return '!='
+
+    def visit_Not(self, node):
+        return 'not '
+
+    def visit_UnaryOp(self, node):
+        return '{}{}'.format(self.visit(node.op), self.visit(node.operand))
 
     def visit_Compare(self, node):
         left = self.visit(node.left)

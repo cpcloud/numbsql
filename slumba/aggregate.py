@@ -8,7 +8,7 @@ from slumba.gen import (
     RESULT_SETTERS, CONVERTERS, libsqlite3, gen_finalize, gen_step,
     camel_to_snake
 )
-from slumba.casting import unsafe_cast, sizeof
+from slumba.casting import unsafe_cast, sizeof, not_null
 
 from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
@@ -42,20 +42,25 @@ def sqlite_udaf(signature):
         genmod = ast.Module(body=step_mod.body + finalize_mod.body)
 
         mod = ast.fix_missing_locations(genmod)
+
         code = compile(mod, __file__, 'exec')
         scope = {
             cls.__name__: cls,
             'sqlite3_aggregate_context': sqlite3_aggregate_context,
             'unsafe_cast': unsafe_cast,
             'sizeof': sizeof,
+            'not_null': not_null,
             'SQLITE_NULL': SQLITE_NULL,
         }
         scope.update(CONVERTERS)
         scope.update((func.__name__, func) for func in RESULT_SETTERS.values())
         exec(code, scope)
 
-        cls.step.address = scope[step_name].address
-        cls.finalize.address = scope[finalize_name].address
+        step = scope[step_name]
+        finalize = scope[finalize_name]
+
+        cls.step.address = step.address
+        cls.finalize.address = finalize.address
         return cls
 
     return cls_wrapper
