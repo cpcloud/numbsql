@@ -18,7 +18,6 @@ def _unsafe_cast_ptr_to_class(int_type, class_type):
 
         # Set data from the given pointer
         inst_struct.data = builder.bitcast(ptr, alloc_type.as_pointer())
-
         return inst_struct._getvalue()
 
     return sig, codegen
@@ -42,8 +41,26 @@ def sizeof(typingctx, src):
     def codegen(context, builder, signature, args):
         return context.get_constant(
             sig.return_type,
-            context.get_abi_sizeof(
-                context.get_data_type(src.instance_type)
-            )
+            context.get_abi_sizeof(context.get_data_type(src.instance_type))
         )
-    return sig, codegen
+    if isinstance(src, types.ClassType):
+        return sig, codegen
+    raise TypeError()
+
+
+@extending.intrinsic
+def not_null(typingctx, src):
+    sig = types.boolean(src)
+
+    def codegen(context, builder, signature, args):
+        instance, = args
+
+        # TODO: probably a better way to do this
+        second_element = builder.extract_value(instance, [1])
+        result = cgutils.is_not_null(builder, second_element)
+        return result
+
+    if isinstance(src, types.ClassInstanceType):
+        return sig, codegen
+
+    raise TypeError()
