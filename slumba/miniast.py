@@ -179,7 +179,7 @@ class DottedModule(object):
 
     def __getitem__(self, key):
         names = [key] if isinstance(key, ast.alias) else list(key)
-        return ast.ImportFrom(module=self.name, names=names)
+        return ast.ImportFrom(module=self.name, names=names, level=0)
 
     def __getattr__(self, name):
         return DottedModule('{}.{}'.format(self.name, name))
