@@ -55,7 +55,7 @@ def not_null(typingctx, src):
     def codegen(context, builder, signature, args):
         instance, = args
 
-        # TODO: probably a better way to do this
+        # TODO: probably a more general way to do this
         second_element = builder.extract_value(instance, [1])
         result = cgutils.is_not_null(builder, second_element)
         return result
