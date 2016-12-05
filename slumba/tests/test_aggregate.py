@@ -1,14 +1,9 @@
 import sqlite3
-import string
-import random
 
 import pytest
 
 from numba import float64, int64, jitclass
 from slumba import sqlite_udaf, create_aggregate
-
-from ctypes import CDLL, c_char_p
-from ctypes.util import find_library
 
 
 @sqlite_udaf(float64(float64))
@@ -29,7 +24,6 @@ class Avg(object):
         if not self.count:
             return None
         return self.total / self.count
-
 
 
 @pytest.fixture

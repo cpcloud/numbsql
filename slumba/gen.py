@@ -250,10 +250,9 @@ def gen_finalize(cls, name):
                                 value=call(attr.agg_ctx.finalize)
                             ),
                             ast.Expr(
-                                value=call[RESULT_SETTERS[sig.return_type].__name__](
-                                    load.ctx,
-                                    load.final_value
-                                )
+                                value=call[
+                                    RESULT_SETTERS[sig.return_type].__name__
+                                ](load.ctx, load.final_value)
                             ),
                         ],
                         orelse=[],

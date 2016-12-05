@@ -52,7 +52,6 @@ def test_eq():
     )
 
 
-
 def test_load():
     assert eq(load.foo, ast.Name(id='foo', ctx=ast.Load()))
     assert eq(load['bar'], ast.Name(id='bar', ctx=ast.Load()))

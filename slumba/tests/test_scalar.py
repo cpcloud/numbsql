@@ -1,6 +1,4 @@
 import sqlite3
-import string
-import random
 
 import pytest
 
@@ -54,7 +52,9 @@ def test_scalar(con):
 
 
 def test_scalar_with_aggregate(con):
-    assert list(con.execute('SELECT sum(add_one(value)) as c FROM t')) == [(20.0,)]
+    assert list(
+        con.execute('SELECT sum(add_one(value)) as c FROM t')
+    ) == [(20.0,)]
 
 
 def test_scalar_with_empty(con):

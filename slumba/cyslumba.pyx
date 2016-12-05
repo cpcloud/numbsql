@@ -65,7 +65,6 @@ cpdef object register_scalar_function(
         raise RuntimeError(sqlite3_errmsg(con.db))
 
 
-
 cpdef object register_aggregate_function(
     Connection con,
     const char *name,
