@@ -64,3 +64,22 @@ class Avg(object):
         else:
             return None
 ```
+
+## TODO
+
+### API Design
+
+#### `NULL` values
+
+1. Automatically convert all signatures to return an `optional` type and
+   accept `optional` types. This is the current system. The drawback of
+   this approach is that it's not immediately clear from the API that this
+   is what's happening. Furthermore, a user must always handle null values
+   inside the function, when in fact desired null handling may nearly
+   always be "do nothing if any inputs are `NULL`".
+2. Require users to specify `optional` types if they want to accept NULL
+   values. We would generate slightly different wrappers if types are marked
+   `optional`. This presents a problem for empty tables if users forget to
+   mark their UDF return values as `optional(<some numba type>)`.
+3. Completely ignore nulls automatically, and only pass in values that
+   are not null.
