@@ -1,6 +1,6 @@
 # Put some Numba in your SQLite
 
-[![Circle CI](https://circleci.com/gh/:owner/:repo.svg?style=shield&circle-token=:circle-token)](https://github.com/cpcloud/slumba)
+[![Circle CI](https://circleci.com/gh/cpcloud/slumba.svg?style=shield&circle-token=:circle-token)](https://github.com/cpcloud/slumba)
 
 ## Requirements
 
