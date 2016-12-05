@@ -60,7 +60,7 @@ from slumba import sqlite_udaf
 class Avg(object):
     def __init__(self):
         self.total = 0.0
-        self.count = 0.0
+        self.count = 0
 
     def step(self, value):
         if value is not None:
