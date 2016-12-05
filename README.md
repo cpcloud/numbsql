@@ -2,6 +2,12 @@
 
 [![Circle CI](https://circleci.com/gh/cpcloud/slumba.svg?style=shield&circle-token=:circle-token)](https://github.com/cpcloud/slumba)
 
+## Fair Warning
+
+This library does unsafe things like pass around function pointer addresses
+as integers. It also bypasses numba's memory management mechanisms. Use at your
+own risk.
+
 ## Requirements
 
 * `cython`
