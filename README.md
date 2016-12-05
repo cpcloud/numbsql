@@ -45,8 +45,8 @@ from slumba import sqlite_udaf
 
 @sqlite_udaf(float64(float64))
 @jitclass([
-  ('total', float64),
-  ('count', int64)
+    ('total', float64),
+    ('count', int64)
 ])
 class Avg(object):
     def __init__(self):
