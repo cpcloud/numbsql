@@ -8,6 +8,9 @@ This library does unsafe things like pass around function pointer addresses
 as integers. It also bypasses numba's memory management mechanisms.  **Use at
 your own risk**.
 
+If you're unfamiliar with why passing function pointers' addresses around as
+integers is unsafe, then you shouldn't use this library.
+
 ## Requirements
 
 * `cython`
