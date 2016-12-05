@@ -18,4 +18,4 @@ dependencies:
 
 test:
   override:
-    - py.test --tb=short --junitxml="$CIRCLE_TEST_REPORTS/junit.xml"
+    - py.test slumba --tb=short --junitxml="$CIRCLE_TEST_REPORTS/junit.xml"
