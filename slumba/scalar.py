@@ -13,13 +13,9 @@ def sqlite_udf(signature):
     ----------
     signature : numba.Signature
     """
-    # SQL functions can always return and accept None
-    new_signature = optional(signature.return_type)(
-        *map(optional, signature.args)
-    )
 
     def wrapped(func):
-        jitted_func = njit(new_signature)(func)
+        jitted_func = njit(signature)(func)
         func_name = func.__name__
         scope = {
             func_name: jitted_func,
