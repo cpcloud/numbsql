@@ -3,12 +3,22 @@ import sqlite3
 import pytest
 
 from slumba import create_function, sqlite_udf
-from numba import float64
+from numba import int64, float64, optional
 
 
 @sqlite_udf(float64(float64))
 def add_one(x):
+    return x + 1.0
+
+
+@sqlite_udf(optional(float64)(float64))
+def add_one_optional(x):
     return x + 1.0 if x is not None else None
+
+
+@sqlite_udf(int64(int64, float64))
+def add_each_other(x, y):
+    return x + int(y)
 
 
 @pytest.fixture
