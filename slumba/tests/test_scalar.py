@@ -1,4 +1,5 @@
 import sqlite3
+import random
 
 import pytest
 
@@ -39,6 +40,14 @@ def con():
         )
     """)
 
+    con.execute("""
+        CREATE TABLE null_t (
+            id INTEGER PRIMARY KEY,
+            key VARCHAR(1),
+            value DOUBLE PRECISION
+        )
+    """)
+
     rows = [
         ('a', 1.0),
         ('a', 2.0),
@@ -46,8 +55,11 @@ def con():
         ('c', 4.0),
         ('c', 5.0),
     ]
+    null_rows = [row for row in rows] + [('b', None), ('c', None)]
+    random.shuffle(null_rows)
     con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
     create_function(con, 'add_one', 1, add_one)
+    create_function(con, 'add_one_optional', 1, add_one_optional)
     return con
 
 
@@ -70,3 +82,8 @@ def test_scalar_with_aggregate(con):
 def test_scalar_with_empty(con):
     result = list(con.execute('SELECT add_one(value) as c FROM s'))
     assert result == []
+
+
+def test_optional(con):
+    result = list(con.execute('SELECT add_one_optional(value) AS c FROM null_t'))
+    assert result == list(con.execute('SELECT value + 1.0 AS c FROM null_t'))
