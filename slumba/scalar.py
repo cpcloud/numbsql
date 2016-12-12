@@ -2,7 +2,9 @@ import ast
 
 from numba import njit, optional
 
-from slumba.gen import CONVERTERS, RESULT_SETTERS, gen_scalar
+from slumba.gen import (
+    CONVERTERS, RESULT_SETTERS, gen_scalar, sqlite3_result_null
+)
 from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
 
@@ -19,7 +21,8 @@ def sqlite_udf(signature):
         func_name = func.__name__
         scope = {
             func_name: jitted_func,
-            'SQLITE_NULL': SQLITE_NULL
+            'SQLITE_NULL': SQLITE_NULL,
+            'sqlite3_result_null': sqlite3_result_null,
         }
         scope.update(CONVERTERS)
         scope.update((f.__name__, f) for f in RESULT_SETTERS.values())

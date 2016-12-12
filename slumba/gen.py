@@ -13,7 +13,8 @@ from slumba.miniast import (
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
 from ctypes.util import find_library
 
-from numba import float64, int64, optional
+from numba import float64, int64, int32, optional
+from numba import types
 
 
 libsqlite3 = CDLL(find_library('sqlite3'))
@@ -21,6 +22,8 @@ libsqlite3 = CDLL(find_library('sqlite3'))
 
 sqlite3_result_double = libsqlite3.sqlite3_result_double
 sqlite3_result_int64 = libsqlite3.sqlite3_result_int64
+sqlite3_result_int = libsqlite3.sqlite3_result_int
+sqlite3_result_null = libsqlite3.sqlite3_result_null
 
 sqlite3_result_double.argtypes = c_void_p, c_double
 sqlite3_result_double.restype = None
@@ -28,10 +31,20 @@ sqlite3_result_double.restype = None
 sqlite3_result_int64.argtypes = c_void_p, c_int64
 sqlite3_result_int64.restype = None
 
+sqlite3_result_int.argtypes = c_void_p, c_int
+sqlite3_result_int.restype = None
+
+sqlite3_result_null.argtypes = c_void_p,
+sqlite3_result_null.restype = None
+
 
 RESULT_SETTERS = {
     optional(float64): sqlite3_result_double,
     optional(int64): sqlite3_result_int64,
+    optional(int32): sqlite3_result_int,
+    float64: sqlite3_result_double,
+    int64: sqlite3_result_int64,
+    int32: sqlite3_result_int,
 }
 
 
@@ -56,6 +69,10 @@ def add_value_method(typename, restype):
 VALUE_EXTRACTORS = {
     optional(float64): add_value_method('double', c_double),
     optional(int64): add_value_method('int64', c_int64),
+    optional(int32): add_value_method('int', c_int),
+    float64: add_value_method('double', c_double),
+    int64: add_value_method('int64', c_int64),
+    int32: add_value_method('int', c_int),
 }
 
 
@@ -65,29 +82,81 @@ CONVERTERS = {
 }
 
 
-def unnullify(value, true_function):
-    return ast.IfExp(
+def unnullify(value, true_function, name, argtype):
+    return ast.If(
         test=ast.Compare(
             left=call.sqlite3_value_type(value),
             ops=[ast.NotEq()],
             comparators=[load.SQLITE_NULL]
         ),
-        body=true_function(value),
-        orelse=NONE,
-    )
+        body=[ast.Assign(targets=[store[name]], value=true_function(value))],
+        orelse=[ast.Assign(targets=[store[name]], value=NONE)],
+    ), None, load[name]
+
+
+def fail_if_null(value, true_function, name, argtype):
+    return ast.If(
+        test=ast.Compare(
+            left=call.sqlite3_value_type(value),
+            ops=[ast.Eq()],
+            comparators=[load.SQLITE_NULL]
+        ),
+        body=[
+            ast.Raise(
+                exc=call.TypeError(
+                    ast.Str(
+                        s=(
+                            'Argument {0!r} is NULL but argument type was {1}.'
+                            ' Please change the argument type to optional({1})'
+                            ' to accept NULL values.'
+                        ).format(SourceVisitor().visit(value), argtype)
+                    )
+                ),
+                cause=None
+            )
+        ],
+        orelse=[],
+    ), ast.Assign(targets=[store[name]], value=true_function(value)), load[name]
 
 
 def generate_function_body(func):
     sig, = func.nopython_signatures
-    converters = [VALUE_EXTRACTORS[arg] for arg in sig.args]
+    converters = [(arg, VALUE_EXTRACTORS[arg]) for arg in sig.args]
     resulter = RESULT_SETTERS[sig.return_type]
 
-    args = [
-        unnullify(sub(load.argv, idx(i)), call[converter.__name__])
-        for i, converter in enumerate(converters)
-    ]
+    args = []
+    sequence = []
+
+    for i, (argtype, converter) in enumerate(converters):
+        arg = sub(load.argv, idx(i))
+        converter_function = call[converter.__name__]
+        argname = 'arg_{:d}'.format(i)
+        if isinstance(argtype, types.Optional):
+            if_statement, rest, arg = unnullify(arg, converter_function, argname, argtype)
+        else:
+            if_statement, rest, arg = fail_if_null(arg, converter_function, argname, argtype)
+
+        sequence.append(if_statement)
+        if rest is not None:
+            sequence.append(rest)
+        args.append(arg)
+
     result = call[func.__name__](*args)
-    return call[resulter.__name__](load.ctx, result)
+    final_call = call[resulter.__name__](load.ctx, load.result_value)
+    return sequence + [
+        ast.Assign(targets=[store.result_value], value=result),
+        ast.If(
+            test=ast.Compare(
+                left=load.result_value,
+                ops=[ast.IsNot()],
+                comparators=[NONE]
+            ),
+            body=[ast.Expr(value=final_call)],
+            orelse=[ast.Expr(value=call.sqlite3_result_null(load.ctx))]
+        ) if isinstance(sig.return_type, types.Optional) else (
+            ast.Expr(value=final_call)
+        )
+    ]
 
 
 def gen_scalar(func, name):
@@ -114,7 +183,7 @@ def gen_scalar(func, name):
                     kwargs=None,
                     defaults=[],
                 ),
-                body=[ast.Expr(value=generate_function_body(func))],
+                body=generate_function_body(func),
                 decorator_list=[
                     call.cfunc(
                         call.void(
@@ -143,11 +212,31 @@ def gen_step(cls, name):
 
     body = [
         ast.Assign(
-            targets=[store['value_{:d}'.format(i)]],
+            targets=[store['arg_{:d}'.format(i)]],
             value=sub(load.argv, idx(i))
         )
         for i, arg in enumerate(args)
     ]
+
+    step_args = []
+    statements = []
+
+    for i, a in enumerate(args):
+        if isinstance(a, types.Optional):
+            func = unnullify
+        else:
+            func = fail_if_null
+        if_statement, rest, argument = func(
+            load['arg_{:d}'.format(i)],
+            call[VALUE_EXTRACTORS[a].__name__],
+            'value_{:d}'.format(i),
+            a
+        )
+        statements.append(if_statement)
+        if rest is not None:
+            statements.append(rest)
+        step_args.append(argument)
+
     body.extend([
         ast.Assign(
             targets=[
@@ -163,18 +252,8 @@ def gen_step(cls, name):
         ),
         ast.If(
             test=call.not_null(load.agg_ctx),
-            body=[
-                ast.Expr(
-                    value=call(
-                        attr.agg_ctx.step,
-                        *(
-                            unnullify(
-                                load['value_{:d}'.format(i)],
-                                call[VALUE_EXTRACTORS[arg].__name__]
-                            ) for i, arg in enumerate(args)
-                        )
-                    )
-                )
+            body=statements + [
+                ast.Expr(value=call(attr.agg_ctx.step, *step_args))
             ],
             orelse=[]
         )
@@ -193,7 +272,7 @@ def gen_step(cls, name):
         kwargs=None,
         defaults=[],
     )
-    return ast.Module(
+    mod = ast.Module(
         body=[
             import_from.numba[alias.cfunc],
             import_from.numba.types[
@@ -208,11 +287,26 @@ def gen_step(cls, name):
             )
         ]
     )
+    return mod
 
 
 def gen_finalize(cls, name):
     class_name = cls.__name__
     sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
+    output_call = ast.Expr(
+        value=call[
+            RESULT_SETTERS[sig.return_type].__name__
+        ](load.ctx, load.final_value)
+    )
+    final_result = ast.If(
+        test=ast.Compare(
+            left=load.final_value,
+            ops=[ast.IsNot()],
+            comparators=[NONE],
+        ),
+        body=[output_call],
+        orelse=[ast.Expr(value=call.sqlite3_result_null(load.ctx))]
+    ) if isinstance(sig.return_type, types.Optional) else output_call
     return ast.Module(
         body=[
             # no imports because this is always defined with a step function,
@@ -249,11 +343,7 @@ def gen_finalize(cls, name):
                                 ],
                                 value=call(attr.agg_ctx.finalize)
                             ),
-                            ast.Expr(
-                                value=call[
-                                    RESULT_SETTERS[sig.return_type].__name__
-                                ](load.ctx, load.final_value)
-                            ),
+                            final_result,
                         ],
                         orelse=[],
                     )
@@ -286,7 +376,10 @@ class SourceVisitor(ast.NodeVisitor):
         spaces = ' ' * 4
         body = textwrap.indent('\n'.join(map(self.visit, node.body)), spaces)
         if node.orelse:
-            orelse = textwrap.indent(self.visit(node.orelse), spaces)
+            orelse = textwrap.indent(
+                '\n'.join(map(self.visit, node.orelse)),
+                spaces
+            )
             return 'if {}:\n{}\nelse:\n{}'.format(test, body, orelse)
         return 'if {}:\n{}'.format(test, body)
 
@@ -303,8 +396,14 @@ class SourceVisitor(ast.NodeVisitor):
     def visit_NotEq(self, node):
         return '!='
 
+    def visit_Eq(self, node):
+        return '=='
+
     def visit_Not(self, node):
         return 'not '
+
+    def visit_IsNot(self, node):
+        return 'is not'
 
     def visit_UnaryOp(self, node):
         return '{}{}'.format(self.visit(node.op), self.visit(node.operand))
@@ -387,8 +486,19 @@ class SourceVisitor(ast.NodeVisitor):
     def visit_Num(self, node):
         return str(node.n)
 
+    def visit_Str(self, node):
+        return repr(node.s)
+
     def visit_arg(self, node):
         return node.arg
+
+    def visit_Raise(self, node):
+        raise_string = 'raise {}'.format(self.visit(node.exc))
+        cause = getattr(node, 'cause', None)
+
+        if cause is not None:
+            return '{} from {}'.format(raise_string, self.visit(cause))
+        return raise_string
 
     def visit_Subscript(self, node):
         return '{}[{}]'.format(self.visit(node.value), self.visit(node.slice))
@@ -398,6 +508,10 @@ class SourceVisitor(ast.NodeVisitor):
 
     def visit_Module(self, node):
         return '\n'.join(map(self.visit, node.body))
+
+
+def sourcify(mod):
+    return SourceVisitor().visit(mod)
 
 
 if __name__ == '__main__':

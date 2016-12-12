@@ -16,9 +16,10 @@ def register_scalar_cfunc(con, func):
 
 if __name__ == '__main__':
     import random
+    from numba import optional
     from math import sqrt, pi, exp
 
-    @sqlite_udf(float64(float64, float64, float64))
+    @sqlite_udf(optional(float64)(float64, float64, float64))
     def normal(x, mu, sigma):
         c = 1.0 / (sigma * sqrt(2.0 * pi))
         return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)

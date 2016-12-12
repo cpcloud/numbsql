@@ -5,7 +5,7 @@ import string
 from operator import attrgetter
 from collections import namedtuple
 
-from numba import float64, int64, boolean, jitclass
+from numba import float64, int64, boolean, jitclass, optional
 
 from slumba import sqlite_udaf, register_aggregate_function
 
@@ -61,11 +61,8 @@ class Cov(object):
         return n / (n - 1) * self.mean12
 
 
-@sqlite_udaf(float64(float64))
-@jitclass([
-    ('total', float64),
-    ('count', int64),
-])
+@sqlite_udaf(optional(float64)(float64))
+@jitclass([('total', float64), ('count', int64)])
 class Avg(object):
     def __init__(self):
         self.total = 0.0
@@ -81,23 +78,20 @@ class Avg(object):
         return self.total / self.count
 
 
-@sqlite_udaf(float64(float64))
-@jitclass([
-    ('total', float64),
-    ('has_values', boolean),
-])
+@sqlite_udaf(optional(float64)(float64))
+@jitclass([('total', float64), ('count', int64)])
 class Sum(object):
     def __init__(self):
         self.total = 0.0
-        self.has_values = False
+        self.count = 0
 
     def step(self, value):
         if value is not None:
             self.total += value
-            self.has_values = True
+            self.count += 1
 
     def finalize(self):
-        return self.total if self.has_values else None
+        return self.total if self.count > 0 else None
 
 
 def main():
