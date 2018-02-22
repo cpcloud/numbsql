@@ -2,7 +2,7 @@ import ast
 
 from ctypes import c_void_p, c_int
 
-from numba import void, optional
+from numba import void
 
 from slumba.gen import (
     RESULT_SETTERS, CONVERTERS, libsqlite3, gen_finalize, gen_step,
@@ -33,8 +33,8 @@ def sqlite_udaf(signature):
         jitmethods['finalize'].compile(finalize_signature)
 
         func_name = camel_to_snake(cls.__name__)
-        step_name = '{}_step'.format(func_name)
-        finalize_name = '{}_finalize'.format(func_name)
+        step_name = f'{func_name}_step'
+        finalize_name = f'{func_name}_finalize'
 
         step_mod = gen_step(cls, step_name)
         finalize_mod = gen_finalize(cls, finalize_name)

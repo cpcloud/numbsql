@@ -1,6 +1,6 @@
 import ast
 
-from numba import njit, optional
+from numba import njit
 
 from slumba.gen import (
     CONVERTERS, RESULT_SETTERS, gen_scalar, sqlite3_result_null
@@ -26,7 +26,7 @@ def sqlite_udf(signature):
         }
         scope.update(CONVERTERS)
         scope.update((f.__name__, f) for f in RESULT_SETTERS.values())
-        final_func_name = '{}_scalar'.format(func_name)
+        final_func_name = f'{func_name}_scalar'
         genmod = gen_scalar(jitted_func, final_func_name)
         mod = ast.fix_missing_locations(genmod)
         bytecode = compile(mod, __file__, 'exec')
