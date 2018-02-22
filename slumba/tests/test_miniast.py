@@ -8,7 +8,7 @@ from slumba.miniast import (
     arg,
     call,
     attr,
-    idx,
+    getidx,
     sub,
     alias,
     import_from,
@@ -98,13 +98,13 @@ def test_attr():
 
 @pytest.mark.parametrize('i', range(5))
 def test_idx(i):
-    assert eq(idx(i), ast.Index(value=ast.Num(n=i)))
+    assert eq(getidx(i), ast.Index(value=ast.Num(n=i)))
 
 
 @pytest.mark.parametrize('i', range(5))
 def test_sub(i):
     assert eq(
-        sub(load.a, idx(i)),
+        sub(load.a, getidx(i)),
         ast.Subscript(
             value=ast.Name(id='a', ctx=ast.Load()),
             slice=ast.Index(value=ast.Num(n=i)),
