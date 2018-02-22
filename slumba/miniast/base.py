@@ -8,11 +8,11 @@ import copy
 
 def comparisons(mapping):
     def decorator(cls):
-        for dunder_name, value in mapping.items():
+        for method_name, op in mapping.items():
             setattr(
                 cls,
-                dunder_name,
-                lambda self, other, op=value(): ast.Compare(
+                method_name,
+                lambda self, other, op=op(): ast.Compare(
                     left=self,
                     ops=[op],
                     comparators=[other]
@@ -29,22 +29,11 @@ def comparisons(mapping):
     '__le__': ast.LtE,
     '__gt__': ast.Gt,
     '__ge__': ast.GtE,
+    'is_': ast.Is,
+    'is_not': ast.IsNot,
 })
 class Comparable:
-
-    def is_(self, other):
-        return ast.Compare(
-            left=self,
-            ops=[ast.Is()],
-            comparators=[other]
-        )
-
-    def is_not(self, other):
-        return ast.Compare(
-            left=self,
-            ops=[ast.IsNot()],
-            comparators=[other]
-        )
+    pass
 
 
 class Variable(ast.Name, Comparable):
@@ -52,7 +41,7 @@ class Variable(ast.Name, Comparable):
         super().__init__(id=id, ctx=ctx)
 
     def __getitem__(self, key):
-        return sub(self, idx(key))
+        return sub(self, getidx(key))
 
     def assign(self, value):
         return ast.Assign(targets=[self], value=value)
@@ -264,12 +253,10 @@ class Index:
     __slots__ = ()
 
     def __call__(self, index):
-        if not isinstance(index, int):
-            raise TypeError('index must be an integer')
-        return ast.Index(value=ast.Num(n=index), ctx=ast.Load())
+        return ast.Index(value=to_node(index), ctx=ast.Load())
 
 
-idx = Index()
+getidx = Index()
 
 
 class Subscript:
