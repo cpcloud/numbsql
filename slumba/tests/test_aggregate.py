@@ -2,11 +2,11 @@ import sqlite3
 
 import pytest
 
-from numba import float64, int64, jitclass, optional
+from numba import float64, int64, jitclass
 from slumba import sqlite_udaf, create_aggregate
 
 
-@sqlite_udaf(optional(float64)(float64))
+@sqlite_udaf(float64(float64))
 @jitclass([
     ('total', float64),
     ('count', int64),
