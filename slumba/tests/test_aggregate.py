@@ -26,6 +26,27 @@ class Avg(object):
         return self.total / self.count
 
 
+@sqlite_udaf(float64(float64), skipna=False)
+@jitclass([
+    ('total', float64),
+    ('count', int64),
+])
+class AvgWithNulls(object):
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value):
+        if value is not None:
+            self.total += value
+            self.count += 1
+
+    def finalize(self):
+        if not self.count:
+            return None
+        return self.total / self.count
+
+
 @pytest.fixture
 def con():
     con = sqlite3.connect(':memory:')

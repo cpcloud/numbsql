@@ -106,6 +106,10 @@ def to_node(value):
     return value
 
 
+def to_expr(value):
+    return value if isinstance(value, ast.stmt) else expr(value)
+
+
 class Call:
     """
     API
@@ -167,7 +171,12 @@ class If:
 
         if orelse is not None and not isinstance(orelse, list):
             orelse = [orelse]
-        return ast.If(test=test, body=body, orelse=orelse)
+
+        return ast.If(
+            test=test,
+            body=list(map(to_expr, body)),
+            orelse=list(map(to_expr, orelse))
+        )
 
 
 if_ = If()
@@ -328,3 +337,14 @@ class DottedModule:
 
     def __getattr__(self, name):
         return DottedModule('{}.{}'.format(self.name, name))
+
+
+class Return:
+
+    __slots__ = ()
+
+    def __call__(self, value=None):
+        return ast.Return(value=value)
+
+
+return_ = Return()

@@ -1,14 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 from itertools import chain
 
-import re
 import ast
+import re
 import textwrap
 
 from slumba.miniast import (
     call, store, load, TRUE, NONE, arg, import_from, alias, attr, if_, def_,
-    decorate, mod, expr, ifelse
+    decorate, mod, ifelse, return_
 )
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
@@ -95,7 +93,7 @@ def unnullify(value, true_function, name):
     return stored_var
 
 
-def generate_function_body(func):
+def generate_function_body(func, *, skipna):
     sig, = func.nopython_signatures
     converters = ((arg, VALUE_EXTRACTORS[arg]) for arg in sig.args)
     resulter = RESULT_SETTERS[sig.return_type]
@@ -105,11 +103,23 @@ def generate_function_body(func):
 
     for i, (argtype, converter) in enumerate(converters):
         argname = f'arg_{i:d}'
+
         if_statement = unnullify(
             load.argv[i], call[converter.__name__], argname
         )
 
         sequence.append(if_statement)
+
+        if skipna:
+            sequence.append(
+                if_(
+                    load[argname].is_(NONE),
+                    [
+                        call.sqlite3_result_null(load.ctx),
+                        return_()
+                    ]
+                )
+            )
         args.append(load[argname])
 
     result = call[func.__name__](*args)
@@ -118,13 +128,13 @@ def generate_function_body(func):
         store.result_value.assign(result),
         if_(
             load.result_value.is_not(NONE),
-            expr(final_call),
-            expr(call.sqlite3_result_null(load.ctx))
+            final_call,
+            call.sqlite3_result_null(load.ctx)
         )
     ]
 
 
-def gen_scalar(func, name):
+def gen_scalar(func, name, *, skipna):
     return mod(
         # from numba import cfunc
         import_from.numba[alias.cfunc],
@@ -151,7 +161,7 @@ def gen_scalar(func, name):
             # def func(ctx, argc, argv):
             #     *body
             def_[name](arg.ctx, arg.argc, arg.argv)(
-                *generate_function_body(func),
+                *generate_function_body(func, skipna=skipna),
                 returns=None
             )
         )
@@ -163,7 +173,7 @@ def camel_to_snake(name):
     return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', result).lower()
 
 
-def gen_step(cls, name):
+def gen_step(cls, name, *, skipna):
     class_name = cls.__name__
     sig, = cls.class_type.jitmethods['step'].nopython_signatures
     args = sig.args[1:]
@@ -181,6 +191,16 @@ def gen_step(cls, name):
             argname,
         )
         statements.append(if_statement)
+        if skipna:
+            statements.append(
+                if_(
+                    load[argname].is_(NONE),
+                    [
+                        call.sqlite3_result_null(load.ctx),
+                        return_()
+                    ]
+                )
+            )
         step_args.append(load[argname])
 
     body.extend([
@@ -195,7 +215,7 @@ def gen_step(cls, name):
         ),
         if_(
             call.not_null(load.agg_ctx),
-            statements + [expr(call(attr.agg_ctx.step, *step_args))]
+            statements + [call(attr.agg_ctx.step, *step_args)]
         )
     ])
     module = mod(
@@ -224,15 +244,13 @@ def gen_step(cls, name):
 def gen_finalize(cls, name):
     class_name = cls.__name__
     sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
-    output_call = expr(
-        call[RESULT_SETTERS[sig.return_type].__name__](
-            load.ctx, load.final_value
-        )
+    output_call = call[RESULT_SETTERS[sig.return_type].__name__](
+        load.ctx, load.final_value
     )
     final_result = if_(
         load.final_value.is_not(NONE),
         output_call,
-        expr(call.sqlite3_result_null(load.ctx))
+        call.sqlite3_result_null(load.ctx)
     )
     return mod(
         # no imports because this is always defined with a step function,
@@ -274,6 +292,9 @@ class SourceVisitor(ast.NodeVisitor):
             )
         return method(node)
 
+    def visit_NoneType(self, node):
+        return ''
+
     def visit_If(self, node):
         test = self.visit(node.test)
         spaces = ' ' * 4
@@ -304,6 +325,9 @@ class SourceVisitor(ast.NodeVisitor):
     def visit_Not(self, node):
         return 'not '
 
+    def visit_Is(self, node):
+        return 'is'
+
     def visit_IsNot(self, node):
         return 'is not'
 
@@ -318,7 +342,14 @@ class SourceVisitor(ast.NodeVisitor):
         )
 
     def visit_BoolOp(self, node):
-        return f' {self.visit(node.op)} '.join(map(self.visit, node.values))
+        left, op, right = node.left, node.op, node.right
+        return f'{self.visit(left)} {self.visit(op)} {self.visit(right)}'
+
+    def visit_Or(self, node):
+        return 'or'
+
+    def visit_Return(self, node):
+        return f'return {self.visit(node.value)}'
 
     def visit_Attribute(self, node):
         return f'{self.visit(node.value)}.{node.attr}'
@@ -415,5 +446,5 @@ if __name__ == '__main__':
         return x + y * 1.0
 
     # this shows what the compiled function looks like
-    module = gen_scalar(g, 'g_unit')
+    module = gen_scalar(g, 'g_unit', skipna=True)
     print(sourcify(module))

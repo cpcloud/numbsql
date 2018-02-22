@@ -4,7 +4,7 @@ import random
 import pytest
 
 from slumba import create_function, sqlite_udf
-from numba import int64, float64, optional
+from numba import int64, float64
 
 
 @sqlite_udf(float64(float64))
@@ -12,7 +12,7 @@ def add_one(x):
     return x + 1.0
 
 
-@sqlite_udf(optional(float64)(float64))
+@sqlite_udf(float64(float64))
 def add_one_optional(x):
     return x + 1.0 if x is not None else None
 
@@ -20,6 +20,13 @@ def add_one_optional(x):
 @sqlite_udf(int64(int64, float64))
 def add_each_other(x, y):
     return x + int(y)
+
+
+@sqlite_udf(int64(int64, float64), skipna=False)
+def add_each_other_nulls(x, y):
+    if x is not None and y is not None:
+        return x + int(y)
+    return None
 
 
 @pytest.fixture
@@ -85,5 +92,7 @@ def test_scalar_with_empty(con):
 
 
 def test_optional(con):
-    result = list(con.execute('SELECT add_one_optional(value) AS c FROM null_t'))
+    result = list(
+        con.execute('SELECT add_one_optional(value) AS c FROM null_t')
+    )
     assert result == list(con.execute('SELECT value + 1.0 AS c FROM null_t'))
