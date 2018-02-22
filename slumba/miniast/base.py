@@ -3,9 +3,62 @@ Constructing Python ASTs in Python is quite verbose, let's clean it up a bit.
 """
 
 import ast
+import copy
 
 
-class Load(object):
+def comparisons(mapping):
+    def decorator(cls):
+        for dunder_name, value in mapping.items():
+            setattr(
+                cls,
+                dunder_name,
+                lambda self, other, op=value(): ast.Compare(
+                    left=self,
+                    ops=[op],
+                    comparators=[other]
+                )
+            )
+        return cls
+    return decorator
+
+
+@comparisons({
+    '__eq__': ast.Eq,
+    '__ne__': ast.NotEq,
+    '__lt__': ast.Lt,
+    '__le__': ast.LtE,
+    '__gt__': ast.Gt,
+    '__ge__': ast.GtE,
+})
+class Comparable:
+
+    def is_(self, other):
+        return ast.Compare(
+            left=self,
+            ops=[ast.Is()],
+            comparators=[other]
+        )
+
+    def is_not(self, other):
+        return ast.Compare(
+            left=self,
+            ops=[ast.IsNot()],
+            comparators=[other]
+        )
+
+
+class Variable(ast.Name, Comparable):
+    def __init__(self, id, ctx):
+        super().__init__(id=id, ctx=ctx)
+
+    def __getitem__(self, key):
+        return sub(self, idx(key))
+
+    def assign(self, value):
+        return ast.Assign(targets=[self], value=value)
+
+
+class Load(Comparable):
     """
     API
     ---
@@ -14,7 +67,7 @@ class Load(object):
     __slots__ = ()
 
     def __getitem__(self, key):
-        return ast.Name(id=key, ctx=ast.Load())
+        return Variable(id=key, ctx=ast.Load())
 
     __getattr__ = __getitem__
 
@@ -22,11 +75,21 @@ class Load(object):
 load = Load()
 
 
-class Store(object):
+class Raise:
+    __slots__ = ()
+
+    def __call__(self, exception, cause=None):
+        return ast.Raise(exc=exception, cause=cause)
+
+
+raise_ = Raise()
+
+
+class Store:
     __slots__ = ()
 
     def __getitem__(self, key):
-        return ast.Name(id=key, ctx=ast.Store())
+        return Variable(id=key, ctx=ast.Store())
 
     __getattr__ = __getitem__
 
@@ -34,7 +97,7 @@ class Store(object):
 store = Store()
 
 
-class Arg(object):
+class Arg:
     __slots__ = ()
 
     def __getitem__(self, key):
@@ -46,7 +109,15 @@ class Arg(object):
 arg = Arg()
 
 
-class Call(object):
+def to_node(value):
+    if isinstance(value, str):
+        return ast.Str(s=value)
+    elif isinstance(value, (int, float)):
+        return ast.Num(n=value)
+    return value
+
+
+class Call:
     """
     API
     ---
@@ -55,21 +126,14 @@ class Call(object):
     __slots__ = ()
 
     def __getitem__(self, key):
-        return lambda *args, **kwargs: ast.Call(
-            func=load[key],
-            args=list(args),
-            keywords=[
-                ast.keyword(arg=arg, value=value)
-                for arg, value in kwargs.items()
-            ],
-        )
+        return lambda *args, **kwargs: self(load[key], *args, **kwargs)
 
     __getattr__ = __getitem__
 
     def __call__(self, callable, *args, **kwargs):
         return ast.Call(
             func=callable,
-            args=list(args),
+            args=list(map(to_node, args)),
             keywords=[
                 ast.keyword(arg=key, value=value)
                 for key, value in kwargs.items()
@@ -80,7 +144,7 @@ class Call(object):
 call = Call()
 
 
-class Attributable(object):
+class Attributable:
     __slots__ = 'parent',
 
     def __init__(self, parent):
@@ -90,7 +154,7 @@ class Attributable(object):
         return ast.Attribute(value=self.parent, attr=name, ctx=ast.Load())
 
 
-class Attr(object):
+class Attr:
     __slots__ = ()
 
     def __getitem__(self, key):
@@ -102,7 +166,101 @@ class Attr(object):
 attr = Attr()
 
 
-class Index(object):
+class If:
+    __slots__ = ()
+
+    def __call__(self, test, body, orelse=None):
+        if not isinstance(body, list):
+            body = [body]
+
+        if orelse is None:
+            orelse = []
+
+        if orelse is not None and not isinstance(orelse, list):
+            orelse = [orelse]
+        return ast.If(test=test, body=body, orelse=orelse)
+
+
+if_ = If()
+
+
+class IfElse:
+    __slots__ = ()
+
+    def __call__(self, test, body, orelse):
+        return ast.IfExp(test, body, orelse)
+
+
+def ifelse(test, body, orelse):
+    return ast.IfExp(test, body, orelse)
+
+
+class FunctionDeclaration:
+
+    def __getitem__(self, name):
+        return FunctionDef(name=name)
+
+
+def_ = FunctionDeclaration()
+
+
+class FunctionArguments:
+
+    __slots__ = 'name', 'arguments'
+
+    def __init__(self, name, arguments):
+        self.name = name
+        self.arguments = arguments
+
+    def __call__(self, *body, returns=None):
+        return ast.FunctionDef(
+            name=self.name,
+            args=self.arguments,
+            body=list(body),
+            decorator_list=[],
+            returns=returns
+        )
+
+
+def decorate(*functions):
+    def wrapper(function_definition):
+        func_def = copy.copy(function_definition)
+        func_def.decorator_list = list(functions)
+        return func_def
+    return wrapper
+
+
+def mod(*body):
+    return ast.Module(
+        body=list(body)
+    )
+
+
+def expr(value):
+    return ast.Expr(value=value)
+
+
+class FunctionDef:
+    __slots__ = 'name',
+
+    def __init__(self, name):
+        self.name = name
+
+    def __call__(self, *ast_arguments):
+        return FunctionArguments(
+            self.name,
+            ast.arguments(
+                args=list(ast_arguments),
+                vararg=None,
+                kwonlyargs=[],
+                kw_defaults=[],
+                kwargs=None,
+                defaults=[],
+            )
+        )
+
+
+class Index:
     __slots__ = ()
 
     def __call__(self, index):
@@ -114,7 +272,7 @@ class Index(object):
 idx = Index()
 
 
-class Subscript(object):
+class Subscript:
     __slots__ = ()
 
     def __call__(self, value, index):
@@ -133,7 +291,7 @@ FALSE = ast.NameConstant(value=False)
 NONE = ast.NameConstant(value=None)
 
 
-class Alias(object):
+class Alias:
     """Shorter version of aliases used in `from foo import bar as baz`.
 
     API
@@ -160,7 +318,7 @@ class Alias(object):
 alias = Alias()
 
 
-class ImportFrom(object):
+class ImportFrom:
     __slots__ = ()
 
     def __getattr__(self, name):
@@ -170,7 +328,7 @@ class ImportFrom(object):
 import_from = ImportFrom()
 
 
-class DottedModule(object):
+class DottedModule:
 
     __slots__ = 'name',
 
