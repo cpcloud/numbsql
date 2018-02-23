@@ -83,14 +83,13 @@ CONVERTERS = {
 def unnullify(value, true_function, name):
     # condition = sqlite3_value_type(value) == SQLITE_NULL
     # name = true_function(value) if condition else None
-    stored_var = store[name].assign(
+    return store[name].assign(
         ifelse(
             call.sqlite3_value_type(value) != load.SQLITE_NULL,
             true_function(value),
             NONE
         )
     )
-    return stored_var
 
 
 def generate_function_body(func, *, skipna):
@@ -191,33 +190,19 @@ def gen_step(cls, name, *, skipna):
             argname,
         )
         statements.append(if_statement)
+        argvar = load[argname]
         if skipna:
             statements.append(
                 if_(
-                    load[argname].is_(NONE),
+                    argvar.is_(NONE),
                     [
                         call.sqlite3_result_null(load.ctx),
                         return_()
                     ]
                 )
             )
-        step_args.append(load[argname])
+        step_args.append(argvar)
 
-    body.extend([
-        store.agg_ctx.assign(
-            call.unsafe_cast(
-                call.sqlite3_aggregate_context(
-                    load.ctx,
-                    call.sizeof(load[class_name])
-                ),
-                load[class_name]
-            )
-        ),
-        if_(
-            call.not_null(load.agg_ctx),
-            statements + [call(attr.agg_ctx.step, *step_args)]
-        )
-    ])
     module = mod(
         import_from.numba[alias.cfunc],
         import_from.numba.types[
@@ -233,6 +218,19 @@ def gen_step(cls, name, *, skipna):
         )(
             def_[name](arg.ctx, arg.argc, arg.argv)(
                 *body,
+                store.agg_ctx.assign(
+                    call.unsafe_cast(
+                        call.sqlite3_aggregate_context(
+                            load.ctx,
+                            call.sizeof(load[class_name])
+                        ),
+                        load[class_name]
+                    )
+                ),
+                if_(
+                    call.not_null(load.agg_ctx),
+                    statements + [call(attr.agg_ctx.step, *step_args)]
+                ),
                 returns=None
             )
         )
@@ -384,7 +382,7 @@ class SourceVisitor(ast.NodeVisitor):
             ))
             indented_args = textwrap.indent(args, ' ' * 4)
             template = (
-                f'(\n{indented_args}\n)' if args else '({indented_args})'
+                f'(\n{indented_args}\n)' if args else f'({indented_args})'
             )
             return f'{func}{template}'
         else:
@@ -439,7 +437,8 @@ def sourcify(mod):
 
 
 if __name__ == '__main__':
-    from numba import jit
+    from numba import jit, jitclass
+    from slumba import sqlite_udaf
 
     @jit(float64(int64, int64), nopython=True)
     def g(x, y):
@@ -447,4 +446,24 @@ if __name__ == '__main__':
 
     # this shows what the compiled function looks like
     module = gen_scalar(g, 'g_unit', skipna=True)
-    print(sourcify(module))
+
+    @sqlite_udaf(float64(float64))
+    @jitclass([
+        ('total', float64),
+        ('count', int64),
+    ])
+    class Avg(object):
+        def __init__(self):
+            self.total = 0.0
+            self.count = 0
+
+        def step(self, value):
+            self.total += value
+            self.count += 1
+
+        def finalize(self):
+            if not self.count:
+                return None
+            return self.total / self.count
+    print(sourcify(gen_step(Avg, 'avg_step', skipna=True)))
+    print(sourcify(gen_finalize(Avg, 'avg_finalize')))
