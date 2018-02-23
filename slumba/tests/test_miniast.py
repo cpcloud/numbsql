@@ -14,8 +14,14 @@ from slumba.miniast import (
     import_from,
     NONE,
     TRUE,
-    FALSE
+    FALSE,
+    class_,
+    def_,
+    return_,
+    if_,
 )
+
+from slumba.source import sourcify
 
 
 def eq(a, b):
@@ -142,3 +148,14 @@ def test_constants():
     assert eq(NONE, ast.NameConstant(value=None))
     assert eq(TRUE, ast.NameConstant(value=True))
     assert eq(FALSE, ast.NameConstant(value=False))
+
+
+def test_classdef():
+
+    myklass = class_.Yuge(load.object, metaclass=load.object)(
+        def_.method1(arg.self, arg.a)(
+            if_(load.a == 1, return_(load.a + 1), return_(1))
+        )
+    )
+    s = sourcify(myklass)
+    assert s

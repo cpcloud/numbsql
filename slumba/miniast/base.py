@@ -352,7 +352,6 @@ import_from = ImportFrom()
 
 
 class DottedModule:
-
     __slots__ = 'name',
 
     def __init__(self, name):
@@ -367,7 +366,6 @@ class DottedModule:
 
 
 class Return:
-
     __slots__ = ()
 
     def __call__(self, value=None):
@@ -375,3 +373,34 @@ class Return:
 
 
 return_ = Return()
+
+
+class ClassDefinition:
+    def __init__(self, name, *bases, **keywords):
+        self.name = name
+        self.bases = bases
+        self.keywords = keywords
+
+    def __call__(self, *body):
+        return ast.ClassDef(
+            name=self.name,
+            bases=list(self.bases),
+            keywords=[
+                ast.keyword(arg=arg, value=value)
+                for arg, value in self.keywords.items()
+            ],
+            body=list(body),
+            decorator_list=[]
+        )
+
+
+class ClassDeclaration:
+    __slots__ = ()
+
+    def __getitem__(self, name):
+        return functools.partial(ClassDefinition, name)
+
+    __getattr__ = __getitem__
+
+
+class_ = ClassDeclaration()

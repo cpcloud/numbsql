@@ -198,6 +198,28 @@ class SourceVisitor(ast.NodeVisitor):
     def visit_Module(self, node):
         return '\n'.join(map(self.visit, node.body))
 
+    def visit_ClassDef(self, node):
+
+        bases = list(map(self.visit, node.bases))
+        keywords = node.keywords
+        string = f'class {node.name}'
+
+        if bases:
+            string += f"({', '.join(bases)}"
+
+        import pdb; pdb.set_trace()  # noqa
+        if keywords:
+            kwargs = ', '.join(
+                f'{k.arg}={self.visit(k.value)}' for k in keywords
+            )
+            string += f", {kwargs}"
+
+        if bases or keywords:
+            string += ')'
+
+        body = textwrap.indent('\n'.join(map(self.visit, node.body)), ' ' * 4)
+        return string + f':{body}'
+
 
 def sourcify(mod):
     return SourceVisitor().visit(mod)
