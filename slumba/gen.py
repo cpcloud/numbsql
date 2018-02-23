@@ -1,12 +1,8 @@
-from itertools import chain
-
-import ast
 import re
-import textwrap
 
-from slumba.miniast import (
+from miniast import (
     call, store, load, TRUE, NONE, arg, import_from, alias, attr, if_, def_,
-    decorate, mod, ifelse, return_
+    decorate, mod, ifelse, return_, sourcify
 )
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER

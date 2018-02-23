@@ -8,7 +8,7 @@ from slumba.gen import (
     RESULT_SETTERS, CONVERTERS, libsqlite3, gen_finalize, gen_step,
     camel_to_snake, sqlite3_result_null,
 )
-from slumba.miniast import mod
+from miniast import mod
 from slumba.casting import unsafe_cast, sizeof, not_null
 
 from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
