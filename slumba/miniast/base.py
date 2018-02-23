@@ -4,39 +4,63 @@ Constructing Python ASTs in Python is quite verbose, let's clean it up a bit.
 
 import ast
 import copy
+import functools
 
 
-def comparisons(mapping):
+def binary_operations(mapping, func):
     def decorator(cls):
         for method_name, op in mapping.items():
-            setattr(
-                cls,
-                method_name,
-                lambda self, other, op=op(): ast.Compare(
-                    left=self,
-                    ops=[op],
-                    comparators=[other]
-                )
-            )
+            setattr(cls, method_name, functools.partialmethod(func, op=op()))
         return cls
     return decorator
 
 
-@comparisons({
-    '__eq__': ast.Eq,
-    '__ne__': ast.NotEq,
-    '__lt__': ast.Lt,
-    '__le__': ast.LtE,
-    '__gt__': ast.Gt,
-    '__ge__': ast.GtE,
-    'is_': ast.Is,
-    'is_not': ast.IsNot,
-})
+@binary_operations(
+    {
+        '__eq__': ast.Eq,
+        '__ne__': ast.NotEq,
+        '__lt__': ast.Lt,
+        '__le__': ast.LtE,
+        '__gt__': ast.Gt,
+        '__ge__': ast.GtE,
+        'is_': ast.Is,
+        'is_not': ast.IsNot,
+    },
+    func=lambda self, other, op: ast.Compare(
+        left=self, ops=[op], comparators=[to_node(other)]
+    )
+)
 class Comparable:
+
+    def __contains__(self, other):
+        return ast.Compare(
+            left=to_node(other), ops=[ast.In()], comparators=[self]
+        )
+
+
+@binary_operations(
+    {
+        '__add__': ast.Add,
+        '__sub__': ast.Sub,
+        '__mul__': ast.Mult,
+        '__floordiv__': ast.FloorDiv,
+        '__truediv__': ast.Div,
+        '__div__': ast.Div,
+        '__pow__': ast.Pow,
+    },
+
+    func=lambda self, other, op: ast.BinOp(
+        left=self, op=op, right=to_node(other))
+)
+class BinOp:
     pass
 
 
-class Variable(ast.Name, Comparable):
+def s(value):
+    return ast.Str(s=value)
+
+
+class Variable(ast.Name, Comparable, BinOp):
     def __init__(self, id, ctx):
         super().__init__(id=id, ctx=ctx)
 
@@ -44,7 +68,7 @@ class Variable(ast.Name, Comparable):
         return sub(self, getidx(key))
 
     def assign(self, value):
-        return ast.Assign(targets=[self], value=value)
+        return ast.Assign(targets=[self], value=to_node(value))
 
 
 class Load(Comparable):
@@ -103,6 +127,7 @@ def to_node(value):
         return ast.Str(s=value)
     elif isinstance(value, (int, float)):
         return ast.Num(n=value)
+    assert value is None or isinstance(value, ast.AST)
     return value
 
 
@@ -197,6 +222,8 @@ class FunctionDeclaration:
 
     def __getitem__(self, name):
         return FunctionDef(name=name)
+
+    __getattr__ = __getitem__
 
 
 def_ = FunctionDeclaration()
@@ -344,7 +371,7 @@ class Return:
     __slots__ = ()
 
     def __call__(self, value=None):
-        return ast.Return(value=value)
+        return ast.Return(value=to_node(value))
 
 
 return_ = Return()
