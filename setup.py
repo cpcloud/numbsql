@@ -19,4 +19,6 @@ setup(
             include_dirs=[os.path.join('slumba')]
         )
     ]),
+    author='Phillip Cloud',
+    author_email='cpcloud@gmail.com',
 )
