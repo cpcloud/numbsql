@@ -13,8 +13,10 @@ integers is unsafe, then you shouldn't use this library.
 
 ## Requirements
 
+* Python >=3.6
 * `cython`
 * `numba`
+* [`miniast`](https://github.com/cpcloud/miniast)
 
 ## Installation
 * `python setup.py develop`
@@ -49,15 +51,16 @@ aggregates is that they require two decorators: `numba.jitclass` and
 floating point numbers.
 
 ```python
-from numba import jitclass, int64, float64
+from numba import int64, float64, jitclass
 from slumba import sqlite_udaf
 
+
 @sqlite_udaf(float64(float64))
-@jitclass([
-    ('total', float64),
-    ('count', int64)
-])
-class Avg(object):
+@jitclass(dict(
+    total=float64,
+    count=int64
+))
+class Avg:
     def __init__(self):
         self.total = 0.0
         self.count = 0
