@@ -1,7 +1,7 @@
 import re
 
 from miniast import (
-    call, store, load, TRUE, NONE, arg, import_from, alias, attr, if_, def_,
+    call, store, load, TRUE, NONE, arg, import_from, alias, if_, def_,
     decorate, mod, ifelse, return_, sourcify
 )
 
@@ -107,12 +107,9 @@ def generate_function_body(func, *, skipna):
 
         if skipna:
             sequence.append(
-                if_(
-                    load[argname].is_(NONE),
-                    [
-                        call.sqlite3_result_null(load.ctx),
-                        return_()
-                    ]
+                if_(load[argname].is_(NONE))(
+                    call.sqlite3_result_null(load.ctx),
+                    return_()
                 )
             )
         args.append(load[argname])
@@ -121,9 +118,9 @@ def generate_function_body(func, *, skipna):
     final_call = call[resulter.__name__](load.ctx, load.result_value)
     return sequence + [
         store.result_value.assign(result),
-        if_(
-            load.result_value.is_not(NONE),
+        if_(load.result_value.is_not(NONE))(
             final_call,
+        ).else_(
             call.sqlite3_result_null(load.ctx)
         )
     ]
@@ -157,7 +154,6 @@ def gen_scalar(func, name, *, skipna):
             #     *body
             def_[name](arg.ctx, arg.argc, arg.argv)(
                 *generate_function_body(func, skipna=skipna),
-                returns=None
             )
         )
     )
@@ -189,12 +185,9 @@ def gen_step(cls, name, *, skipna):
         argvar = load[argname]
         if skipna:
             statements.append(
-                if_(
-                    argvar.is_(NONE),
-                    [
-                        call.sqlite3_result_null(load.ctx),
-                        return_()
-                    ]
+                if_(argvar.is_(NONE))(
+                    call.sqlite3_result_null(load.ctx),
+                    return_()
                 )
             )
         step_args.append(argvar)
@@ -223,9 +216,10 @@ def gen_step(cls, name, *, skipna):
                         load[class_name]
                     )
                 ),
-                if_(
-                    call.not_null(load.agg_ctx),
-                    statements + [call(attr.agg_ctx.step, *step_args)]
+                if_(call.not_null(load.agg_ctx))(
+                    *statements,
+                    load.agg_ctx.step(*step_args)
+                    # call(load.agg_ctx.step, *step_args)
                 ),
                 returns=None
             )
@@ -241,9 +235,9 @@ def gen_finalize(cls, name):
     output_call = call[RESULT_SETTERS[sig.return_type].__name__](
         load.ctx, load.final_value
     )
-    final_result = if_(
-        load.final_value.is_not(NONE),
+    final_result = if_(load.final_value.is_not(NONE))(
         output_call,
+    ).else_(
         call.sqlite3_result_null(load.ctx)
     )
     return mod(
@@ -259,12 +253,9 @@ def gen_finalize(cls, name):
                         load[class_name]
                     )
                 ),
-                if_(
-                    call.not_null(load.agg_ctx),
-                    [
-                        store.final_value.assign(call(attr.agg_ctx.finalize)),
-                        final_result,
-                    ],
+                if_(call.not_null(load.agg_ctx))(
+                    store.final_value.assign(call(load.agg_ctx.finalize)),
+                    final_result,
                 ),
                 returns=None
             )
