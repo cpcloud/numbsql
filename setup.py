@@ -20,6 +20,7 @@ setup(
             include_dirs=[os.path.join('slumba')]
         )
     ]),
+    license='Apache License, Version 2.0',
     author='Phillip Cloud',
     author_email='cpcloud@gmail.com',
 )
