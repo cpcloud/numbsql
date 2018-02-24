@@ -107,10 +107,10 @@ def generate_function_body(func, *, skipna):
 
         if skipna:
             sequence.append(
-                if_(load[argname].is_(NONE))(
+                if_(load[argname].is_(NONE))[
                     call.sqlite3_result_null(load.ctx),
                     return_()
-                )
+                ]
             )
         args.append(load[argname])
 
@@ -118,11 +118,11 @@ def generate_function_body(func, *, skipna):
     final_call = call[resulter.__name__](load.ctx, load.result_value)
     return sequence + [
         store.result_value.assign(result),
-        if_(load.result_value.is_not(NONE))(
+        if_(load.result_value.is_not(NONE))[
             final_call,
-        ).else_(
+        ].else_[
             call.sqlite3_result_null(load.ctx)
-        )
+        ]
     ]
 
 
@@ -185,10 +185,10 @@ def gen_step(cls, name, *, skipna):
         argvar = load[argname]
         if skipna:
             statements.append(
-                if_(argvar.is_(NONE))(
+                if_(argvar.is_(NONE))[
                     call.sqlite3_result_null(load.ctx),
                     return_()
-                )
+                ]
             )
         step_args.append(argvar)
 
@@ -219,9 +219,7 @@ def gen_step(cls, name, *, skipna):
                 if_(call.not_null(load.agg_ctx))(
                     *statements,
                     load.agg_ctx.step(*step_args)
-                    # call(load.agg_ctx.step, *step_args)
                 ),
-                returns=None
             )
         )
     )
@@ -235,11 +233,11 @@ def gen_finalize(cls, name):
     output_call = call[RESULT_SETTERS[sig.return_type].__name__](
         load.ctx, load.final_value
     )
-    final_result = if_(load.final_value.is_not(NONE))(
+    final_result = if_(load.final_value.is_not(NONE))[
         output_call,
-    ).else_(
+    ].else_[
         call.sqlite3_result_null(load.ctx)
-    )
+    ]
     return mod(
         # no imports because this is always defined with a step function,
         # which has the imports
@@ -257,7 +255,6 @@ def gen_finalize(cls, name):
                     store.final_value.assign(call(load.agg_ctx.finalize)),
                     final_result,
                 ),
-                returns=None
             )
         )
     )
