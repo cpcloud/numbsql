@@ -8,6 +8,7 @@ from Cython.Build import cythonize
 
 setup(
     name='slumba',
+    url='https://github.com/cpcloud/slumba',
     packages=find_packages(),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
