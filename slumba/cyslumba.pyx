@@ -32,9 +32,8 @@ cdef extern from "sqlite3.h":
     const char *sqlite3_errmsg(sqlite3 *db)
 
 
-cdef extern from "pysqlite/connection.h":
-    ctypedef class sqlite3.Connection [object pysqlite_Connection]:
-        cdef sqlite3 *db
+ctypedef extern class sqlite3.Connection:
+    cdef sqlite3 *db
 
 
 cpdef object register_scalar_function(
