@@ -2,9 +2,8 @@ import ast
 
 from numba import njit, optional
 
-from slumba.gen import (
-    CONVERTERS, RESULT_SETTERS, gen_scalar, sqlite3_result_null
-)
+from slumba.gen import gen_scalar
+from slumba.sqlite import CONVERTERS, RESULT_SETTERS, sqlite3_result_null
 from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
 
 

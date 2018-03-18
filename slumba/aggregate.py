@@ -4,11 +4,11 @@ from ctypes import c_void_p, c_int
 
 from numba import void, optional
 
-from slumba.gen import (
-    RESULT_SETTERS, CONVERTERS, libsqlite3, gen_finalize, gen_step,
-    camel_to_snake, sqlite3_result_null,
-)
 from miniast import mod
+
+from slumba.gen import gen_finalize, gen_step, camel_to_snake
+from slumba.sqlite import (
+    RESULT_SETTERS, CONVERTERS, libsqlite3, sqlite3_result_null)
 from slumba.casting import unsafe_cast, sizeof, not_null
 
 from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
