@@ -12,12 +12,12 @@ setup(
     packages=find_packages(),
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
+    description='JITted SQLite user-defined functions and aggregates',
     ext_modules=cythonize([
         Extension(
             name='slumba.cyslumba',
             sources=[os.path.join('slumba', 'cyslumba.pyx')],
             libraries=['sqlite3'],
-            include_dirs=[os.path.join('slumba')]
         )
     ]),
     license='Apache License, Version 2.0',
