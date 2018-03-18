@@ -33,8 +33,8 @@ def sqlite_udaf(signature, *, skipna=True):
         jitmethods['finalize'].compile(finalize_signature)
 
         func_name = camel_to_snake(cls.__name__)
-        step_name = f'{func_name}_step'
-        finalize_name = f'{func_name}_finalize'
+        step_name = '{}_step'.format(func_name)
+        finalize_name = '{}_finalize'.format(func_name)
 
         step_mod = gen_step(cls, step_name, skipna=skipna)
         finalize_mod = gen_finalize(cls, finalize_name)

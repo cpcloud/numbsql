@@ -28,7 +28,7 @@ def sqlite_udf(signature, *, skipna=True):
         }
         scope.update(CONVERTERS)
         scope.update((f.__name__, f) for f in RESULT_SETTERS.values())
-        final_func_name = f'{func_name}_scalar'
+        final_func_name = '{}_scalar'.format(func_name)
         genmod = gen_scalar(jitted_func, final_func_name, skipna=skipna)
         mod = ast.fix_missing_locations(genmod)
         bytecode = compile(mod, __file__, 'exec')

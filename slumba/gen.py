@@ -1,8 +1,8 @@
 import re
 
 from miniast import (
-    call, store, load, TRUE, NONE, arg, import_from, alias, if_, def_,
-    decorate, mod, ifelse, return_, sourcify
+    call, TRUE, NONE, arg, from_, if_, def_, var, alias, decorate, mod, ifelse,
+    return_, sourcify
 )
 
 from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
@@ -54,7 +54,7 @@ value_methods = {
 
 
 def add_value_method(typename, restype):
-    method = getattr(libsqlite3, f'sqlite3_value_{typename}')
+    method = getattr(libsqlite3, 'sqlite3_value_{}'.format(typename))
     method.argtypes = c_void_p,
     method.restype = restype
     return method
@@ -71,7 +71,7 @@ VALUE_EXTRACTORS = {
 
 
 CONVERTERS = {
-    f'sqlite3_value_{typename}': add_value_method(typename, restype)
+    'sqlite3_value_{}'.format(typename): add_value_method(typename, restype)
     for typename, restype in value_methods.items()
 }
 
@@ -79,9 +79,9 @@ CONVERTERS = {
 def unnullify(value, true_function, name):
     # condition = sqlite3_value_type(value) == SQLITE_NULL
     # name = true_function(value) if condition else None
-    return store[name].assign(
+    return var[name].store(
         ifelse(
-            call.sqlite3_value_type(value) != load.SQLITE_NULL,
+            call.sqlite3_value_type(value) != var.SQLITE_NULL,
             true_function(value),
             NONE
         )
@@ -97,31 +97,31 @@ def generate_function_body(func, *, skipna):
     sequence = []
 
     for i, (argtype, converter) in enumerate(converters):
-        argname = f'arg_{i:d}'
+        argname = 'arg_{:d}'.format(i)
 
         if_statement = unnullify(
-            load.argv[i], call[converter.__name__], argname
+            var.argv[i], call[converter.__name__], argname
         )
 
         sequence.append(if_statement)
 
         if skipna:
             sequence.append(
-                if_(load[argname].is_(NONE))[
-                    call.sqlite3_result_null(load.ctx),
+                if_(var[argname].is_(NONE))[
+                    call.sqlite3_result_null(var.ctx),
                     return_()
                 ]
             )
-        args.append(load[argname])
+        args.append(var[argname])
 
     result = call[func.__name__](*args)
-    final_call = call[resulter.__name__](load.ctx, load.result_value)
+    final_call = call[resulter.__name__](var.ctx, var.result_value)
     return sequence + [
-        store.result_value.assign(result),
-        if_(load.result_value.is_not(NONE))[
+        var.result_value.store(result),
+        if_(var.result_value.is_not(NONE))[
             final_call,
         ].else_[
-            call.sqlite3_result_null(load.ctx)
+            call.sqlite3_result_null(var.ctx)
         ]
     ]
 
@@ -129,24 +129,20 @@ def generate_function_body(func, *, skipna):
 def gen_scalar(func, name, *, skipna):
     return mod(
         # from numba import cfunc
-        import_from.numba[alias.cfunc],
+        from_.numba.import_(alias.cfunc),
 
         # from numba.types import void, voidptr, intc, CPointer
-        import_from.numba.types[
+        from_.numba.types.import_(
             alias.void,
             alias.voidptr,
             alias.intc,
             alias.CPointer,
-        ],
+        ),
 
         # @cfunc(void(voidptr, intc, CPointer(voidptr)))
         decorate(
             call.cfunc(
-                call.void(
-                    load.voidptr,
-                    load.intc,
-                    call.CPointer(load.voidptr)
-                ),
+                call.void(var.voidptr, var.intc, call.CPointer(var.voidptr)),
                 nopython=TRUE
             )
         )(
@@ -169,56 +165,56 @@ def gen_step(cls, name, *, skipna):
     sig, = cls.class_type.jitmethods['step'].nopython_signatures
     args = sig.args[1:]
 
-    body = [store[f'arg_{i:d}'].assign(load.argv[i]) for i in range(len(args))]
+    body = [
+        var['arg_{:d}'.format(i)].store(var.argv[i]) for i in range(len(args))
+    ]
 
     step_args = []
     statements = []
 
     for i, a in enumerate(args):
-        argname = f'value_{i:d}'
+        argname = 'value_{:d}'.format(i)
         if_statement = unnullify(
-            load[f'arg_{i:d}'],
+            var['arg_{:d}'.format(i)],
             call[VALUE_EXTRACTORS[a].__name__],
             argname,
         )
         statements.append(if_statement)
-        argvar = load[argname]
+        argvar = var[argname]
         if skipna:
             statements.append(
                 if_(argvar.is_(NONE))[
-                    call.sqlite3_result_null(load.ctx),
+                    call.sqlite3_result_null(var.ctx),
                     return_()
                 ]
             )
         step_args.append(argvar)
 
     module = mod(
-        import_from.numba[alias.cfunc],
-        import_from.numba.types[
+        from_.numba.import_(alias.cfunc),
+        from_.numba.types.import_(
             alias.void, alias.voidptr, alias.intc, alias.CPointer
-        ],
+        ),
         decorate(
             call.cfunc(
-                call.void(
-                    load.voidptr, load.intc, call.CPointer(load.voidptr)
-                ),
+                call.void(var.voidptr, var.intc, call.CPointer(var.voidptr)),
                 nopython=TRUE
             )
         )(
             def_[name](arg.ctx, arg.argc, arg.argv)(
                 *body,
-                store.agg_ctx.assign(
+                var.agg_ctx.store(
                     call.unsafe_cast(
                         call.sqlite3_aggregate_context(
-                            load.ctx,
-                            call.sizeof(load[class_name])
+                            var.ctx,
+                            call.sizeof(var[class_name])
                         ),
-                        load[class_name]
+                        var[class_name]
                     )
                 ),
-                if_(call.not_null(load.agg_ctx))(
+                if_(call.not_null(var.agg_ctx))(
                     *statements,
-                    load.agg_ctx.step(*step_args)
+                    var.agg_ctx.step(*step_args)
                 ),
             )
         )
@@ -231,28 +227,28 @@ def gen_finalize(cls, name):
     class_name = cls.__name__
     sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
     output_call = call[RESULT_SETTERS[sig.return_type].__name__](
-        load.ctx, load.final_value
+        var.ctx, var.final_value
     )
-    final_result = if_(load.final_value.is_not(NONE))[
+    final_result = if_(var.final_value.is_not(NONE))[
         output_call,
     ].else_[
-        call.sqlite3_result_null(load.ctx)
+        call.sqlite3_result_null(var.ctx)
     ]
     return mod(
         # no imports because this is always defined with a step function,
         # which has the imports
         decorate(
-            call.cfunc(call.void(load.voidptr), nopython=TRUE)
+            call.cfunc(call.void(var.voidptr), nopython=TRUE)
         )(
             def_[name](arg.ctx)(
-                store.agg_ctx.assign(
+                var.agg_ctx.store(
                     call.unsafe_cast(
-                        call.sqlite3_aggregate_context(load.ctx, 0),
-                        load[class_name]
+                        call.sqlite3_aggregate_context(var.ctx, 0),
+                        var[class_name]
                     )
                 ),
-                if_(call.not_null(load.agg_ctx))(
-                    store.final_value.assign(call(load.agg_ctx.finalize)),
+                if_(call.not_null(var.agg_ctx))(
+                    var.final_value.store(call(var.agg_ctx.finalize)),
                     final_result,
                 ),
             )
