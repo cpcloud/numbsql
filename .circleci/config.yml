@@ -5,7 +5,9 @@ test: &test
         working_directory: ~/slumba
     - run:
         name: Echo
-        command: echo $PWD
+        command: |
+          echo $PWD
+          ls $PWD
     - run:
         name: Install dependencies
         command: pip install -r requirements.txt
