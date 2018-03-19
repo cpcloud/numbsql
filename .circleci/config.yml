@@ -2,17 +2,31 @@ test: &test
   steps:
     - checkout
     - run:
-        name: Install dependencies
+        name: Download conda
         command: |
-          curl -Ls -o miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-          bash miniconda.sh -b -p $HOME/miniconda
-          $HOME/miniconda/bin/conda create -n slumba -y -c conda-forge python="$PYTHON" numba
+          curl -Ls -o $HOME/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    - run:
+        name: Install conda
+        command: bash $HOME/miniconda.sh -b -p $HOME/miniconda
+    - run:
+        name: Create conda environment
+        command: |
+          $HOME/miniconda/bin/conda create -q -n slumba -y -c conda-forge python="$PYTHON" numba
+    - run:
+        name: Activate environment
           echo 'export PATH=$HOME/miniconda/bin:$PATH' >> $BASH_ENV
           echo 'source activate slumba' >> $BASH_ENV
     - run:
-        name: Install slumba
+        name: Install dependencies
+        command: |
+          pip install -r requirements.txt
+    - run:
+        name: Install dev dependencies
         command: |
           pip install -r requirements_dev.txt
+    - run:
+        name: Install package
+        command: |
           python setup.py develop
     - run:
         name: Make test reports directory
