@@ -1,13 +1,11 @@
 test: &test
   steps:
-    - checkout:
-        path: ~/slumba
-        working_directory: ~/slumba
+    - checkout
     - run:
         name: Echo
         command: |
           echo $PWD
-          ls $PWD
+          ls
     - run:
         name: Install dependencies
         command: pip install -r requirements.txt
