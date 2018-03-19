@@ -6,7 +6,7 @@
 typedef struct Connection {
     PyObject_HEAD
     sqlite3 *db;
-};
+} Connection;
 
 typedef void (*scalarfunc)(sqlite3_context*, int, sqlite3_value**);
 typedef scalarfunc stepfunc;
@@ -15,6 +15,7 @@ typedef void (*finalizefunc)(sqlite3_context*);
 static PyObject *
 register_scalar_function(PyObject *self, PyObject *args)
 {
+    PyObject* con = NULL;
     const char* name = NULL;
     int narg;
     Py_ssize_t address;
@@ -42,16 +43,23 @@ register_scalar_function(PyObject *self, PyObject *args)
 	return NULL;
     }
 
+    sqlite3* db = ((Connection*) con)->db;
+
     int result = sqlite3_create_function(
-        ((Connection*) con)->db,
+        db,
         name,
         narg,
         SQLITE_UTF8,
         NULL,
         (scalarfunc) address,
         NULL,
-        NULL,
+        NULL
     );
+
+    if (result != SQLITE_OK) {
+	PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
+	return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -98,18 +106,21 @@ register_aggregate_function(PyObject *self, PyObject *args)
 	return NULL;
     }
 
+    sqlite3* db = ((Connection*) con)->db;
+
     int result = sqlite3_create_function(
-        ((Connection*) con)->db,
+        db,
         name,
         narg,
         SQLITE_UTF8,
         NULL,
         NULL,
 	(stepfunc) step,
-	(finalizefunc) finalize,
+	(finalizefunc) finalize
     );
 
     if (result != SQLITE_OK) {
+	PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
 	return NULL;
     }
 
@@ -131,11 +142,17 @@ static struct PyModuleDef cslumbamodule = {
     "cslumba",
     NULL,
     -1,
-    cslumba_methods
+    cslumba_methods,
 };
 
 PyMODINIT_FUNC
 PyInit_cslumba(void)
 {
-    return PyModule_Create(&cslumbamodule);
+    PyObject* module = PyModule_Create(&cslumbamodule);
+    if (PyModule_AddIntMacro(module, SQLITE_NULL) == -1) {
+	PyErr_SetString(
+	    PyExc_RuntimeError, "Unable to add SQLITE_NULL constant");
+	return NULL;
+    }
+    return module;
 }

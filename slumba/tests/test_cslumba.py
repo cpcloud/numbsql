@@ -6,7 +6,7 @@ import pytest
 import sqlite3
 
 
-from slumba.cyslumba import (
+from slumba.cslumba import (
     register_scalar_function,
     register_aggregate_function,
 )

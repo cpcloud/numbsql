@@ -6,6 +6,9 @@ from numba import float64, int64, int32, optional
 
 libsqlite3 = CDLL(find_library('sqlite3'))
 
+sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
+sqlite3_aggregate_context.argtypes = c_void_p, c_int
+sqlite3_aggregate_context.restype = c_void_p
 
 sqlite3_result_double = libsqlite3.sqlite3_result_double
 sqlite3_result_int64 = libsqlite3.sqlite3_result_int64

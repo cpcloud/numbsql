@@ -4,7 +4,7 @@ from numba import njit, optional
 
 from slumba.gen import gen_scalar
 from slumba.sqlite import CONVERTERS, RESULT_SETTERS, sqlite3_result_null
-from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
+from slumba.cslumba import SQLITE_NULL
 
 
 def sqlite_udf(signature, *, skipna=True):

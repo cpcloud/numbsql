@@ -1,22 +1,15 @@
 import ast
 
-from ctypes import c_void_p, c_int
-
 from numba import void, optional
 
 from miniast import mod
 
 from slumba.gen import gen_finalize, gen_step, camel_to_snake
 from slumba.sqlite import (
-    RESULT_SETTERS, CONVERTERS, libsqlite3, sqlite3_result_null)
+    RESULT_SETTERS, CONVERTERS, sqlite3_result_null, sqlite3_aggregate_context)
 from slumba.casting import unsafe_cast, sizeof, not_null
 
-from slumba.cyslumba import _SQLITE_NULL as SQLITE_NULL
-
-
-sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
-sqlite3_aggregate_context.argtypes = c_void_p, c_int
-sqlite3_aggregate_context.restype = c_void_p
+from slumba.cslumba import SQLITE_NULL
 
 
 def sqlite_udaf(signature, *, skipna=True):
