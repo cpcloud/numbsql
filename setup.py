@@ -13,13 +13,13 @@ setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='JITted SQLite user-defined functions and aggregates',
-    ext_modules=cythonize([
+    ext_modules=[
         Extension(
-            name='slumba.cyslumba',
-            sources=[os.path.join('slumba', 'cyslumba.pyx')],
+            name='slumba.cslumba',
+            sources=[os.path.join('slumba', 'cslumba.c')],
             libraries=['sqlite3'],
         )
-    ]),
+    ],
     license='Apache License, Version 2.0',
     author='Phillip Cloud',
     author_email='cpcloud@gmail.com',
