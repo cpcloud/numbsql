@@ -3,7 +3,7 @@ test: &test
     - checkout
     - run:
         name: Install dependencies
-        command: pip install -r requirements_dev.txt
+        command: conda env list
     - run:
         name: Install slumba
         command: python setup.py develop
