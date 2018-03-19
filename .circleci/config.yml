@@ -3,13 +3,20 @@ test: &test
     - checkout
     - run:
         name: Install dependencies
-        command: conda env list
+        command: |
+          curl -Ls -o miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+          bash miniconda.sh -b -p $HOME/miniconda
+          $HOME/miniconda/bin/conda create -n slumba -y -c conda-forge python="$PYTHON" numba
+          echo 'export PATH=$HOME/miniconda/bin:$PATH' >> $BASH_ENV
+          echo 'source activate slumba' >> $BASH_ENV
     - run:
         name: Install slumba
-        command: python setup.py develop
+        command: |
+          pip install -r requirements_dev.txt
+          python setup.py develop
     - run:
         name: Make test reports directory
-        command: sudo mkdir -p /tmp/slumba/test-reports/pytest
+        command: mkdir -p /tmp/slumba/test-reports/pytest
     - run:
         name: Execute Pytest
         command: |
@@ -25,18 +32,24 @@ test: &test
 jobs:
   python27_test:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:3.6
     <<: *test
+    environment:
+      PYTHON: 2.7
 
   python35_test:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.6
     <<: *test
+    environment:
+      PYTHON: 3.5
 
   python36_test:
     docker:
       - image: circleci/python:3.6
     <<: *test
+    environment:
+      PYTHON: 3.6
 
 workflows:
   version: 2
