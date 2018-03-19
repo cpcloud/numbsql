@@ -1,46 +1,49 @@
 #include "Python.h"
 #include "sqlite3.h"
 
-/* We assume the pysqlite_Connection object's first non PyObject member is
- * the sqlite3* database */
-typedef struct Connection {
+/* Assume the pysqlite_Connection object's first non-PyObject member is the
+ * sqlite3 database */
+typedef struct {
     PyObject_HEAD
     sqlite3 *db;
 } Connection;
 
-typedef void (*scalarfunc)(sqlite3_context*, int, sqlite3_value**);
+typedef void (*scalarfunc)(
+    sqlite3_context* ctx, int narg, sqlite3_value** arguments);
 typedef scalarfunc stepfunc;
-typedef void (*finalizefunc)(sqlite3_context*);
+typedef void (*finalizefunc)(sqlite3_context* ctx);
 
-static PyObject *
-register_scalar_function(PyObject *self, PyObject *args)
+static PyObject*
+register_scalar_function(PyObject* self, PyObject* args)
 {
     PyObject* con = NULL;
     const char* name = NULL;
     int narg;
     Py_ssize_t address;
 
-    if (!PyArg_ParseTuple(args, "Osin", &con, &name, &narg, &address)) {
+    if (!PyArg_ParseTuple(args, "Oyin", &con, &name, &narg, &address)) {
         return NULL;
     }
+
+    Py_XINCREF(con);
 
     if (narg < -1) {
 	PyErr_SetString(
 	    PyExc_ValueError,
 	    "narg < -1, must be between -1 and SQLITE_LIMIT_FUNCTION_ARG");
-	return NULL;
+	goto error;
     }
 
     if (narg > SQLITE_LIMIT_FUNCTION_ARG) {
 	PyErr_SetString(PyExc_ValueError, "narg > SQLITE_LIMIT_FUNCTION_ARG");
-	return NULL;
+	goto error;
     }
 
     if (address <= 0) {
 	PyErr_SetString(
 		PyExc_ValueError,
 		"scalar function pointer address must be greater than 0");
-	return NULL;
+	goto error;
     }
 
     sqlite3* db = ((Connection*) con)->db;
@@ -58,14 +61,18 @@ register_scalar_function(PyObject *self, PyObject *args)
 
     if (result != SQLITE_OK) {
 	PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
-	return NULL;
+	goto error;
     }
 
     Py_RETURN_NONE;
+
+error:
+    Py_XDECREF(con);
+    return NULL;
 }
 
-static PyObject *
-register_aggregate_function(PyObject *self, PyObject *args)
+static PyObject*
+register_aggregate_function(PyObject* self, PyObject* args)
 {
     PyObject* con = NULL;
     const char* name = NULL;
@@ -76,34 +83,36 @@ register_aggregate_function(PyObject *self, PyObject *args)
     Py_ssize_t finalize;
 
     if (!PyArg_ParseTuple(
-	    args, "Osinn", &con, &name, &narg, &step, &finalize)) {
+	    args, "Oyinn", &con, &name, &narg, &step, &finalize)) {
         return NULL;
     }
+
+    Py_XINCREF(con);
 
     if (narg < -1) {
 	PyErr_SetString(
 	    PyExc_ValueError,
 	    "narg < -1, must be between -1 and SQLITE_LIMIT_FUNCTION_ARG");
-	return NULL;
+	goto error;
     }
 
     if (narg > SQLITE_LIMIT_FUNCTION_ARG) {
 	PyErr_SetString(PyExc_ValueError, "narg > SQLITE_LIMIT_FUNCTION_ARG");
-	return NULL;
+	goto error;
     }
 
     if (step <= 0) {
 	PyErr_SetString(
 		PyExc_ValueError,
 		"step function pointer address must be greater than 0");
-	return NULL;
+	goto error;
     }
 
     if (finalize <= 0) {
 	PyErr_SetString(
 		PyExc_ValueError,
 		"step function pointer address must be greater than 0");
-	return NULL;
+	goto error;
     }
 
     sqlite3* db = ((Connection*) con)->db;
@@ -121,10 +130,14 @@ register_aggregate_function(PyObject *self, PyObject *args)
 
     if (result != SQLITE_OK) {
 	PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
-	return NULL;
+	goto error;
     }
 
     Py_RETURN_NONE;
+
+error:
+    Py_XDECREF(con);
+    return NULL;
 }
 
 static PyMethodDef cslumba_methods[] = {
@@ -149,6 +162,10 @@ PyMODINIT_FUNC
 PyInit_cslumba(void)
 {
     PyObject* module = PyModule_Create(&cslumbamodule);
+    if (module == NULL) {
+	return NULL;
+    }
+
     if (PyModule_AddIntMacro(module, SQLITE_NULL) == -1) {
 	PyErr_SetString(
 	    PyExc_RuntimeError, "Unable to add SQLITE_NULL constant");

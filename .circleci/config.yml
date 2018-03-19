@@ -1,0 +1,51 @@
+test: &test
+  steps:
+    - checkout:
+        path: ~/slumba
+    - run:
+        name: Install dependencies
+        command: pip install -r requirements.txt
+    - run:
+        name: Install pytest
+        command: pip install pytest
+    - run:
+        name: Install slumba
+        command: python setup.py develop
+    - run:
+        name: Make test reports directory
+        command: sudo mkdir -p /tmp/slumba/test-reports/pytest
+    - run:
+        name: Execute Pytest
+        command: |
+          pytest -rsxX \
+            --doctest-modules \
+            --doctest-ignore-import-errors \
+            --junitxml=/tmp/test-reports/pytest/junit.xml
+    - store_test_results:
+        path: /tmp/slumba/test-reports
+    - store_artifacts:
+        path: /tmp/slumba/test-reports
+
+jobs:
+  python27_test:
+    docker:
+      - image: circleci/python:2.7
+    <<: *test
+
+  python35_test:
+    docker:
+      - image: circleci/python:3.5
+    <<: *test
+
+  python36_test:
+    docker:
+      - image: circleci/python:3.6
+    <<: *test
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - python27_test
+      - python35_test
+      - python36_test
