@@ -31,7 +31,7 @@ test: &test
           python setup.py develop
     - run:
         name: Make test reports directory
-        command: mkdir -p /tmp/slumba/test-reports/pytest
+        command: mkdir -p /tmp/test-reports/pytest
     - run:
         name: Execute Pytest
         command: |
@@ -40,9 +40,9 @@ test: &test
             --doctest-ignore-import-errors \
             --junitxml=/tmp/test-reports/pytest/junit.xml
     - store_test_results:
-        path: /tmp/slumba/test-reports
+        path: /tmp/test-reports
     - store_artifacts:
-        path: /tmp/slumba/test-reports
+        path: /tmp/test-reports
 
 jobs:
   python27_test:
