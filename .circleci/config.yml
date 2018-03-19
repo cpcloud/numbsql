@@ -14,6 +14,7 @@ test: &test
           $HOME/miniconda/bin/conda create -q -n slumba -y -c conda-forge python="$PYTHON" numba
     - run:
         name: Activate environment
+        command: |
           echo 'export PATH=$HOME/miniconda/bin:$PATH' >> $BASH_ENV
           echo 'source activate slumba' >> $BASH_ENV
     - run:
