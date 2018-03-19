@@ -11,7 +11,7 @@ test: &test
     - run:
         name: Create conda environment
         command: |
-          $HOME/miniconda/bin/conda create -q -n slumba -y -c conda-forge python="$PYTHON" numba nomkl
+          $HOME/miniconda/bin/conda create -q -n slumba -y -c conda-forge python="$PYTHON" numba=0.36.2 nomkl
     - run:
         name: Activate environment
         command: |
