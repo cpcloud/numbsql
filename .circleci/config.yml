@@ -2,16 +2,8 @@ test: &test
   steps:
     - checkout
     - run:
-        name: Echo
-        command: |
-          echo $PWD
-          ls
-    - run:
         name: Install dependencies
-        command: pip install -r requirements.txt
-    - run:
-        name: Install pytest
-        command: pip install pytest
+        command: pip install -r requirements_dev.txt
     - run:
         name: Install slumba
         command: python setup.py develop
