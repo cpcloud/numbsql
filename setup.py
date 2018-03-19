@@ -3,8 +3,6 @@ import versioneer
 
 from setuptools import setup, find_packages, Extension
 
-from Cython.Build import cythonize
-
 
 setup(
     name='slumba',

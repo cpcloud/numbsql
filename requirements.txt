@@ -1,3 +1,2 @@
 miniast
 numba
-cython
