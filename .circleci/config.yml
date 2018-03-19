@@ -2,6 +2,7 @@ test: &test
   steps:
     - checkout:
         path: ~/slumba
+        working_directory: ~/slumba
     - run:
         name: Install dependencies
         command: pip install -r requirements.txt
