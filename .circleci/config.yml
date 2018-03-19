@@ -35,10 +35,7 @@ test: &test
     - run:
         name: Execute Pytest
         command: |
-          pytest -rsxX \
-            --doctest-modules \
-            --doctest-ignore-import-errors \
-            --junitxml=/tmp/test-reports/pytest/junit.xml
+          pytest -rsxX --junitxml=/tmp/test-reports/pytest/junit.xml
     - store_test_results:
         path: /tmp/test-reports
     - store_artifacts:
