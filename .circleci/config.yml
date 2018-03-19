@@ -45,13 +45,6 @@ test: &test
         path: /tmp/test-reports
 
 jobs:
-  python27_test:
-    docker:
-      - image: circleci/python:3.6
-    <<: *test
-    environment:
-      PYTHON: 2.7
-
   python35_test:
     docker:
       - image: circleci/python:3.6
@@ -70,6 +63,5 @@ workflows:
   version: 2
   test:
     jobs:
-      - python27_test
       - python35_test
       - python36_test
