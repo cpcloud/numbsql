@@ -49,13 +49,13 @@ def sqlite_udaf(signature, *, skipna=True):
             value_name = '{}_value'.format(func_name)
             inverse_name = '{}_inverse'.format(func_name)
 
-        step_mod = gen_step(cls, step_name, skipna=skipna)
-        finalize_mod = gen_finalize(cls, finalize_name)
+        step_mod = gen_step(cls, step_signature, step_name, skipna=skipna)
+        finalize_mod = gen_finalize(cls, finalize_signature, finalize_name)
 
         if is_window_function:
-            value_mod = gen_finalize(cls, step_signature, value_name)
+            value_mod = gen_finalize(cls, value_signature, value_name)
             inverse_mod = gen_step(
-                cls, step_signature, inverse_name, skipna=skipna)
+                cls, inverse_signature, inverse_name, skipna=skipna)
 
         module_body = step_mod.body + finalize_mod.body
 
