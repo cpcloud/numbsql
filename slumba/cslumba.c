@@ -10,8 +10,23 @@ typedef struct {
 
 typedef void (*scalarfunc)(
     sqlite3_context* ctx, int narg, sqlite3_value** arguments);
-typedef scalarfunc stepfunc;
+typedef void (*stepfunc)(
+    sqlite3_context* ctx, int narg, sqlite3_value** arguments);
 typedef void (*finalizefunc)(sqlite3_context* ctx);
+typedef void (*valuefunc)(sqlite3_context* ctx);
+typedef void (*inversefunc)(
+    sqlite3_context* ctx, int narg, sqlite3_value** arguments);
+
+static int
+check_function_pointer_address(Py_ssize_t address, const char* name) {
+    if (address <= 0) {
+	(void) PyErr_Format(
+	    PyExc_ValueError,
+	    "%s function pointer address must be greater than 0", name);
+	return 0;
+    }
+    return 1;
+}
 
 static PyObject*
 register_scalar_function(PyObject* self, PyObject* args)
@@ -39,10 +54,7 @@ register_scalar_function(PyObject* self, PyObject* args)
 	goto error;
     }
 
-    if (address <= 0) {
-	PyErr_SetString(
-		PyExc_ValueError,
-		"scalar function pointer address must be greater than 0");
+    if (!check_function_pointer_address(address, "scalar")) {
 	goto error;
     }
 
@@ -64,6 +76,7 @@ register_scalar_function(PyObject* self, PyObject* args)
 	goto error;
     }
 
+    Py_XDECREF(con);
     Py_RETURN_NONE;
 
 error:
@@ -101,17 +114,11 @@ register_aggregate_function(PyObject* self, PyObject* args)
 	goto error;
     }
 
-    if (step <= 0) {
-	PyErr_SetString(
-		PyExc_ValueError,
-		"step function pointer address must be greater than 0");
+    if (!check_function_pointer_address(step, "step")) {
 	goto error;
     }
 
-    if (finalize <= 0) {
-	PyErr_SetString(
-		PyExc_ValueError,
-		"step function pointer address must be greater than 0");
+    if (!check_function_pointer_address(finalize, "finalize")) {
 	goto error;
     }
 
@@ -133,6 +140,84 @@ register_aggregate_function(PyObject* self, PyObject* args)
 	goto error;
     }
 
+    Py_XDECREF(con);
+    Py_RETURN_NONE;
+
+error:
+    Py_XDECREF(con);
+    return NULL;
+}
+
+static PyObject*
+register_window_function(PyObject* self, PyObject* args)
+{
+    PyObject* con = NULL;
+    const char* name = NULL;
+    int narg;
+
+    /* step, finalize, value and inverse are function pointer addresses */
+    Py_ssize_t step;
+    Py_ssize_t finalize;
+    Py_ssize_t value;
+    Py_ssize_t inverse;
+
+    if (!PyArg_ParseTuple(
+	    args, "Oyinnnn", &con, &name, &narg,
+	    &step, &finalize, &value, &inverse)) {
+        return NULL;
+    }
+
+    Py_XINCREF(con);
+
+    if (narg < -1) {
+	PyErr_SetString(
+	    PyExc_ValueError,
+	    "narg < -1, must be between -1 and SQLITE_LIMIT_FUNCTION_ARG");
+	goto error;
+    }
+
+    if (narg > SQLITE_LIMIT_FUNCTION_ARG) {
+	PyErr_SetString(PyExc_ValueError, "narg > SQLITE_LIMIT_FUNCTION_ARG");
+	goto error;
+    }
+
+    if (!check_function_pointer_address(step, "step")) {
+	goto error;
+    }
+
+    if (!check_function_pointer_address(finalize, "finalize")) {
+	goto error;
+    }
+
+    if (!check_function_pointer_address(value, "value")) {
+	goto error;
+    }
+
+    if (!check_function_pointer_address(inverse, "inverse")) {
+	goto error;
+    }
+
+    sqlite3* db = ((Connection*) con)->db;
+
+    int result = sqlite3_create_window_function(
+        db,
+        name,
+        narg,
+        SQLITE_UTF8,
+        NULL,
+	(stepfunc) step,
+	(finalizefunc) finalize,
+	(valuefunc) value,
+	(inversefunc) inverse,
+	NULL
+    );
+
+    if (result != SQLITE_OK) {
+	PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
+	goto error;
+    }
+
+    Py_XDECREF(con);
     Py_RETURN_NONE;
 
 error:
@@ -146,6 +231,9 @@ static PyMethodDef cslumba_methods[] = {
      "Register a numba generated SQLite user-defined function"},
     {"register_aggregate_function",
 	(PyCFunction) register_aggregate_function, METH_VARARGS,
+     "Register a numba generated SQLite user-defined aggregate function"},
+    {"register_window_function",
+	(PyCFunction) register_window_function, METH_VARARGS,
      "Register a numba generated SQLite user-defined aggregate function"},
     {NULL, NULL, 0, NULL}   /* sentinel */
 };
