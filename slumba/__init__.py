@@ -1,4 +1,7 @@
-from .cslumba import register_scalar_function, register_aggregate_function
+from .cslumba import (
+    register_scalar_function,
+    register_aggregate_function,
+    register_window_function)
 from . import gen  # noqa: F401
 from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
@@ -25,9 +28,7 @@ def create_function(con, name, num_params, func):
     num_params : int
     func : cfunc
     """
-    register_scalar_function(
-        con, name.encode('utf8'), num_params, func.address
-    )
+    register_scalar_function(con, name, num_params, func.address)
 
 
 def create_aggregate(con, name, num_params, aggregate_class):
@@ -41,10 +42,21 @@ def create_aggregate(con, name, num_params, aggregate_class):
     aggregate_class : JitClass
        This class must be decorated with @sqlite_udaf for this function to work
     """
-    register_aggregate_function(
-        con,
-        name.encode('utf8'),
-        num_params,
-        aggregate_class.step.address,
-        aggregate_class.finalize.address,
-    )
+    if hasattr(aggregate_class, 'value') and hasattr(aggregate_class, 'inverse'):
+        register_window_function(
+            con,
+            name,
+            num_params,
+            aggregate_class.step.address,
+            aggregate_class.finalize.address,
+            aggregate_class.value.address,
+            aggregate_class.inverse.address,
+        )
+    else:
+        register_aggregate_function(
+            con,
+            name,
+            num_params,
+            aggregate_class.step.address,
+            aggregate_class.finalize.address,
+        )

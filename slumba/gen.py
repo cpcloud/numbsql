@@ -9,8 +9,6 @@ from slumba.sqlite import VALUE_EXTRACTORS, RESULT_SETTERS
 
 
 def unnullify(value, true_function, name):
-    # condition = sqlite3_value_type(value) == SQLITE_NULL
-    # name = true_function(value) if condition else None
     return var[name].store(
         ifelse(
             var.sqlite3_value_type(value) != var.SQLITE_NULL,
@@ -23,7 +21,7 @@ def unnullify(value, true_function, name):
 def generate_function_body(func, *, skipna):
     sig, = func.nopython_signatures
     converters = ((arg, VALUE_EXTRACTORS[arg]) for arg in sig.args)
-    resulter = RESULT_SETTERS[sig.return_type]
+    result_setter = RESULT_SETTERS[sig.return_type]
 
     args = []
     sequence = []
@@ -47,7 +45,7 @@ def generate_function_body(func, *, skipna):
         args.append(var[argname])
 
     result = var[func.__name__](*args)
-    final_call = var[resulter.__name__](var.ctx, var.result_value)
+    final_call = var[result_setter.__name__](var.ctx, var.result_value)
     return sequence + [
         var.result_value.store(result),
         if_(var.result_value.is_not(NONE))[
@@ -92,9 +90,9 @@ def camel_to_snake(name):
     return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', result).lower()
 
 
-def gen_step(cls, name, *, skipna):
+def gen_step(cls, sig, name, *, skipna):
     class_name = cls.__name__
-    sig, = cls.class_type.jitmethods['step'].nopython_signatures
+    # sig, = cls.class_type.jitmethods['step'].nopython_signatures
     args = sig.args[1:]
 
     body = [
@@ -155,9 +153,9 @@ def gen_step(cls, name, *, skipna):
     return module
 
 
-def gen_finalize(cls, name):
+def gen_finalize(cls, sig, name):
     class_name = cls.__name__
-    sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
+    # sig, = cls.class_type.jitmethods['finalize'].nopython_signatures
     output_call = var[RESULT_SETTERS[sig.return_type].__name__](
         var.ctx, var.final_value
     )
@@ -204,7 +202,7 @@ if __name__ == '__main__':
         ('total', float64),
         ('count', int64),
     ])
-    class Avg(object):
+    class Avg:
         def __init__(self):
             self.total = 0.0
             self.count = 0

@@ -7,11 +7,8 @@ from slumba import sqlite_udaf, create_aggregate
 
 
 @sqlite_udaf(float64(float64))
-@jitclass(dict(
-    total=float64,
-    count=int64,
-))
-class Avg(object):
+@jitclass(dict(total=float64, count=int64))
+class Avg:
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -26,12 +23,33 @@ class Avg(object):
         return self.total / self.count
 
 
+@sqlite_udaf(float64(float64))
+@jitclass(dict(total=float64, count=int64))
+class WinAvg:
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value):
+        self.total += value
+        self.count += 1
+
+    def finalize(self):
+        if not self.count:
+            return None
+        return self.total / self.count
+
+    def value(self):
+        return self.finalize()
+
+    def inverse(self, value):
+        self.total -= value
+        self.count -= 1
+
+
 @sqlite_udaf(float64(float64), skipna=False)
-@jitclass(dict(
-    total=float64,
-    count=int64,
-))
-class AvgWithNulls(object):
+@jitclass(dict(total=float64, count=int64))
+class AvgWithNulls:
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -74,6 +92,7 @@ def con():
     ]
     con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
     create_aggregate(con, 'myavg', 1, Avg)
+    create_aggregate(con, 'mywinavg', 1, WinAvg)
     return con
 
 
@@ -85,3 +104,11 @@ def test_aggregate(con):
 def test_aggregate_with_empty(con):
     result = list(con.execute('SELECT myavg(value) as c FROM s'))
     assert result == [(None,)]
+
+
+def test_aggregate_window(con):
+    result = list(
+        con.execute(
+            'SELECT mywinavg(value) OVER (PARTITION BY key) as c FROM t'))
+    assert result == list(
+        con.execute('SELECT avg(value) OVER (PARTITION BY key) as c FROM t'))
