@@ -28,7 +28,8 @@ def create_function(con, name, num_params, func):
     num_params : int
     func : cfunc
     """
-    register_scalar_function(con, name, num_params, func.address)
+    register_scalar_function(
+        con, name.encode('utf8'), num_params, func.address)
 
 
 def create_aggregate(con, name, num_params, aggregate_class):
@@ -42,10 +43,13 @@ def create_aggregate(con, name, num_params, aggregate_class):
     aggregate_class : JitClass
        This class must be decorated with @sqlite_udaf for this function to work
     """
-    if hasattr(aggregate_class, 'value') and hasattr(aggregate_class, 'inverse'):
+    namebytes = name.encode('utf8')
+    if hasattr(aggregate_class, 'value') and hasattr(
+        aggregate_class, 'inverse'
+    ):
         register_window_function(
             con,
-            name,
+            namebytes,
             num_params,
             aggregate_class.step.address,
             aggregate_class.finalize.address,
@@ -55,7 +59,7 @@ def create_aggregate(con, name, num_params, aggregate_class):
     else:
         register_aggregate_function(
             con,
-            name,
+            namebytes,
             num_params,
             aggregate_class.step.address,
             aggregate_class.finalize.address,
