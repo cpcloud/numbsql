@@ -5,18 +5,15 @@
 ## Fair Warning
 
 This library does unsafe things like pass around function pointer addresses
-as integers. It also bypasses numba's memory management mechanisms.  **Use at
-your own risk**.
+as integers.  **Use at your own risk**.
 
 If you're unfamiliar with why passing function pointers' addresses around as
-integers is unsafe, then you shouldn't use this library.
+integers might be unsafe, then you shouldn't use this library.
 
 ## Requirements
 
-* Python >=3.6
-* `cython`
+* Python >=3.5
 * `numba`
-* [`miniast`](https://github.com/cpcloud/miniast)
 
 ## Installation
 * `python setup.py develop`
@@ -37,7 +34,9 @@ from numba import int64
 def add_one(x):
     """Add one to `x` if `x` is not NULL
     """
-    return x + 1
+    if x is not None:
+	return x + 1
+    return None
 ```
 
 
@@ -56,19 +55,19 @@ from slumba import sqlite_udaf
 
 
 @sqlite_udaf(float64(float64))
-@jitclass(dict(
-    total=float64,
-    count=int64
-))
+@jitclass(dict(total=float64, count=int64))
 class Avg:
     def __init__(self):
         self.total = 0.0
         self.count = 0
 
     def step(self, value):
-        self.total += value
-        self.count += 1
+        if value is not None:
+	    self.total += value
+	    self.count += 1
 
     def finalize(self):
+	if not self.count:
+	    return None
         return self.total / self.count
 ```
