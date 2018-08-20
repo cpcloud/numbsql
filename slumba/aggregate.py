@@ -1,15 +1,66 @@
 import ast
 
-from numba import void, optional
+from numba import void, optional, cfunc, jitclass
+from numba.types import voidptr, intc, CPointer, float64, int64
 
 from miniast import mod
 
 from slumba.gen import gen_finalize, gen_step, camel_to_snake
 from slumba.sqlite import (
-    RESULT_SETTERS, CONVERTERS, sqlite3_result_null, sqlite3_aggregate_context)
-from slumba.casting import unsafe_cast, sizeof, not_null
+    RESULT_SETTERS,
+    CONVERTERS,
+    sqlite3_result_null,
+    sqlite3_aggregate_context,
+    VALUE_EXTRACTORS,
+)
+from slumba.casting import unsafe_cast, sizeof, not_null, make_arg_tuple
 
-from slumba.cslumba import SQLITE_NULL
+from slumba.cslumba import SQLITE_NULL, SQLITE_INTEGER, SQLITE_FLOAT
+
+
+@jitclass(dict(total=float64, count=int64))
+class Avg:
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value):
+        self.total += value
+        self.count += 1
+
+    def finalize(self):
+        if not self.count:
+            return None
+        return self.total / self.count
+
+
+sqlite3_value_int64 = CONVERTERS['sqlite3_value_int64']
+sqlite3_value_double = CONVERTERS['sqlite3_value_double']
+sqlite3_value_type = CONVERTERS['sqlite3_value_type']
+
+
+Avg.class_type.jitmethods['step'].compile(
+    void(Avg.class_type.instance_type, float64))
+
+
+def new_wrapper(cls):
+    step_func = cls.class_type.jitmethods['step']
+
+    @cfunc(void(voidptr, intc, CPointer(voidptr)))
+    def avg_step(ctx, argc, argv):
+        num_bytes = sizeof(cls)
+        raw_pointer = sqlite3_aggregate_context(ctx, num_bytes)
+        agg_ctx = unsafe_cast(raw_pointer, cls)
+        if not_null(agg_ctx):
+            for i in range(argc):
+                if sqlite3_value_type(argv[i]) == SQLITE_NULL:
+                    sqlite3_result_null(ctx)
+                    return
+            agg_ctx.step(*make_arg_tuple(step_func, argv))
+    return avg_step
+
+
+_step = new_wrapper(Avg)
 
 
 def sqlite_udaf(signature, *, skipna=True):
