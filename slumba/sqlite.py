@@ -65,6 +65,12 @@ VALUE_EXTRACTORS = {
     int32: add_value_method('int', c_int),
 }
 
+VALUE_EXTRACTOR_NAMES = {
+    float64: 'sqlite3_value_double',
+    int64: 'sqlite3_value_int64',
+    int32: 'sqlite3_value_int',
+}
+
 
 CONVERTERS = {
     'sqlite3_value_{}'.format(typename): add_value_method(typename, restype)
