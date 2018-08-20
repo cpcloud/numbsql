@@ -267,25 +267,6 @@ PyInit_cslumba(void)
     return NULL;
   }
 
-  if (PyModule_AddIntMacro(module, SQLITE_NULL) == -1) {
-    return PyErr_Format(PyExc_RuntimeError,
-                        "Unable to add SQLITE_NULL int constant with value %i",
-                        SQLITE_NULL);
-  }
-
-  if (PyModule_AddIntMacro(module, SQLITE_FLOAT) == -1) {
-    return PyErr_Format(PyExc_RuntimeError,
-                        "Unable to add SQLITE_FLOAT int constant with value %i",
-                        SQLITE_FLOAT);
-  }
-
-  if (PyModule_AddIntMacro(module, SQLITE_INTEGER) == -1) {
-    return PyErr_Format(
-      PyExc_RuntimeError,
-      "Unable to add SQLITE_INTEGER int constant with value %i",
-      SQLITE_INTEGER);
-  }
-
   if (PyModule_AddStringMacro(module, SQLITE_VERSION) == -1) {
     return PyErr_Format(
       PyExc_RuntimeError,
