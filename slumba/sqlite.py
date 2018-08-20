@@ -1,4 +1,4 @@
-from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, c_ubyte, POINTER
+from ctypes import CDLL, c_void_p, c_double, c_int, c_int64
 from ctypes.util import find_library
 
 from numba import float64, int64, int32, optional
@@ -39,12 +39,9 @@ RESULT_SETTERS = {
 
 
 value_methods = {
-    'blob': c_void_p,
-    'bytes': c_int,
     'double': c_double,
     'int': c_int,
     'int64': c_int64,
-    'text': POINTER(c_ubyte),
     'type': c_int,
 }
 
