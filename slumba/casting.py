@@ -1,6 +1,10 @@
-from numba import types
-from numba import extending
-from numba import cgutils
+from llvmlite import ir
+
+from numba import types, extending, cgutils
+from numba.targets import imputils
+from numba.typing import ctypes_utils
+
+from slumba.sqlite import VALUE_EXTRACTORS, VALUE_EXTRACTOR_NAMES
 
 
 def _unsafe_cast_ptr_to_class(int_type, class_type):
@@ -34,6 +38,44 @@ def unsafe_cast(typingctx, src, dst):
     raise TypeError(
         'Unable to cast pointer type {} to class type {}'.format(src, dst)
     )
+
+
+@extending.intrinsic
+def make_arg_tuple(typingctx, func, argv):
+    (func_type,), _ = func.get_call_signatures()
+    argtypes = func_type.args[1:]
+    tuple_type = types.Tuple(argtypes)
+    sig = tuple_type(func, types.CPointer(types.voidptr))
+
+    def codegen(context, builder, signature, args):
+        _, argv = args
+        converted_args = []
+        for i, argtype in enumerate(argtypes):
+            # get the appropriate ctypes extraction routine
+            ctypes_function = VALUE_EXTRACTORS[argtype]
+
+            # create a numba function type for the converter
+            converter = ctypes_utils.make_function_type(ctypes_function)
+
+            # get the function pointer instruction out
+            fn = context.get_constant_generic(
+                builder, converter, ctypes_function)
+
+            # get a pointer to the i-ith argument
+            element_pointer = cgutils.gep(builder, argv, i)
+
+            # deref that pointer
+            element = builder.load(element_pointer)
+
+            # call the value extraction routine
+            instr = builder.call(fn, [element])
+
+            # put the value into a list used to build a tuple
+            converted_args.append(instr)
+
+        res = context.make_tuple(builder, tuple_type, converted_args)
+        return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
+    return sig, codegen
 
 
 @extending.intrinsic
