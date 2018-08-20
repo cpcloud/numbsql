@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "sqlite3.h"
 
+#define UNUSED(x) (void)(x)
+
 /* Assume the pysqlite_Connection object's first non-PyObject member is the
  * sqlite3 database */
 typedef struct
@@ -23,18 +25,18 @@ typedef void (*inversefunc)(sqlite3_context* ctx,
 static int
 check_function_pointer_address(Py_ssize_t address, const char* name)
 {
-  if (address <= 0) {
-    (void)PyErr_Format(PyExc_ValueError,
-                       "%s function pointer address must be greater than 0",
-                       name);
-    return 0;
-  }
-  return 1;
+  return address > 0 ||
+         PyErr_Format(
+           PyExc_ValueError,
+           "%s function pointer address must be greater than 0, got %zi",
+           name,
+           address);
 }
 
 static PyObject*
 register_scalar_function(PyObject* self, PyObject* args)
 {
+  UNUSED(self);
   PyObject* con = NULL;
   const char* name = NULL;
   int narg;
@@ -83,6 +85,7 @@ error:
 static PyObject*
 register_aggregate_function(PyObject* self, PyObject* args)
 {
+  UNUSED(self);
   PyObject* con = NULL;
   const char* name = NULL;
   int narg;
@@ -145,6 +148,7 @@ error:
 static PyObject*
 register_window_function(PyObject* self, PyObject* args)
 {
+  UNUSED(self);
   PyObject* con = NULL;
   const char* name = NULL;
   int narg;
@@ -226,6 +230,8 @@ error:
 static PyObject*
 register_window_function(PyObject* self, PyObject* args)
 {
+  UNUSED(self);
+  UNUSED(args);
   return PyErr_Format(PyExc_RuntimeError,
                       "SQLite version %s does not support window functions. "
                       "Window functions were added in 3.25.0",
@@ -268,10 +274,9 @@ PyInit_cslumba(void)
   }
 
   if (PyModule_AddIntMacro(module, SQLITE_FLOAT) == -1) {
-    return PyErr_Format(
-      PyExc_RuntimeError,
-      "Unable to add SQLITE_FLOAT int constant with value %i",
-      SQLITE_FLOAT);
+    return PyErr_Format(PyExc_RuntimeError,
+                        "Unable to add SQLITE_FLOAT int constant with value %i",
+                        SQLITE_FLOAT);
   }
 
   if (PyModule_AddIntMacro(module, SQLITE_INTEGER) == -1) {
