@@ -1,36 +1,31 @@
-import ast
+from numba import njit, cfunc, optional
+from numba.types import void, voidptr, intc, CPointer
 
-from numba import njit, optional
-
-from slumba.gen import gen_scalar
-from slumba.sqlite import CONVERTERS, RESULT_SETTERS, sqlite3_result_null
-from slumba.cslumba import SQLITE_NULL
+from slumba.sqlite import sqlite3_result_null, CONVERTERS
+from slumba.numbaext import get_result_setter, make_arg_tuple
 
 
-def sqlite_udf(signature, *, skipna=True):
+sqlite3_value_type = CONVERTERS['sqlite3_value_type']
+
+
+def sqlite_udf(signature):
     """Generate a SQLite compatible cfunc wrapper for a numba compiled function
 
     Parameters
     ----------
     signature : numba.Signature
     """
+    def wrapper(func):
+        compiled_func = njit(optional(signature.return_type)(
+            *map(optional, signature.args)), nogil=True)(func)
 
-    def wrapped(func):
-        return_type = signature.return_type
-        jitted_func = njit(optional(return_type)(
-            *map(optional, signature.args)))(func)
-        func_name = func.__name__
-        scope = {
-            func_name: jitted_func,
-            'SQLITE_NULL': SQLITE_NULL,
-            'sqlite3_result_null': sqlite3_result_null,
-        }
-        scope.update(CONVERTERS)
-        scope.update((f.__name__, f) for f in RESULT_SETTERS.values())
-        final_func_name = '{}_scalar'.format(func_name)
-        genmod = gen_scalar(jitted_func, final_func_name, skipna=skipna)
-        mod = ast.fix_missing_locations(genmod)
-        bytecode = compile(mod, __file__, 'exec')
-        exec(bytecode, scope)
-        return scope[final_func_name]
-    return wrapped
+        @cfunc(void(voidptr, intc, CPointer(voidptr)))
+        def scalar(ctx, argc, argv):
+            result = compiled_func(*make_arg_tuple(compiled_func, argv))
+            if result is None:
+                sqlite3_result_null(ctx)
+            else:
+                result_setter = get_result_setter(result)
+                result_setter(ctx, result)
+        return scalar
+    return wrapper

@@ -17,8 +17,9 @@ class Avg:
         self.count = 0
 
     def step(self, value):
-        self.total += value
-        self.count += 1
+        if value is not None:
+            self.total += value
+            self.count += 1
 
     def finalize(self):
         if not self.count:
@@ -34,8 +35,9 @@ class WinAvg:
         self.count = 0
 
     def step(self, value):
-        self.total += value
-        self.count += 1
+        if value is not None:
+            self.total += value
+            self.count += 1
 
     def finalize(self):
         if not self.count:
@@ -46,11 +48,12 @@ class WinAvg:
         return self.finalize()
 
     def inverse(self, value):
-        self.total -= value
-        self.count -= 1
+        if value is not None:
+            self.total -= value
+            self.count -= 1
 
 
-@sqlite_udaf(float64(float64), skipna=False)
+@sqlite_udaf(float64(float64))
 @jitclass(dict(total=float64, count=int64))
 class AvgWithNulls:
     def __init__(self):
