@@ -27,7 +27,9 @@ def _unsafe_cast_ptr_to_class(int_type, class_type):
 def unsafe_cast(typingctx, src, dst):
     """Cast a voidptr to a jitclass
     """
-    if isinstance(src, types.RawPointer) and isinstance(dst, types.ClassType):
+    if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(
+        dst, types.ClassType
+    ):
         return _unsafe_cast_ptr_to_class(src, dst)
     raise TypeError(
         'Unable to cast pointer type {} to class type {}'.format(src, dst)
