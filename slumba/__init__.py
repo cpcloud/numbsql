@@ -2,7 +2,6 @@ from .cslumba import (
     register_scalar_function,
     register_aggregate_function,
     register_window_function)
-from . import gen  # noqa: F401
 from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
 from ._version import get_versions
