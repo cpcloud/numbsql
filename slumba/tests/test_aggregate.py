@@ -1,6 +1,10 @@
 import sqlite3
+import string
+import tempfile
 
 from pkg_resources import parse_version
+
+import numpy as np
 
 import pytest
 
@@ -12,6 +16,22 @@ from slumba.cslumba import SQLITE_VERSION
 @sqlite_udaf(float64(float64))
 @jitclass(dict(total=float64, count=int64))
 class Avg:
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value):
+        if value is not None:
+            self.total += value
+            self.count += 1
+
+    def finalize(self):
+        if not self.count:
+            return None
+        return self.total / self.count
+
+
+class AvgPython:
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -123,3 +143,49 @@ def test_aggregate_window(con):
             'SELECT mywinavg(value) OVER (PARTITION BY key) as c FROM t'))
     assert result == list(
         con.execute('SELECT avg(value) OVER (PARTITION BY key) as c FROM t'))
+
+
+@pytest.fixture
+def large_con():
+    with tempfile.NamedTemporaryFile(suffix='.db') as f:
+        con = sqlite3.connect(f.name)
+        con.execute("""
+            CREATE TABLE large_t (
+                id INTEGER PRIMARY KEY,
+                key VARCHAR(1),
+                value DOUBLE PRECISION
+            )
+        """)
+        n = int(1e6)
+        rows = [
+            (key, value.item()) for key, value in zip(
+                np.random.choice(list(string.ascii_lowercase), size=n),
+                np.random.randn(n),
+            )
+        ]
+        con.executemany('INSERT INTO large_t (key, value) VALUES (?, ?)', rows)
+        create_aggregate(con, 'avg_numba', 1, Avg)
+        con.create_aggregate('avg_python', 1, AvgPython)
+        yield con
+
+
+def run_agg_numba(con):
+    query = 'SELECT key, avg_numba(value) AS result FROM large_t GROUP BY key'
+    result = con.execute(query)
+    return result
+
+
+def run_agg_python(con):
+    query = 'SELECT key, avg_python(value) AS result FROM large_t GROUP BY key'
+    result = con.execute(query)
+    return result
+
+
+def test_aggregate_bench_numba(large_con, benchmark):
+    result = benchmark(run_agg_numba, large_con)
+    assert result
+
+
+def test_aggregate_bench_python(large_con, benchmark):
+    result = benchmark(run_agg_python, large_con)
+    assert result

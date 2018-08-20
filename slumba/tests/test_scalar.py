@@ -1,6 +1,8 @@
 import sqlite3
 import random
 
+import numpy as np
+
 import pytest
 
 from slumba import create_function, sqlite_udf
@@ -80,3 +82,52 @@ def test_optional(con):
         con.execute('SELECT add_one_optional(value) AS c FROM null_t')
     )
     assert result == list(con.execute('SELECT value + 1.0 AS c FROM null_t'))
+
+
+def add_one_python(x):
+    return 1.0 if x is not None else None
+
+
+@pytest.fixture
+def large_con():
+    con = sqlite3.connect(':memory:')
+    con.execute("""
+        CREATE TABLE large_t (
+            id INTEGER PRIMARY KEY,
+            key VARCHAR(1),
+            value DOUBLE PRECISION
+        )
+    """)
+    n = int(1e5)
+    rows = [
+        (key, value.item()) for key, value in zip(
+            np.random.choice(list('abcde'), size=n),
+            np.random.randn(n),
+        )
+    ]
+    con.executemany('INSERT INTO large_t (key, value) VALUES (?, ?)', rows)
+    create_function(con, 'add_one_numba', 1, add_one_optional)
+    con.create_function('add_one_python', 1, add_one_python)
+    return con
+
+
+def run_scalar_numba(con):
+    query = 'SELECT add_one_numba(value) AS result FROM large_t'
+    result = con.execute(query)
+    return result
+
+
+def run_scalar_python(con):
+    query = 'SELECT add_one_python(value) AS result FROM large_t'
+    result = con.execute(query)
+    return result
+
+
+def test_scalar_bench_numba(large_con, benchmark):
+    result = benchmark(run_scalar_numba, large_con)
+    assert result
+
+
+def test_scalar_bench_python(large_con, benchmark):
+    result = benchmark(run_scalar_python, large_con)
+    assert result
