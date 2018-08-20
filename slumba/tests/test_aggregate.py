@@ -1,9 +1,12 @@
 import sqlite3
 
+from pkg_resources import parse_version
+
 import pytest
 
 from numba import float64, int64, jitclass
 from slumba import sqlite_udaf, create_aggregate
+from slumba.cslumba import SQLITE_VERSION
 
 
 @sqlite_udaf(float64(float64))
@@ -92,7 +95,6 @@ def con():
     ]
     con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
     create_aggregate(con, 'myavg', 1, Avg)
-    create_aggregate(con, 'mywinavg', 1, WinAvg)
     return con
 
 
@@ -106,7 +108,13 @@ def test_aggregate_with_empty(con):
     assert result == [(None,)]
 
 
+@pytest.mark.xfail(
+    parse_version(SQLITE_VERSION) < parse_version('3.25.0'),
+    reason='Window functions not support in SQLite < 3.25.0',
+    raises=RuntimeError
+)
 def test_aggregate_window(con):
+    create_aggregate(con, 'mywinavg', 1, WinAvg)
     result = list(
         con.execute(
             'SELECT mywinavg(value) OVER (PARTITION BY key) as c FROM t'))
