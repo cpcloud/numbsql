@@ -17,7 +17,7 @@ __version__ = get_versions()['version']
 del get_versions
 
 
-def create_function(con, name, num_params, func):
+def create_function(con, name, num_params, func, deterministic=False):
     """Register a UDF with name `name` with the SQLite connection `con`.
 
     Parameters
@@ -28,10 +28,12 @@ def create_function(con, name, num_params, func):
     func : cfunc
     """
     register_scalar_function(
-        con, name.encode('utf8'), num_params, func.address)
+        con, name.encode('utf8'), num_params, func.address, deterministic)
 
 
-def create_aggregate(con, name, num_params, aggregate_class):
+def create_aggregate(
+    con, name, num_params, aggregate_class, deterministic=False
+):
     """Register an aggregate named `name` with the SQLite connection `con`.
 
     Parameters
@@ -54,6 +56,7 @@ def create_aggregate(con, name, num_params, aggregate_class):
             aggregate_class.finalize.address,
             aggregate_class.value.address,
             aggregate_class.inverse.address,
+            deterministic,
         )
     else:
         register_aggregate_function(
@@ -62,4 +65,5 @@ def create_aggregate(con, name, num_params, aggregate_class):
             num_params,
             aggregate_class.step.address,
             aggregate_class.finalize.address,
+            deterministic,
         )

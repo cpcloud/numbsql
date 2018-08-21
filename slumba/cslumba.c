@@ -33,6 +33,8 @@ check_function_pointer_address(Py_ssize_t address, const char* name)
            address);
 }
 
+static const int DETERMINISM[] = {0, SQLITE_DETERMINISTIC};
+
 static PyObject*
 register_scalar_function(PyObject* self, PyObject* args)
 {
@@ -41,8 +43,10 @@ register_scalar_function(PyObject* self, PyObject* args)
   const char* name = NULL;
   int narg;
   Py_ssize_t address;
+  int deterministic;
 
-  if (!PyArg_ParseTuple(args, "Oyin", &con, &name, &narg, &address)) {
+  if (!PyArg_ParseTuple(
+        args, "Oyinp", &con, &name, &narg, &address, &deterministic)) {
     return NULL;
   }
 
@@ -67,7 +71,14 @@ register_scalar_function(PyObject* self, PyObject* args)
   sqlite3* db = ((Connection*)con)->db;
 
   int result = sqlite3_create_function(
-    db, name, narg, SQLITE_UTF8, NULL, (scalarfunc)address, NULL, NULL);
+    db,
+    name,
+    narg,
+    SQLITE_UTF8 | DETERMINISM[deterministic],
+    NULL,
+    (scalarfunc)address,
+    NULL,
+    NULL);
 
   if (result != SQLITE_OK) {
     PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
@@ -94,7 +105,10 @@ register_aggregate_function(PyObject* self, PyObject* args)
   Py_ssize_t step;
   Py_ssize_t finalize;
 
-  if (!PyArg_ParseTuple(args, "Oyinn", &con, &name, &narg, &step, &finalize)) {
+  int deterministic;
+
+  if (!PyArg_ParseTuple(
+        args, "Oyinnp", &con, &name, &narg, &step, &finalize, &deterministic)) {
     return NULL;
   }
 
@@ -122,14 +136,15 @@ register_aggregate_function(PyObject* self, PyObject* args)
 
   sqlite3* db = ((Connection*)con)->db;
 
-  int result = sqlite3_create_function(db,
-                                       name,
-                                       narg,
-                                       SQLITE_UTF8,
-                                       NULL,
-                                       NULL,
-                                       (stepfunc)step,
-                                       (finalizefunc)finalize);
+  int result = sqlite3_create_function(
+    db,
+    name,
+    narg,
+    SQLITE_UTF8 | DETERMINISM[deterministic],
+    NULL,
+    NULL,
+    (stepfunc)step,
+    (finalizefunc)finalize);
 
   if (result != SQLITE_OK) {
     PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
@@ -159,15 +174,18 @@ register_window_function(PyObject* self, PyObject* args)
   Py_ssize_t value;
   Py_ssize_t inverse;
 
+  int deterministic;
+
   if (!PyArg_ParseTuple(args,
-                        "Oyinnnn",
+                        "Oyinnnnp",
                         &con,
                         &name,
                         &narg,
                         &step,
                         &finalize,
                         &value,
-                        &inverse)) {
+                        &inverse,
+                        &deterministic)) {
     return NULL;
   }
 
@@ -203,16 +221,17 @@ register_window_function(PyObject* self, PyObject* args)
 
   sqlite3* db = ((Connection*)con)->db;
 
-  int result = sqlite3_create_window_function(db,
-                                              name,
-                                              narg,
-                                              SQLITE_UTF8,
-                                              NULL,
-                                              (stepfunc)step,
-                                              (finalizefunc)finalize,
-                                              (valuefunc)value,
-                                              (inversefunc)inverse,
-                                              NULL);
+  int result = sqlite3_create_window_function(
+    db,
+    name,
+    narg,
+    SQLITE_UTF8 | DETERMINISM[deterministic],
+    NULL,
+    (stepfunc)step,
+    (finalizefunc)finalize,
+    (valuefunc)value,
+    (inversefunc)inverse,
+    NULL);
 
   if (result != SQLITE_OK) {
     PyErr_SetString(PyExc_RuntimeError, sqlite3_errmsg(db));
