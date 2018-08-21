@@ -159,7 +159,7 @@ def large_con():
         n = int(1e6)
         rows = [
             (key, value.item()) for key, value in zip(
-                np.random.choice(list(string.ascii_lowercase), size=n),
+                np.random.choice(list(string.ascii_lowercase[:3]), size=n),
                 np.random.randn(n),
             )
         ]
@@ -175,6 +175,12 @@ def run_agg_numba(con):
     return result
 
 
+def run_agg_builtin(con):
+    query = 'SELECT key, avg(value) AS result FROM large_t GROUP BY key'
+    result = con.execute(query)
+    return result
+
+
 def run_agg_python(con):
     query = 'SELECT key, avg_python(value) AS result FROM large_t GROUP BY key'
     result = con.execute(query)
@@ -183,6 +189,11 @@ def run_agg_python(con):
 
 def test_aggregate_bench_numba(large_con, benchmark):
     result = benchmark(run_agg_numba, large_con)
+    assert result
+
+
+def test_aggregate_bench_builtin(large_con, benchmark):
+    result = benchmark(run_agg_builtin, large_con)
     assert result
 
 
