@@ -23,9 +23,16 @@ def create_function(con, name, num_params, func, deterministic=False):
     Parameters
     ----------
     con : sqlite3.Connection
+        A connection to a SQLite database
     name : str
+        The name of this function in the database, given as a UTF-8 encoded
+        string
     num_params : int
+        The number of arguments this function takes
     func : cfunc
+        The sqlite_udf-decorated function to register
+    deterministic : bool
+        True if this function returns the same output given the same input.
     """
     register_scalar_function(
         con, name.encode('utf8'), num_params, func.address, deterministic)
@@ -39,10 +46,19 @@ def create_aggregate(
     Parameters
     ----------
     con : sqlite3.Connection
+        A connection to a SQLite database
     name : str
+        The name of this function in the database, given as a UTF-8 encoded
+        string
     num_params : int
+        The number of arguments this function takes
     aggregate_class : JitClass
-       This class must be decorated with @sqlite_udaf for this function to work
+       This class must be decorated with @sqlite_udaf for this function to
+       work. If this class has `value` and `inverse` attributes, it will be
+       registered as a window function. Window functions can also be used as
+       standard aggregate functions.
+    deterministic : bool
+        True if this function returns the same output given the same input
     """
     namebytes = name.encode('utf8')
     if hasattr(aggregate_class, 'value') and hasattr(
