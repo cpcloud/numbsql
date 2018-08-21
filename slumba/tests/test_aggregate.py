@@ -145,21 +145,21 @@ def test_aggregate_window(con):
         con.execute('SELECT avg(value) OVER (PARTITION BY key) as c FROM t'))
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def large_con():
     with tempfile.NamedTemporaryFile(suffix='.db') as f:
         con = sqlite3.connect(f.name)
         con.execute("""
             CREATE TABLE large_t (
-                id INTEGER PRIMARY KEY,
                 key VARCHAR(1),
                 value DOUBLE PRECISION
             )
         """)
+        con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
         n = int(1e6)
         rows = [
             (key, value.item()) for key, value in zip(
-                np.random.choice(list(string.ascii_lowercase[:3]), size=n),
+                np.random.choice(list(string.ascii_lowercase[:2]), size=n),
                 np.random.randn(n),
             )
         ]
@@ -169,20 +169,53 @@ def large_con():
         yield con
 
 
-def run_agg_numba(con):
+def run_agg_group_by_numba(con):
     query = 'SELECT key, avg_numba(value) AS result FROM large_t GROUP BY key'
+    result = con.execute(query)
+    return result.fetchall()
+
+
+def run_agg_group_by_builtin(con):
+    query = 'SELECT key, avg(value) AS result FROM large_t GROUP BY key'
+    result = con.execute(query)
+    return result.fetchall()
+
+
+def run_agg_group_by_python(con):
+    query = 'SELECT key, avg_python(value) AS result FROM large_t GROUP BY key'
+    result = con.execute(query)
+    return result.fetchall()
+
+
+def test_aggregate_group_by_bench_numba(large_con, benchmark):
+    result = benchmark(run_agg_group_by_numba, large_con)
+    assert result
+
+
+def test_aggregate_group_by_bench_builtin(large_con, benchmark):
+    result = benchmark(run_agg_group_by_builtin, large_con)
+    assert result
+
+
+def test_aggregate_group_by_bench_python(large_con, benchmark):
+    result = benchmark(run_agg_group_by_python, large_con)
+    assert result
+
+
+def run_agg_numba(con):
+    query = 'SELECT key, avg_numba(value) AS result FROM large_t'
     result = con.execute(query)
     return result
 
 
 def run_agg_builtin(con):
-    query = 'SELECT key, avg(value) AS result FROM large_t GROUP BY key'
+    query = 'SELECT key, avg(value) AS result FROM large_t'
     result = con.execute(query)
     return result
 
 
 def run_agg_python(con):
-    query = 'SELECT key, avg_python(value) AS result FROM large_t GROUP BY key'
+    query = 'SELECT key, avg_python(value) AS result FROM large_t'
     result = con.execute(query)
     return result
 
