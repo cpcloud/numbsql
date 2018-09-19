@@ -1,7 +1,11 @@
-from .cslumba import (
-    register_scalar_function,
-    register_aggregate_function,
-    register_window_function)
+from .cslumba import get_sqlite_db, SQLITE_DETERMINISTIC, SQLITE_UTF8
+from .sqlite import (
+    sqlite3_create_function,
+    scalarfunc, stepfunc, finalizefunc, valuefunc, inversefunc)
+try:
+    from .sqlite import sqlite3_create_window_function
+except ImportError:
+    pass
 from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
 from ._version import get_versions
@@ -34,8 +38,16 @@ def create_function(con, name, num_params, func, deterministic=False):
     deterministic : bool
         True if this function returns the same output given the same input.
     """
-    register_scalar_function(
-        con, name.encode('utf8'), num_params, func.address, deterministic)
+    sqlite3_create_function(
+        get_sqlite_db(con),
+        name.encode('utf8'),
+        num_params,
+        SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
+        None,
+        scalarfunc(func.address),
+        stepfunc(0),
+        finalizefunc(0),
+    )
 
 
 def create_aggregate(
@@ -64,22 +76,25 @@ def create_aggregate(
     if hasattr(aggregate_class, 'value') and hasattr(
         aggregate_class, 'inverse'
     ):
-        register_window_function(
-            con,
+        sqlite3_create_window_function(
+            get_sqlite_db(con),
             namebytes,
             num_params,
-            aggregate_class.step.address,
-            aggregate_class.finalize.address,
-            aggregate_class.value.address,
-            aggregate_class.inverse.address,
-            deterministic,
+            SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
+            None,
+            stepfunc(aggregate_class.step.address),
+            finalizefunc(aggregate_class.finalize.address),
+            valuefunc(aggregate_class.value.address),
+            inversefunc(aggregate_class.inverse.address),
         )
     else:
-        register_aggregate_function(
-            con,
+        sqlite3_create_function(
+            get_sqlite_db(con),
             namebytes,
             num_params,
-            aggregate_class.step.address,
-            aggregate_class.finalize.address,
-            deterministic,
+            SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
+            None,
+            scalarfunc(0),
+            stepfunc(aggregate_class.step.address),
+            finalizefunc(aggregate_class.finalize.address),
         )

@@ -1,4 +1,5 @@
-from ctypes import CDLL, c_void_p, c_double, c_int, c_int64
+from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, CFUNCTYPE
+from ctypes import POINTER, c_char_p
 from ctypes.util import find_library
 
 from numba import float64, int64, int32, optional
@@ -26,6 +27,46 @@ sqlite3_result_int.restype = None
 
 sqlite3_result_null.argtypes = c_void_p,
 sqlite3_result_null.restype = None
+
+scalarfunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
+stepfunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
+finalizefunc = CFUNCTYPE(None, c_void_p)
+valuefunc = CFUNCTYPE(None, c_void_p)
+inversefunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
+
+destroyfunc = CFUNCTYPE(None, c_void_p)
+
+sqlite3_create_function = libsqlite3.sqlite3_create_function
+sqlite3_create_function.restype = c_int
+sqlite3_create_function.argtypes = (
+    c_void_p,
+    c_char_p,
+    c_int,
+    c_int,
+    c_void_p,
+    scalarfunc,
+    stepfunc,
+    finalizefunc,
+)
+
+try:
+    sqlite3_create_window_function = libsqlite3.sqlite3_create_window_function
+except AttributeError:
+    pass
+else:
+    sqlite3_create_window_function.restype = c_int
+    sqlite3_create_window_function.argtypes = (
+        c_void_p,
+        c_char_p,
+        c_int,
+        c_int,
+        c_void_p,
+        stepfunc,
+        finalizefunc,
+        valuefunc,
+        inversefunc,
+        destroyfunc,
+    )
 
 
 RESULT_SETTERS = {
