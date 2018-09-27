@@ -1,11 +1,8 @@
 from .cslumba import get_sqlite_db, SQLITE_DETERMINISTIC, SQLITE_UTF8
 from .sqlite import (
     sqlite3_create_function,
-    scalarfunc, stepfunc, finalizefunc, valuefunc, inversefunc)
-try:
-    from .sqlite import sqlite3_create_window_function
-except ImportError:
-    pass
+    scalarfunc, stepfunc, finalizefunc, valuefunc, inversefunc, destroyfunc)
+from .sqlite import sqlite3_create_window_function
 from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
 from ._version import get_versions
@@ -86,6 +83,7 @@ def create_aggregate(
             finalizefunc(aggregate_class.finalize.address),
             valuefunc(aggregate_class.value.address),
             inversefunc(aggregate_class.inverse.address),
+            destroyfunc(0),
         )
     else:
         sqlite3_create_function(
