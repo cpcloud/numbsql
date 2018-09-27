@@ -1,8 +1,6 @@
 #include "Python.h"
 #include "sqlite3.h"
 
-#define UNUSED(x) (void)(x)
-
 /* Assume the pysqlite_Connection object's first non-PyObject member is the
  * sqlite3 database */
 typedef struct
@@ -14,7 +12,7 @@ typedef struct
 static PyObject*
 get_sqlite_db(PyObject* self, PyObject* args)
 {
-  UNUSED(self);
+  (void)self;
   PyObject* con = NULL;
   if (!PyArg_ParseTuple(args, "O", &con)) {
     return NULL;
