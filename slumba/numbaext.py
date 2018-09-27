@@ -62,7 +62,7 @@ def make_arg_tuple(typingctx, func, argv):
             fn = context.get_constant_generic(
                 builder, converter, ctypes_function)
 
-            # get a pointer to the i-ith argument
+            # get a pointer to the ith argument
             element_pointer = cgutils.gep(builder, argv, i)
 
             # deref that pointer
