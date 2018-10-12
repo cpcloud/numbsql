@@ -8,7 +8,7 @@ setup(
     name='slumba',
     url='https://github.com/cpcloud/slumba',
     packages=find_packages(),
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='JITted SQLite user-defined functions and aggregates',
