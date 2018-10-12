@@ -88,7 +88,8 @@ def make_arg_tuple(typingctx, func, argv):
             if isinstance(argtype, types.Optional):
                 underlying_type = getattr(argtype, 'type', argtype)
                 instr = context.make_optional_value(
-                    builder, underlying_type, raw)
+                    builder, underlying_type, raw
+                )
             else:
                 instr = raw
 
@@ -140,18 +141,25 @@ def sizeof(typingctx, src):
         raise TypeError('Cannot get sizeof non jitclass')
 
 
-@extending.intrinsic
-def not_null(typingctx, src):
-    if isinstance(src, (types.RawPointer, types.ClassInstanceType)):
-        sig = types.boolean(src)
+def generate_null_checker(func):
+    def null_pointer_checker(typingctx, src):
+        if isinstance(src, types.ClassInstanceType):
+            sig = types.boolean(src)
 
-        def codegen(context, builder, signature, args):
-            instance, = args
+            def codegen(context, builder, signature, args):
+                instance, = args
 
-            # TODO: probably a more general way to do this
-            second_element = builder.extract_value(instance, [1])
-            result = cgutils.is_not_null(builder, second_element)
-            return result
-        return sig, codegen
-    else:
-        raise TypeError('Cannot compute whether a non pointer is not null')
+                # TODO: probably a more general way to do this
+                second_element = builder.extract_value(instance, [1])
+                result = func(builder, second_element)
+                return result
+            return sig, codegen
+        else:
+            raise TypeError(
+                'Cannot check null pointer status of a non-jitclass type')
+    return null_pointer_checker
+
+
+is_null_pointer = extending.intrinsic(generate_null_checker(cgutils.is_null))
+is_not_null_pointer = extending.intrinsic(
+    generate_null_checker(cgutils.is_not_null))

@@ -8,7 +8,7 @@ from slumba.sqlite import sqlite3_aggregate_context, sqlite3_result_null
 from slumba.numbaext import (
     unsafe_cast,
     sizeof,
-    not_null,
+    is_not_null_pointer,
     make_arg_tuple,
     get_sqlite3_result_function,
 )
@@ -35,7 +35,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         def step(ctx, argc, argv):  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
-            if not_null(agg_ctx):
+            if is_not_null_pointer(agg_ctx):
                 args = make_arg_tuple(step_func, argv)
                 agg_ctx.step(*args)
 
@@ -47,7 +47,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         def finalize(ctx):  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
-            if not_null(agg_ctx):
+            if is_not_null_pointer(agg_ctx):
                 result = agg_ctx.finalize()
                 if result is None:
                     sqlite3_result_null(ctx)
@@ -80,7 +80,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             def value(ctx):  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
-                if not_null(agg_ctx):
+                if is_not_null_pointer(agg_ctx):
                     result = agg_ctx.value()
                     if result is None:
                         sqlite3_result_null(ctx)
@@ -95,7 +95,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             def inverse(ctx, argc, argv):  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
-                if not_null(agg_ctx):
+                if is_not_null_pointer(agg_ctx):
                     agg_ctx.inverse(*make_arg_tuple(inverse_func, argv))
 
         cls.step.address = step.address

@@ -1,7 +1,7 @@
 import pytest
 
 from numba import boolean, njit, int64, TypingError
-from slumba.numbaext import not_null, sizeof, unsafe_cast
+from slumba.numbaext import is_not_null_pointer, sizeof, unsafe_cast
 
 
 def test_sizeof_invalid():
@@ -19,7 +19,7 @@ def test_not_null_invalid():
     with pytest.raises(TypingError):
         @dec
         def bad_not_null(x):  # pragma: no cover
-            return not_null(x)
+            return is_not_null_pointer(x)
 
 
 def test_unsafe_case_invalid():
