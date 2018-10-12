@@ -46,14 +46,14 @@ PyInit_cslumba(void)
   if (PyModule_AddIntMacro(module, SQLITE_DETERMINISTIC) == -1) {
     return PyErr_Format(
       PyExc_RuntimeError,
-      "Unable to add SQLITE_DETERMINISTIC string constant with value %s",
+      "Unable to add SQLITE_DETERMINISTIC int constant with value %s",
       SQLITE_DETERMINISTIC);
   }
 
   if (PyModule_AddIntMacro(module, SQLITE_UTF8) == -1) {
     return PyErr_Format(
       PyExc_RuntimeError,
-      "Unable to add SQLITE_UTF8 string constant with value %s",
+      "Unable to add SQLITE_UTF8 int constant with value %s",
       SQLITE_UTF8);
   }
 
