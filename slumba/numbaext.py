@@ -48,7 +48,7 @@ def unsafe_cast(typingctx, src, dst):
         return sig, codegen
     else:
         raise TypeError(
-            'Unable to cast pointer type {} to class type {}'.format(src, dst)
+            f'Unable to cast pointer type {src} to class type {dst}'
         )
 
 
