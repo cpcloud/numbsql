@@ -32,11 +32,12 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         step_func.compile(step_signature)
 
         @cfunc(void(voidptr, intc, CPointer(voidptr)))
-        def step(ctx, argc, argv):
+        def step(ctx, argc, argv):  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
             if not_null(agg_ctx):
-                agg_ctx.step(*make_arg_tuple(step_func, argv))
+                args = make_arg_tuple(step_func, argv)
+                agg_ctx.step(*args)
 
         finalize_func = class_type.jitmethods['finalize']
 
@@ -45,8 +46,9 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         finalize_func.compile(finalize_signature)
 
         @cfunc(void(voidptr))
-        def finalize(ctx):
-            raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
+        def finalize(ctx):  # pragma: no cover
+            nbytes = sizeof(cls)
+            raw_pointer = sqlite3_aggregate_context(ctx, nbytes)
             agg_ctx = unsafe_cast(raw_pointer, cls)
             if not_null(agg_ctx):
                 result = agg_ctx.finalize()
@@ -74,7 +76,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             value_func.compile(value_signature)
 
             @cfunc(void(voidptr))
-            def value(ctx):
+            def value(ctx):  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 if not_null(agg_ctx):
@@ -89,7 +91,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             inverse_func.compile(inverse_signature)
 
             @cfunc(void(voidptr, intc, CPointer(voidptr)))
-            def inverse(ctx, argc, argv):
+            def inverse(ctx, argc, argv):  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 if not_null(agg_ctx):
