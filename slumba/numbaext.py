@@ -81,10 +81,9 @@ def make_arg_tuple(typingctx, func, argv):
 
 
 @extending.intrinsic
-def get_result_setter(typingctx, result):
-    optional_value_type = result
-    value_type = optional_value_type.type
-    func_type = types.void(types.voidptr, value_type)
+def get_sqlite3_result_function(typingctx, value_type):
+    func_type = types.void(
+        types.voidptr, getattr(value_type, 'type', value_type))
 
     efp = types.ExternalFunctionPointer(
         func_type, ctypes_utils.get_pointer)

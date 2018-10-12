@@ -7,7 +7,7 @@ from slumba.numbaext import (
     sizeof,
     not_null,
     make_arg_tuple,
-    get_result_setter
+    get_sqlite3_result_function,
 )
 
 
@@ -44,7 +44,7 @@ def sqlite_udaf(signature):
                 if result is None:
                     sqlite3_result_null(ctx)
                 else:
-                    result_setter = get_result_setter(result)
+                    result_setter = get_sqlite3_result_function(result)
                     result_setter(ctx, result)
 
         try:
@@ -73,7 +73,7 @@ def sqlite_udaf(signature):
                     if result is None:
                         sqlite3_result_null(ctx)
                     else:
-                        result_setter = get_result_setter(result)
+                        result_setter = get_sqlite3_result_function(result)
                         result_setter(ctx, result)
 
             inverse_signature = step_signature
