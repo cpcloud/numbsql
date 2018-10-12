@@ -1,3 +1,7 @@
+import sqlite3
+
+from typing import Any, Callable
+
 from .cslumba import get_sqlite_db, SQLITE_DETERMINISTIC, SQLITE_UTF8
 from .sqlite import (
     sqlite3_create_function,
@@ -8,8 +12,8 @@ from .aggregate import sqlite_udaf
 from ._version import get_versions
 
 __all__ = [
-    'register_scalar_function',
-    'register_aggregate_function',
+    'create_function',
+    'create_aggregate',
     'sqlite_udf',
     'sqlite_udaf',
 ]
@@ -18,7 +22,13 @@ __version__ = get_versions()['version']
 del get_versions
 
 
-def create_function(con, name, num_params, func, deterministic=False):
+def create_function(
+    con: sqlite3.Connection,
+    name: str,
+    num_params: int,
+    func: Callable,
+    deterministic: bool = False
+) -> None:
     """Register a UDF with name `name` with the SQLite connection `con`.
 
     Parameters
@@ -34,6 +44,8 @@ def create_function(con, name, num_params, func, deterministic=False):
         The sqlite_udf-decorated function to register
     deterministic : bool
         True if this function returns the same output given the same input.
+        Most functions are deterministic.
+
     """
     sqlite3_create_function(
         get_sqlite_db(con),
@@ -48,8 +60,12 @@ def create_function(con, name, num_params, func, deterministic=False):
 
 
 def create_aggregate(
-    con, name, num_params, aggregate_class, deterministic=False
-):
+    con: sqlite3.Connection,
+    name: str,
+    num_params: int,
+    aggregate_class: Any,
+    deterministic: bool = False
+) -> None:
     """Register an aggregate named `name` with the SQLite connection `con`.
 
     Parameters
@@ -67,7 +83,9 @@ def create_aggregate(
        registered as a window function. Window functions can also be used as
        standard aggregate functions.
     deterministic : bool
-        True if this function returns the same output given the same input
+        True if this function returns the same output given the same input.
+        Most functions are deterministic.
+
     """
     namebytes = name.encode('utf8')
     if hasattr(aggregate_class, 'value') and hasattr(
