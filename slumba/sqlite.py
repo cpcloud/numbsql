@@ -4,8 +4,11 @@ from ctypes.util import find_library
 
 from numba import float64, int64, int32, optional
 
+sqlite3_path = find_library('sqlite3')
+if sqlite3_path is None:
+    raise RuntimeError('Unable to find sqlite3 library')
 
-libsqlite3 = CDLL(find_library('sqlite3'))
+libsqlite3 = CDLL(sqlite3_path)
 
 sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
 sqlite3_aggregate_context.argtypes = c_void_p, c_int
