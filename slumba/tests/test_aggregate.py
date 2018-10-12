@@ -1,5 +1,4 @@
 import sqlite3
-import string
 import tempfile
 
 from pkg_resources import parse_version
@@ -146,24 +145,24 @@ def test_aggregate_window(con):
 
 
 @pytest.fixture(scope='module')
-def large_con():
+def large_con(request):
     with tempfile.NamedTemporaryFile(suffix='.db') as f:
         con = sqlite3.connect(f.name)
         con.execute("""
             CREATE TABLE large_t (
-                key VARCHAR(1),
+                key INTEGER,
                 value DOUBLE PRECISION
             )
         """)
-        con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
         n = int(1e6)
         rows = [
             (key, value.item()) for key, value in zip(
-                np.random.choice(list(string.ascii_lowercase[:2]), size=n),
+                np.random.randint(0, int(0.9 * n), size=n),
                 np.random.randn(n),
             )
         ]
         con.executemany('INSERT INTO large_t (key, value) VALUES (?, ?)', rows)
+        con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
         create_aggregate(con, 'avg_numba', 1, Avg)
         con.create_aggregate('avg_python', 1, AvgPython)
         yield con
