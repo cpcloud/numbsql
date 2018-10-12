@@ -1,6 +1,8 @@
 import sqlite3
 
-from typing import Any, Callable
+from typing import Callable
+
+from numba.types import ClassType
 
 from .cslumba import get_sqlite_db, SQLITE_DETERMINISTIC, SQLITE_UTF8
 from .sqlite import (
@@ -53,7 +55,7 @@ def create_function(
         num_params,
         SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
         None,
-        scalarfunc(func.address),
+        scalarfunc(getattr(func, 'address')),
         stepfunc(0),
         finalizefunc(0),
     )
@@ -63,7 +65,7 @@ def create_aggregate(
     con: sqlite3.Connection,
     name: str,
     num_params: int,
-    aggregate_class: Any,
+    aggregate_class: ClassType,
     deterministic: bool = False
 ) -> None:
     """Register an aggregate named `name` with the SQLite connection `con`.
