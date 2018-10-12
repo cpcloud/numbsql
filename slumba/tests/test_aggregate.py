@@ -133,23 +133,23 @@ def con():
         ('c', 5.0),
     ]
     con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
-    create_aggregate(con, 'myavg', 1, Avg)
+    create_aggregate(con, 'avg_numba', 1, Avg)
+    create_aggregate(con, 'winavg_numba', 1, WinAvg)
     return con
 
 
 def test_aggregate(con):
-    result = list(con.execute('SELECT myavg(value) as c FROM t'))
+    result = list(con.execute('SELECT avg_numba(value) as c FROM t'))
     assert result == list(con.execute('SELECT avg(value) FROM t'))
 
 
 def test_aggregate_with_empty(con):
-    result = list(con.execute('SELECT myavg(value) as c FROM s'))
+    result = list(con.execute('SELECT avg_numba(value) as c FROM s'))
     assert result == [(None,)]
 
 
 @xfail_if_no_window_functions
 def test_aggregate_window(con):
-    create_aggregate(con, 'winavg_numba', 1, WinAvg)
     result = list(
         con.execute(
             'SELECT winavg_numba(value) OVER (PARTITION BY key) as c FROM t'))
@@ -158,7 +158,7 @@ def test_aggregate_window(con):
 
 
 @pytest.fixture(scope='module')
-def large_con(request):
+def large_con():
     with tempfile.NamedTemporaryFile(suffix='.db') as f:
         con = sqlite3.connect(f.name)
         con.execute("""
@@ -177,7 +177,9 @@ def large_con(request):
         con.executemany('INSERT INTO large_t (key, value) VALUES (?, ?)', rows)
         con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
         create_aggregate(con, 'avg_numba', 1, Avg)
+        create_aggregate(con, 'winavg_numba', 1, WinAvg)
         con.create_aggregate('avg_python', 1, AvgPython)
+        con.create_aggregate('winavg_python', 1, WinAvgPython)
         yield con
 
 
