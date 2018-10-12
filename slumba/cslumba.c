@@ -43,6 +43,13 @@ PyInit_cslumba(void)
     return NULL;
   }
 
+  if (PyModule_AddIntMacro(module, SQLITE_OK) == -1) {
+    return PyErr_Format(
+      PyExc_RuntimeError,
+      "Unable to add SQLITE_OK int constant with value %d",
+      SQLITE_OK);
+  }
+
   if (PyModule_AddIntMacro(module, SQLITE_DETERMINISTIC) == -1) {
     return PyErr_Format(
       PyExc_RuntimeError,
