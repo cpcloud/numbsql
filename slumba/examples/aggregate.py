@@ -3,9 +3,10 @@ import time
 import string
 
 from operator import attrgetter
-from collections import namedtuple
+from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 from numba import float64, int64, jitclass, optional
+from numba.types import ClassType
 
 from slumba import sqlite_udaf, create_aggregate
 
@@ -22,13 +23,13 @@ class Var:
         self.sum_of_squares_of_differences = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: float) -> None:
         self.count += 1
         delta = value - self.mean
         self.mean += delta
         self.sum_of_squares_of_differences += delta * (value - self.mean)
 
-    def finalize(self):
+    def finalize(self) -> float:
         return self.sum_of_squares_of_differences / (self.count - 1)
 
 
@@ -46,7 +47,7 @@ class Cov:
         self.mean12 = 0.0
         self.count = 0
 
-    def step(self, x, y):
+    def step(self, x: Optional[float], y: Optional[float]) -> None:
         if x is not None and y is not None:
             self.count += 1
             n = self.count
@@ -56,8 +57,10 @@ class Cov:
             self.mean2 += delta2
             self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         n = self.count
+        if not n:
+            return None
         return n / (n - 1) * self.mean12
 
 
@@ -68,11 +71,12 @@ class Avg:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
-        self.total += value
-        self.count += 1
+    def step(self, value: Optional[float]) -> None:
+        if value is not None:
+            self.total += value
+            self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         if not self.count:
             return None
         return self.total / self.count
@@ -85,16 +89,16 @@ class Sum:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: Optional[float]) -> None:
         if value is not None:
             self.total += value
             self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         return self.total if self.count > 0 else None
 
 
-def main():
+def main() -> None:
     import random
 
     con = sqlite3.connect(':memory:')
@@ -105,34 +109,27 @@ def main():
           value DOUBLE PRECISION
         )
     """)
-    # con.execute('CREATE INDEX key_index ON t (key)')
+    con.execute('CREATE INDEX key_index ON t (key)')
 
-    random_numbers = [
+    random_numbers: List[Tuple[str, float]] = [
         (
             random.choice(string.ascii_lowercase[:2]),
             random.random()
         ) for _ in range(500000)
     ]
 
-    query = (
-        f'INSERT INTO t (key, value) '
-        f'VALUES ({", ".join("?" * len(random_numbers[0]))})'
-    ),
+    placeholders = ', '.join('?' * len(random_numbers[0]))
+    query = f'INSERT INTO t (key, value) VALUES ({placeholders})'
     con.executemany(query, random_numbers)
 
-    cls = Avg
+    cls: ClassType = Avg
 
     builtin = cls.__name__.lower()
     cfunc_defined = f'my{builtin}'
     python_defined = f'my{builtin}2'
 
     # new way of registering UDAFs using cfuncs
-    create_aggregate(
-        con,
-        cfunc_defined,
-        1,
-        cls,
-    )
+    create_aggregate(con, cfunc_defined, 1, cls)
 
     con.create_aggregate(python_defined, 1, cls.class_type.class_def)
 
@@ -143,39 +140,44 @@ def main():
     query3 = (f'select key, {python_defined}(value) as python_{python_defined}'
               f' from t group by 1')
 
-    queries = {
-        builtin + '_builtin': query1,
-        cfunc_defined + '_cfunc': query2,
-        python_defined + '_python': query3,
+    queries: Dict[str, str] = {
+        f'{builtin}_builtin': query1,
+        f'{cfunc_defined}_cfunc': query2,
+        f'{python_defined}_python': query3,
     }
 
-    results = []
+    Result = NamedTuple(
+        'Result',
+        [('name', str),
+         ('result', List[Tuple[str, float]]),
+         ('duration', float)]
+    )
 
-    Result = namedtuple('Result', 'name result duration')
+    results: List[Result] = []
 
+    execute: Callable = con.execute
     for name, query in queries.items():
         start = time.time()
-        exe = con.execute(query)
-        duration = time.time() - start
+        exe = execute(query)
+        stop = time.time()
+        duration = stop - start
         result = list(exe)
         results.append(Result(name=name, result=result, duration=duration))
 
-    builtin_value = results[0].result
+    builtin_result: List = results[0].result
 
     results.sort(key=attrgetter('duration'))
 
-    strings = [
+    strings: List[str] = [
         (
-            f"{name} duration == {duration:.2f}s | "
-            f"{round(results[-1].duration / duration):d}x faster | "
-            f"values equal? {'yes' if builtin_value == result else 'no'}"
+            f'{name} duration == {duration:.2f}s | '
+            f'{round(results[-1].duration / duration):d}x faster | '
+            f"values equal? {'yes' if builtin_result == result else 'no'}"
         ) for name, result, duration in results
     ]
 
     width = max(map(len, strings))
-
-    for s in strings:
-        print(s.rjust(width, ' '))
+    print('\n'.join(string.rjust(width, ' ')) for string in strings)
 
 
 if __name__ == '__main__':

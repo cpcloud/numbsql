@@ -1,23 +1,31 @@
-from numba import njit, cfunc
-from numba.types import void, voidptr, intc, CPointer
+from typing import Any, Callable
 
-from slumba.sqlite import sqlite3_result_null, CONVERTERS
+from numba import njit, cfunc
+from numba.ccallback import CFunc
+from numba.types import void, voidptr, intc, CPointer
+from numba.typing import Signature
+
+from slumba.sqlite import sqlite3_result_null
 from slumba.numbaext import get_sqlite3_result_function, make_arg_tuple
 
 
-sqlite3_value_type = CONVERTERS['sqlite3_value_type']
-
-
-def sqlite_udf(signature):
-    """Generate a SQLite compatible cfunc wrapper for a numba compiled function
+def sqlite_udf(
+    signature: Signature, nogil: bool = True, **njit_kwargs: Any
+) -> Callable[[Callable], CFunc]:
+    """Define a custom scalar function.
 
     Parameters
     ----------
-    signature : numba.Signature
+    signature
+        A numba signature.
+    nogil
+        Whether to release the GIL.
+    nijt_kwargs
+        Any additional keyword arguments supported by numba's jit decorator.
+
     """
-    def wrapper(func):
-        compiled_func = njit(signature.return_type(
-            *signature.args), nogil=True)(func)
+    def wrapper(func: Callable) -> CFunc:
+        compiled_func = njit(signature, nogil=nogil, **njit_kwargs)(func)
 
         @cfunc(void(voidptr, intc, CPointer(voidptr)))
         def scalar(ctx, argc, argv):

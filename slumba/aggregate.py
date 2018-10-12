@@ -1,5 +1,8 @@
+from typing import Callable, Type
+
 from numba import void, optional, cfunc
 from numba.types import voidptr, intc, CPointer
+from numba.typing import Signature
 
 from slumba.sqlite import sqlite3_aggregate_context, sqlite3_result_null
 from slumba.numbaext import (
@@ -11,8 +14,16 @@ from slumba.numbaext import (
 )
 
 
-def sqlite_udaf(signature):
-    def cls_wrapper(cls):
+def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
+    """Define a custom aggregate function.
+
+    Parameters
+    ----------
+    signature
+        A numba signature.
+
+    """
+    def cls_wrapper(cls: Type) -> Type:
         class_type = cls.class_type
         instance_type = class_type.instance_type
 
@@ -30,7 +41,7 @@ def sqlite_udaf(signature):
         finalize_func = class_type.jitmethods['finalize']
 
         # aggregates can always return a NULL value
-        finalize_signature = signature.return_type(instance_type)
+        finalize_signature: Signature = signature.return_type(instance_type)
         finalize_func.compile(finalize_signature)
 
         @cfunc(void(voidptr))
@@ -74,7 +85,7 @@ def sqlite_udaf(signature):
                         result_setter = get_sqlite3_result_function(result)
                         result_setter(ctx, result)
 
-            inverse_signature = step_signature
+            inverse_signature: Signature = step_signature
             inverse_func.compile(inverse_signature)
 
             @cfunc(void(voidptr, intc, CPointer(voidptr)))
