@@ -111,3 +111,7 @@ VALUE_EXTRACTORS = {
 sqlite3_value_type = libsqlite3.sqlite3_value_type
 sqlite3_value_type.argtypes = c_void_p,
 sqlite3_restype = c_int
+
+sqlite3_errmsg = libsqlite3.sqlite3_errmsg
+sqlite3_errmsg.argtypes = c_void_p,
+sqlite3_errmsg.restype = c_char_p
