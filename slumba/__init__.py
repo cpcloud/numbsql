@@ -51,7 +51,7 @@ def create_function(
 
     """
     sqlite_db = get_sqlite_db(con)
-    rc = sqlite3_create_function(
+    if sqlite3_create_function(
         sqlite_db,
         name.encode('utf8'),
         num_params,
@@ -60,8 +60,7 @@ def create_function(
         scalarfunc(getattr(func, 'address')),
         stepfunc(0),
         finalizefunc(0),
-    )
-    if rc != SQLITE_OK:
+    ) != SQLITE_OK:
         raise RuntimeError(sqlite3_errmsg(sqlite_db))
 
 
@@ -110,8 +109,6 @@ def create_aggregate(
             inversefunc(aggregate_class.inverse.address),
             destroyfunc(0),
         )
-        if rc != SQLITE_OK:
-            raise RuntimeError(sqlite3_errmsg(sqlite_db))
     else:
         rc = sqlite3_create_function(
             sqlite_db,
@@ -123,6 +120,5 @@ def create_aggregate(
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),
         )
-        if rc != SQLITE_OK:
-            raise RuntimeError(sqlite3_errmsg(sqlite_db))
-            raise RuntimeError()
+    if rc != SQLITE_OK:
+        raise RuntimeError(sqlite3_errmsg(sqlite_db))
