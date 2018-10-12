@@ -4,12 +4,16 @@ from typing import Callable
 
 from numba.types import ClassType
 
-from .cslumba import (
-    get_sqlite_db, SQLITE_DETERMINISTIC, SQLITE_UTF8, SQLITE_OK)
+from .cslumba import get_sqlite_db
 from .sqlite import (
     sqlite3_create_function,
-    scalarfunc, stepfunc, finalizefunc, valuefunc, inversefunc, destroyfunc)
-from .sqlite import sqlite3_create_window_function, sqlite3_errmsg
+    scalarfunc, stepfunc, finalizefunc, valuefunc, inversefunc, destroyfunc,
+    sqlite3_create_window_function,
+    sqlite3_errmsg,
+    SQLITE_DETERMINISTIC,
+    SQLITE_UTF8,
+    SQLITE_OK,
+)
 from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
 from ._version import get_versions

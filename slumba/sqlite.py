@@ -6,6 +6,9 @@ from typing import Optional
 
 from numba import float64, int64, int32, optional
 
+from .cslumba import SQLITE_DETERMINISTIC, SQLITE_UTF8, SQLITE_OK  # noqa: F401
+
+
 sqlite3_path: Optional[str] = find_library('sqlite3')
 if sqlite3_path is None:  # pragma: no cover
     raise RuntimeError('Unable to find sqlite3 library')
