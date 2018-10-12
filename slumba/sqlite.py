@@ -90,8 +90,8 @@ value_methods = {
 }
 
 
-def add_value_method(typename, restype):
-    method = getattr(libsqlite3, 'sqlite3_value_{}'.format(typename))
+def add_value_method(typename: str, restype):
+    method = getattr(libsqlite3, f'sqlite3_value_{typename}')
     method.argtypes = c_void_p,
     method.restype = restype
     return method
@@ -106,8 +106,6 @@ VALUE_EXTRACTORS = {
     int32: add_value_method('int', c_int),
 }
 
-
-CONVERTERS = {
-    'sqlite3_value_{}'.format(typename): add_value_method(typename, restype)
-    for typename, restype in value_methods.items()
-}
+sqlite3_value_type = libsqlite3.sqlite3_value_type
+sqlite3_value_type.argtypes = c_void_p,
+sqlite3_restype = c_int
