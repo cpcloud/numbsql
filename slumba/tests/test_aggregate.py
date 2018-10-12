@@ -12,6 +12,13 @@ from slumba import sqlite_udaf, create_aggregate
 from slumba.cslumba import SQLITE_VERSION
 
 
+xfail_if_no_window_functions = pytest.mark.xfail(
+    parse_version(SQLITE_VERSION) < parse_version('3.25.0'),
+    reason='Window functions are not supported in SQLite < 3.25.0',
+    raises=RuntimeError
+)
+
+
 @sqlite_udaf(float64(float64))
 @jitclass(dict(total=float64, count=int64))
 class Avg:
@@ -43,6 +50,26 @@ class AvgPython:
 @sqlite_udaf(float64(float64))
 @jitclass(dict(total=float64, count=int64))
 class WinAvg:
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value):
+        self.total += value
+        self.count += 1
+
+    def finalize(self):
+        return self.total / self.count
+
+    def value(self):
+        return self.finalize()
+
+    def inverse(self, value):
+        self.total -= value
+        self.count -= 1
+
+
+class WinAvgPython:
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -120,16 +147,12 @@ def test_aggregate_with_empty(con):
     assert result == [(None,)]
 
 
-@pytest.mark.xfail(
-    parse_version(SQLITE_VERSION) < parse_version('3.25.0'),
-    reason='Window functions not supported in SQLite < 3.25.0',
-    raises=RuntimeError
-)
+@xfail_if_no_window_functions
 def test_aggregate_window(con):
-    create_aggregate(con, 'mywinavg', 1, WinAvg)
+    create_aggregate(con, 'winavg_numba', 1, WinAvg)
     result = list(
         con.execute(
-            'SELECT mywinavg(value) OVER (PARTITION BY key) as c FROM t'))
+            'SELECT winavg_numba(value) OVER (PARTITION BY key) as c FROM t'))
     assert result == list(
         con.execute('SELECT avg(value) OVER (PARTITION BY key) as c FROM t'))
 
@@ -221,4 +244,45 @@ def test_aggregate_bench_builtin(large_con, benchmark):
 
 def test_aggregate_bench_python(large_con, benchmark):
     result = benchmark(run_agg_python, large_con)
+    assert result
+
+
+def run_agg_partition_by_numba(con):
+    query = """
+SELECT key, winavg_numba(value) OVER (PARTITION BY key) AS result FROM large_t
+"""
+    result = con.execute(query)
+    return result.fetchall()
+
+
+def run_agg_partition_by_builtin(con):
+    query = """
+SELECT key, avg(value) OVER (PARTITION BY key) AS result FROM large_t"""
+    result = con.execute(query)
+    return result.fetchall()
+
+
+def run_agg_partition_by_python(con):
+    query = """
+SELECT key, winavg_python(value) OVER (PARTITION BY key) AS result FROM large_t
+"""
+    result = con.execute(query)
+    return result.fetchall()
+
+
+@xfail_if_no_window_functions
+def test_window_bench_numba(large_con, benchmark):
+    result = benchmark(run_agg_partition_by_numba, large_con)
+    assert result
+
+
+@xfail_if_no_window_functions
+def test_window_bench_builtin(large_con, benchmark):
+    result = benchmark(run_agg_partition_by_builtin, large_con)
+    assert result
+
+
+@xfail_if_no_window_functions
+def test_window_bench_python(large_con, benchmark):
+    result = benchmark(run_agg_partition_by_python, large_con)
     assert result
