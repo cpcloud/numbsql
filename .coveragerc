@@ -1,4 +1,3 @@
-# configuration file used by run_coverage.py
 [run]
 branch = True
 source = slumba
@@ -6,10 +5,8 @@ concurrency = multiprocessing
 parallel = True
 
 [report]
-
 omit =
     */__main__.py
-    # Vendored packages
     slumba/_version.py
 
 exclude_lines =
