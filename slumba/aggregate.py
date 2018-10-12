@@ -84,7 +84,7 @@ def sqlite_udaf(signature):
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 if not_null(agg_ctx):
-                    agg_ctx.inverse(*make_arg_tuple(step_func, argv))
+                    agg_ctx.inverse(*make_arg_tuple(inverse_func, argv))
 
         cls.step.address = step.address
         cls.finalize.address = finalize.address
