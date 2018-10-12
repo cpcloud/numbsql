@@ -35,20 +35,13 @@ test: &test
     - run:
         name: Execute Pytest
         command: |
-          pytest -rsxX --junitxml=/tmp/test-reports/pytest/junit.xml
+          pytest -ra --junitxml=/tmp/test-reports/pytest/junit.xml
     - store_test_results:
         path: /tmp/test-reports
     - store_artifacts:
         path: /tmp/test-reports
 
 jobs:
-  python35_test:
-    docker:
-      - image: circleci/python:3.6
-    <<: *test
-    environment:
-      PYTHON: 3.5
-
   python36_test:
     docker:
       - image: circleci/python:3.6
@@ -60,5 +53,4 @@ workflows:
   version: 2
   test:
     jobs:
-      - python35_test
       - python36_test
