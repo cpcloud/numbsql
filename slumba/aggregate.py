@@ -40,15 +40,12 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                 agg_ctx.step(*args)
 
         finalize_func = class_type.jitmethods['finalize']
-
-        # aggregates can always return a NULL value
         finalize_signature: Signature = signature.return_type(instance_type)
         finalize_func.compile(finalize_signature)
 
         @cfunc(void(voidptr))
         def finalize(ctx):  # pragma: no cover
-            nbytes = sizeof(cls)
-            raw_pointer = sqlite3_aggregate_context(ctx, nbytes)
+            raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
             if not_null(agg_ctx):
                 result = agg_ctx.finalize()
@@ -61,14 +58,18 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         try:
             value_func = class_type.jitmethods['value']
         except KeyError:
-            is_window_function = False
+            has_value_func = False
         else:
-            is_window_function = True
+            has_value_func = True
 
         try:
             inverse_func = class_type.jitmethods['inverse']
         except KeyError:
-            is_window_function = False
+            has_inverse_func = False
+        else:
+            has_inverse_func = True
+
+        is_window_function = has_value_func and has_inverse_func
 
         if is_window_function:
             # aggregates can always return a NULL value
