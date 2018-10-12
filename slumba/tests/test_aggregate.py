@@ -135,6 +135,7 @@ def con():
     con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
     create_aggregate(con, 'avg_numba', 1, Avg)
     create_aggregate(con, 'winavg_numba', 1, WinAvg)
+    con.create_aggregate('winavg_python', 1, WinAvgPython)
     return con
 
 
@@ -149,10 +150,14 @@ def test_aggregate_with_empty(con):
 
 
 @xfail_if_no_window_functions
-def test_aggregate_window(con):
+@pytest.mark.parametrize(
+    'func',
+    ['winavg_numba',
+     pytest.mark.xfail('winavg_python', raises=sqlite3.OperationalError)])
+def test_aggregate_window_numba(con, func):
     result = list(
         con.execute(
-            'SELECT winavg_numba(value) OVER (PARTITION BY key) as c FROM t'))
+            f'SELECT {func}(value) OVER (PARTITION BY key) as c FROM t'))
     assert result == list(
         con.execute('SELECT avg(value) OVER (PARTITION BY key) as c FROM t'))
 
@@ -288,3 +293,72 @@ def test_window_bench_builtin(large_con, benchmark):
 def test_window_bench_python(large_con, benchmark):
     result = benchmark(run_agg_partition_by_python, large_con)
     assert result
+
+
+@sqlite_udaf(float64(float64))
+@jitclass([
+    ('mean', float64),
+    ('sum_of_squares_of_differences', float64),
+    ('count', int64),
+])
+class Var:
+    def __init__(self):
+        self.mean = 0.0
+        self.sum_of_squares_of_differences = 0.0
+        self.count = 0
+
+    def step(self, value):
+        self.count += 1
+        delta = value - self.mean
+        self.mean += delta
+        self.sum_of_squares_of_differences += delta * (value - self.mean)
+
+    def finalize(self):
+        return self.sum_of_squares_of_differences / (self.count - 1)
+
+
+@sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
+@jitclass([
+    ('mean1', float64),
+    ('mean2', float64),
+    ('mean12', float64),
+    ('count', int64)
+])
+class Cov:
+    def __init__(self):
+        self.mean1 = 0.0
+        self.mean2 = 0.0
+        self.mean12 = 0.0
+        self.count = 0
+
+    def step(self, x, y):
+        if x is not None and y is not None:
+            self.count += 1
+            n = self.count
+            delta1 = (x - self.mean1) / n
+            self.mean1 += delta1
+            delta2 = (y - self.mean2) / n
+            self.mean2 += delta2
+            self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
+
+    def finalize(self):
+        n = self.count
+        if not n:
+            return None
+        return n / (n - 1) * self.mean12
+
+
+@sqlite_udaf(optional(float64)(float64))
+@jitclass([('total', float64), ('count', int64)])
+class Sum:
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value):
+        if value is not None:
+            self.total += value
+            self.count += 1
+
+    def finalize(self):
+        return self.total if self.count > 0 else None
