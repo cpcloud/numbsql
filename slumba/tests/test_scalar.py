@@ -6,15 +6,20 @@ import numpy as np
 import pytest
 
 from slumba import create_function, sqlite_udf
-from numba import int64, float64
+from numba import int64, float64, optional
 
 
 @sqlite_udf(float64(float64))
+def add_one(x):
+    return x + 1.0
+
+
+@sqlite_udf(optional(float64)(optional(float64)))
 def add_one_optional(x):
     return x + 1.0 if x is not None else None
 
 
-@sqlite_udf(int64(int64, float64))
+@sqlite_udf(optional(int64)(optional(int64), optional(float64)))
 def add_each_other_nulls(x, y):
     if x is not None and y is not None:
         return x + int(y)

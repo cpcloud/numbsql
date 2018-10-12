@@ -7,7 +7,7 @@ import numpy as np
 
 import pytest
 
-from numba import float64, int64, jitclass
+from numba import float64, int64, jitclass, optional
 from slumba import sqlite_udaf, create_aggregate
 from slumba.cslumba import SQLITE_VERSION
 
@@ -20,13 +20,10 @@ class Avg:
         self.count = 0
 
     def step(self, value):
-        if value is not None:
-            self.total += value
-            self.count += 1
+        self.total += value
+        self.count += 1
 
     def finalize(self):
-        if not self.count:
-            return None
         return self.total / self.count
 
 
@@ -36,13 +33,10 @@ class AvgPython:
         self.count = 0
 
     def step(self, value):
-        if value is not None:
-            self.total += value
-            self.count += 1
+        self.total += value
+        self.count += 1
 
     def finalize(self):
-        if not self.count:
-            return None
         return self.total / self.count
 
 
@@ -54,25 +48,21 @@ class WinAvg:
         self.count = 0
 
     def step(self, value):
-        if value is not None:
-            self.total += value
-            self.count += 1
+        self.total += value
+        self.count += 1
 
     def finalize(self):
-        if not self.count:
-            return None
         return self.total / self.count
 
     def value(self):
         return self.finalize()
 
     def inverse(self, value):
-        if value is not None:
-            self.total -= value
-            self.count -= 1
+        self.total -= value
+        self.count -= 1
 
 
-@sqlite_udaf(float64(float64))
+@sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass(dict(total=float64, count=int64))
 class AvgWithNulls:
     def __init__(self):
@@ -132,7 +122,7 @@ def test_aggregate_with_empty(con):
 
 @pytest.mark.xfail(
     parse_version(SQLITE_VERSION) < parse_version('3.25.0'),
-    reason='Window functions not support in SQLite < 3.25.0',
+    reason='Window functions not supported in SQLite < 3.25.0',
     raises=RuntimeError
 )
 def test_aggregate_window(con):
@@ -157,7 +147,7 @@ def large_con(request):
         n = int(1e6)
         rows = [
             (key, value.item()) for key, value in zip(
-                np.random.randint(0, int(0.9 * n), size=n),
+                np.random.randint(0, int(0.01 * n), size=n),
                 np.random.randn(n),
             )
         ]

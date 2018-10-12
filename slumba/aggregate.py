@@ -16,10 +16,8 @@ def sqlite_udaf(signature):
         class_type = cls.class_type
         instance_type = class_type.instance_type
 
-        step_func = cls.class_type.jitmethods['step']
-        step_signature = void(
-            instance_type,
-            *map(optional, signature.args))
+        step_func = class_type.jitmethods['step']
+        step_signature = void(instance_type, *signature.args)
         step_func.compile(step_signature)
 
         @cfunc(void(voidptr, intc, CPointer(voidptr)))
@@ -29,10 +27,10 @@ def sqlite_udaf(signature):
             if not_null(agg_ctx):
                 agg_ctx.step(*make_arg_tuple(step_func, argv))
 
-        finalize_func = cls.class_type.jitmethods['finalize']
+        finalize_func = class_type.jitmethods['finalize']
 
         # aggregates can always return a NULL value
-        finalize_signature = optional(signature.return_type)(instance_type)
+        finalize_signature = signature.return_type(instance_type)
         finalize_func.compile(finalize_signature)
 
         @cfunc(void(voidptr))
@@ -48,14 +46,14 @@ def sqlite_udaf(signature):
                     result_setter(ctx, result)
 
         try:
-            value_func = cls.class_type.jitmethods['value']
+            value_func = class_type.jitmethods['value']
         except KeyError:
             is_window_function = False
         else:
             is_window_function = True
 
         try:
-            inverse_func = cls.class_type.jitmethods['inverse']
+            inverse_func = class_type.jitmethods['inverse']
         except KeyError:
             is_window_function = False
 

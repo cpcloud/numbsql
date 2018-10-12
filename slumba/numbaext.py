@@ -5,37 +5,51 @@ from numba.typing import ctypes_utils
 from slumba.sqlite import VALUE_EXTRACTORS, RESULT_SETTERS
 
 
-def _unsafe_cast_ptr_to_class(int_type, class_type):
-    inst_typ = class_type.instance_type
-    sig = inst_typ(types.voidptr, class_type)
-
-    def codegen(context, builder, signature, args):
-        ptr, _ = args
-        alloc_type = context.get_data_type(inst_typ.get_data_type())
-
-        inst_struct = context.make_helper(builder, inst_typ)
-
-        # Set meminfo to NULL
-        inst_struct.meminfo = cgutils.get_null_value(inst_struct.meminfo.type)
-
-        # Set data from the given pointer
-        inst_struct.data = builder.bitcast(ptr, alloc_type.as_pointer())
-        return inst_struct._getvalue()
-
-    return sig, codegen
-
-
 @extending.intrinsic
 def unsafe_cast(typingctx, src, dst):
-    """Cast a voidptr to a jitclass
+    """Cast a void pointer to a jitclass.
+
+    Parameters
+    ----------
+    typingctx
+    src
+        A pointer to cast to type `dst`.
+    dst
+        A type to cast from `src` to.
+
+    Raises
+    ------
+    TypeError
+        If `src` is not a raw pointer or integer or `dst` is not a jitclass
+        type.
+
+    Returns
+    -------
     """
     if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(
         dst, types.ClassType
     ):
-        return _unsafe_cast_ptr_to_class(src, dst)
-    raise TypeError(
-        'Unable to cast pointer type {} to class type {}'.format(src, dst)
-    )
+        inst_typ = dst.instance_type
+        sig = inst_typ(types.voidptr, dst)
+
+        def codegen(context, builder, signature, args):
+            ptr, _ = args
+            alloc_type = context.get_data_type(inst_typ.get_data_type())
+
+            inst_struct = context.make_helper(builder, inst_typ)
+
+            # Set meminfo to correctly typed NULL value
+            inst_struct.meminfo = cgutils.get_null_value(
+                inst_struct.meminfo.type)
+
+            # Set data from the given pointer
+            inst_struct.data = builder.bitcast(ptr, alloc_type.as_pointer())
+            return inst_struct._getvalue()
+        return sig, codegen
+    else:
+        raise TypeError(
+            'Unable to cast pointer type {} to class type {}'.format(src, dst)
+        )
 
 
 @extending.intrinsic
@@ -52,8 +66,9 @@ def make_arg_tuple(typingctx, func, argv):
         _, argv = args
         converted_args = []
         for i, argtype in enumerate(argtypes):
+
             # get the appropriate ctypes extraction routine
-            ctypes_function = VALUE_EXTRACTORS[argtype.type]
+            ctypes_function = VALUE_EXTRACTORS[argtype]
 
             # create a numba function type for the converter
             converter = ctypes_utils.make_function_type(ctypes_function)
@@ -70,7 +85,12 @@ def make_arg_tuple(typingctx, func, argv):
 
             # call the value extraction routine
             raw = builder.call(fn, [element])
-            instr = context.make_optional_value(builder, argtype.type, raw)
+            if isinstance(argtype, types.Optional):
+                underlying_type = getattr(argtype, 'type', argtype)
+                instr = context.make_optional_value(
+                    builder, underlying_type, raw)
+            else:
+                instr = raw
 
             # put the value into a list used to build a tuple
             converted_args.append(instr)
@@ -87,7 +107,7 @@ def get_sqlite3_result_function(typingctx, value_type):
 
     efp = types.ExternalFunctionPointer(
         func_type, ctypes_utils.get_pointer)
-    sig = efp(result)
+    sig = efp(value_type)
 
     def codegen(context, builder, signature, args):
         # get the appropriate ctypes extraction routine
@@ -105,31 +125,33 @@ def get_sqlite3_result_function(typingctx, value_type):
 
 @extending.intrinsic
 def sizeof(typingctx, src):
-    sig = types.int64(src)
-
-    def codegen(context, builder, signature, args):
-        return context.get_constant(
-            sig.return_type,
-            context.get_abi_sizeof(context.get_data_type(src.instance_type))
-        )
     if isinstance(src, types.ClassType):
+        sig = types.int64(src)
+
+        def codegen(context, builder, signature, args):
+            return context.get_constant(
+                sig.return_type,
+                context.get_abi_sizeof(
+                    context.get_data_type(src.instance_type)
+                )
+            )
         return sig, codegen
-    raise TypeError()
+    else:
+        raise TypeError('Cannot get sizeof non jitclass')
 
 
 @extending.intrinsic
 def not_null(typingctx, src):
-    sig = types.boolean(src)
+    if isinstance(src, (types.RawPointer, types.ClassInstanceType)):
+        sig = types.boolean(src)
 
-    def codegen(context, builder, signature, args):
-        instance, = args
+        def codegen(context, builder, signature, args):
+            instance, = args
 
-        # TODO: probably a more general way to do this
-        second_element = builder.extract_value(instance, [1])
-        result = cgutils.is_not_null(builder, second_element)
-        return result
-
-    if isinstance(src, types.ClassInstanceType):
+            # TODO: probably a more general way to do this
+            second_element = builder.extract_value(instance, [1])
+            result = cgutils.is_not_null(builder, second_element)
+            return result
         return sig, codegen
-
-    raise TypeError()
+    else:
+        raise TypeError('Cannot compute whether a non pointer is not null')

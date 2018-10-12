@@ -16,8 +16,8 @@ def sqlite_udf(signature):
     signature : numba.Signature
     """
     def wrapper(func):
-        compiled_func = njit(optional(signature.return_type)(
-            *map(optional, signature.args)), nogil=True)(func)
+        compiled_func = njit(signature.return_type(
+            *signature.args), nogil=True)(func)
 
         @cfunc(void(voidptr, intc, CPointer(voidptr)))
         def scalar(ctx, argc, argv):
