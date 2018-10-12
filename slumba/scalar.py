@@ -29,7 +29,8 @@ def sqlite_udf(
 
         @cfunc(void(voidptr, intc, CPointer(voidptr)))
         def scalar(ctx, argc, argv):
-            result = compiled_func(*make_arg_tuple(compiled_func, argv))
+            args = make_arg_tuple(compiled_func, argv)
+            result = compiled_func(*args)
             if result is None:
                 sqlite3_result_null(ctx)
             else:
