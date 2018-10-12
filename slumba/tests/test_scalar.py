@@ -10,17 +10,17 @@ from numba import int64, float64, optional
 
 
 @sqlite_udf(float64(float64))
-def add_one(x):
+def add_one(x):  # pragma: no cover
     return x + 1.0
 
 
 @sqlite_udf(optional(float64)(optional(float64)))
-def add_one_optional(x):
+def add_one_optional(x):  # pragma: no cover
     return x + 1.0 if x is not None else None
 
 
 @sqlite_udf(optional(int64)(optional(int64), optional(float64)))
-def add_each_other_nulls(x, y):
+def add_each_other_nulls(x, y):  # pragma: no cover
     if x is not None and y is not None:
         return x + int(y)
     return None

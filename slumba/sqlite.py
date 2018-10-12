@@ -2,10 +2,12 @@ from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, CFUNCTYPE
 from ctypes import POINTER, c_char_p
 from ctypes.util import find_library
 
+from typing import Optional
+
 from numba import float64, int64, int32, optional
 
-sqlite3_path = find_library('sqlite3')
-if sqlite3_path is None:
+sqlite3_path: Optional[str] = find_library('sqlite3')
+if sqlite3_path is None:  # pragma: no cover
     raise RuntimeError('Unable to find sqlite3 library')
 
 libsqlite3 = CDLL(sqlite3_path)
@@ -54,7 +56,7 @@ sqlite3_create_function.argtypes = (
 
 try:
     sqlite3_create_window_function = libsqlite3.sqlite3_create_window_function
-except AttributeError:
+except AttributeError:  # pragma: no cover
     pass
 else:
     sqlite3_create_window_function.restype = c_int

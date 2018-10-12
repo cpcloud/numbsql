@@ -21,7 +21,7 @@ xfail_if_no_window_functions = pytest.mark.xfail(
 
 @sqlite_udaf(float64(float64))
 @jitclass(dict(total=float64, count=int64))
-class Avg:
+class Avg:  # pragma: no cover
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -49,7 +49,7 @@ class AvgPython:
 
 @sqlite_udaf(float64(float64))
 @jitclass(dict(total=float64, count=int64))
-class WinAvg:
+class WinAvg:  # pragma: no cover
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -69,7 +69,7 @@ class WinAvg:
         self.count -= 1
 
 
-class WinAvgPython:
+class WinAvgPython:  # pragma: no cover
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -91,7 +91,7 @@ class WinAvgPython:
 
 @sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass(dict(total=float64, count=int64))
-class AvgWithNulls:
+class AvgWithNulls:  # pragma: no cover
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -172,7 +172,7 @@ def large_con():
                 value DOUBLE PRECISION
             )
         """)
-        n = int(1e6)
+        n = int(1e4)
         rows = [
             (key, value.item()) for key, value in zip(
                 np.random.randint(0, int(0.01 * n), size=n),
@@ -290,6 +290,7 @@ def test_window_bench_builtin(large_con, benchmark):
 
 
 @xfail_if_no_window_functions
+@pytest.mark.xfail(raises=sqlite3.OperationalError)
 def test_window_bench_python(large_con, benchmark):
     result = benchmark(run_agg_partition_by_python, large_con)
     assert result
@@ -301,7 +302,7 @@ def test_window_bench_python(large_con, benchmark):
     ('sum_of_squares_of_differences', float64),
     ('count', int64),
 ])
-class Var:
+class Var:  # pragma: no cover
     def __init__(self):
         self.mean = 0.0
         self.sum_of_squares_of_differences = 0.0
@@ -324,7 +325,7 @@ class Var:
     ('mean12', float64),
     ('count', int64)
 ])
-class Cov:
+class Cov:  # pragma: no cover
     def __init__(self):
         self.mean1 = 0.0
         self.mean2 = 0.0
@@ -350,7 +351,7 @@ class Cov:
 
 @sqlite_udaf(optional(float64)(float64))
 @jitclass([('total', float64), ('count', int64)])
-class Sum:
+class Sum:  # pragma: no cover
     def __init__(self):
         self.total = 0.0
         self.count = 0

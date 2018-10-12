@@ -9,7 +9,7 @@ def test_sizeof_invalid():
 
     with pytest.raises(TypingError):
         @dec
-        def bad_sizeof(x):
+        def bad_sizeof(x):  # pragma: no cover
             return sizeof(x)
 
 
@@ -18,7 +18,7 @@ def test_not_null_invalid():
 
     with pytest.raises(TypingError):
         @dec
-        def bad_not_null(x):
+        def bad_not_null(x):  # pragma: no cover
             return not_null(x)
 
 
@@ -27,5 +27,5 @@ def test_unsafe_case_invalid():
 
     with pytest.raises(TypingError):
         @dec
-        def bad_unsafe_cast(x):
+        def bad_unsafe_cast(x):  # pragma: no cover
             return unsafe_cast(x, int64)
