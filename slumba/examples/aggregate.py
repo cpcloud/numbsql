@@ -5,9 +5,9 @@ import string
 from operator import attrgetter
 from collections import namedtuple
 
-from numba import float64, int64, boolean, jitclass, optional
+from numba import float64, int64, jitclass, optional
 
-from slumba import sqlite_udaf, register_aggregate_function
+from slumba import sqlite_udaf, create_aggregate
 
 
 @sqlite_udaf(float64(float64))
@@ -16,7 +16,7 @@ from slumba import sqlite_udaf, register_aggregate_function
     ('sum_of_squares_of_differences', float64),
     ('count', int64),
 ])
-class Var(object):
+class Var:
     def __init__(self):
         self.mean = 0.0
         self.sum_of_squares_of_differences = 0.0
@@ -32,14 +32,14 @@ class Var(object):
         return self.sum_of_squares_of_differences / (self.count - 1)
 
 
-@sqlite_udaf(float64(float64, float64))
+@sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
 @jitclass([
     ('mean1', float64),
     ('mean2', float64),
     ('mean12', float64),
     ('count', int64)
 ])
-class Cov(object):
+class Cov:
     def __init__(self):
         self.mean1 = 0.0
         self.mean2 = 0.0
@@ -61,9 +61,9 @@ class Cov(object):
         return n / (n - 1) * self.mean12
 
 
-@sqlite_udaf(optional(float64)(float64))
+@sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass([('total', float64), ('count', int64)])
-class Avg(object):
+class Avg:
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -80,7 +80,7 @@ class Avg(object):
 
 @sqlite_udaf(optional(float64)(float64))
 @jitclass([('total', float64), ('count', int64)])
-class Sum(object):
+class Sum:
     def __init__(self):
         self.total = 0.0
         self.count = 0
@@ -114,43 +114,34 @@ def main():
         ) for _ in range(500000)
     ]
 
-    con.executemany(
-        'INSERT INTO t (key, value) VALUES ({})'.format(
-            ', '.join('?' * len(random_numbers[0]))
-        ),
-        random_numbers
-    )
+    query = (
+        f'INSERT INTO t (key, value) '
+        f'VALUES ({", ".join("?" * len(random_numbers[0]))})'
+    ),
+    con.executemany(query, random_numbers)
 
     cls = Avg
 
     builtin = cls.__name__.lower()
-    cfunc_defined = 'my{}'.format(builtin)
-    python_defined = 'my{}2'.format(builtin)
+    cfunc_defined = f'my{builtin}'
+    python_defined = f'my{builtin}2'
 
     # new way of registering UDAFs using cfuncs
-    register_aggregate_function(
+    create_aggregate(
         con,
-        cfunc_defined.encode('utf8'),
+        cfunc_defined,
         1,
-        cls.step.address,
-        cls.finalize.address
+        cls,
     )
 
     con.create_aggregate(python_defined, 1, cls.class_type.class_def)
 
-    query1 = 'select key, {0}(value) as builtin_{0} from t group by 1'.format(
-        builtin
-    )
-    query2 = 'select key, {0}(value) as cfunc_{0} from t group by 1'.format(
-        cfunc_defined
-    )
-    query3 = 'select key, {0}(value) as python_{0} from t group by 1'.format(
-        python_defined
-    )
-
-    query1 = 'select {0}(value) as builtin_{0} from t'.format(builtin)
-    query2 = 'select {0}(value) as cfunc_{0} from t'.format(cfunc_defined)
-    query3 = 'select {0}(value) as python_{0} from t'.format(python_defined)
+    query1 = (f'select key, {builtin}(value) as builtin_{builtin} from t '
+              f'group by 1')
+    query2 = (f'select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} '
+              f'from t group by 1')
+    query3 = (f'select key, {python_defined}(value) as python_{python_defined}'
+              f' from t group by 1')
 
     queries = {
         builtin + '_builtin': query1,
@@ -174,13 +165,11 @@ def main():
     results.sort(key=attrgetter('duration'))
 
     strings = [
-        '{} duration == {:.2f}s | {:d}x faster | values equal? {}'.format(
-            name,
-            duration,
-            round(results[-1].duration / duration),
-            'yes' if builtin_value == result else 'no'
-        )
-        for name, result, duration in results
+        (
+            f"{name} duration == {duration:.2f}s | "
+            f"{round(results[-1].duration / duration):d}x faster | "
+            f"values equal? {'yes' if builtin_value == result else 'no'}"
+        ) for name, result, duration in results
     ]
 
     width = max(map(len, strings))

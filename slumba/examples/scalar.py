@@ -1,17 +1,8 @@
 import time
 import sqlite3
-import inspect
 
 from numba import float64
-from slumba import register_scalar_function, sqlite_udf
-
-
-def register_scalar_cfunc(con, func):
-    pyfunc = func.pyfunc
-    narg = len(inspect.getargspec(pyfunc).args)
-    register_scalar_function(
-        con, pyfunc.__name__.encode('utf8'), narg, func.address
-    )
+from slumba import create_function, sqlite_udf
 
 
 if __name__ == '__main__':
@@ -37,7 +28,7 @@ if __name__ == '__main__':
     con.executemany('INSERT INTO t VALUES (?)', random_numbers)
 
     # new way of registering C functions
-    register_scalar_function(con, b'normal', 3, normal.address)
+    create_function(con, 'normal', 3, normal, deterministic=True)
 
     # old way
     con.create_function('oldnormal', 3, oldnormal)
