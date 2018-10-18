@@ -19,7 +19,7 @@ xfail_if_no_window_functions = pytest.mark.xfail(
 )
 
 
-@sqlite_udaf(float64(float64))
+@sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass(dict(total=float64, count=int64))
 class Avg:  # pragma: no cover
     def __init__(self):
@@ -27,11 +27,15 @@ class Avg:  # pragma: no cover
         self.count = 0
 
     def step(self, value):
-        self.total += value
-        self.count += 1
+        if value is not None:
+            self.total += value
+            self.count += 1
 
     def finalize(self):
-        return self.total / self.count
+        count = self.count
+        if count:
+            return self.total / count
+        return None
 
 
 class AvgPython:
@@ -47,7 +51,7 @@ class AvgPython:
         return self.total / self.count
 
 
-@sqlite_udaf(float64(float64))
+@sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass(dict(total=float64, count=int64))
 class WinAvg:  # pragma: no cover
     def __init__(self):
@@ -55,18 +59,23 @@ class WinAvg:  # pragma: no cover
         self.count = 0
 
     def step(self, value):
-        self.total += value
-        self.count += 1
+        if value is not None:
+            self.total += value
+            self.count += 1
 
     def finalize(self):
-        return self.total / self.count
+        count = self.count
+        if count:
+            return self.total / count
+        return None
 
     def value(self):
         return self.finalize()
 
     def inverse(self, value):
-        self.total -= value
-        self.count -= 1
+        if value is not None:
+            self.total += value
+            self.count += 1
 
 
 class WinAvgPython:  # pragma: no cover
@@ -131,6 +140,7 @@ def con():
         ('b', 3.0),
         ('c', 4.0),
         ('c', 5.0),
+        ('c', None),
     ]
     con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
     create_aggregate(con, 'avg_numba', 1, Avg)
