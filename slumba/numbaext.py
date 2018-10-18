@@ -2,7 +2,8 @@ from numba import types, extending, cgutils
 from numba.targets import imputils
 from numba.typing import ctypes_utils
 
-from slumba.sqlite import VALUE_EXTRACTORS, RESULT_SETTERS
+from slumba.cslumba import SQLITE_NULL
+from slumba.sqlite import VALUE_EXTRACTORS, RESULT_SETTERS, sqlite3_value_type
 
 
 @extending.intrinsic
@@ -71,7 +72,31 @@ def make_arg_tuple(typingctx, func, argv):
         _, argv = args
         converted_args = []
         for i, argtype in enumerate(argtypes):
+            # get a pointer to the ith argument
+            element_pointer = cgutils.gep(builder, argv, i)
 
+            # deref that pointer
+            element = builder.load(element_pointer)
+
+            # check for null values #
+            # get a pointer to the sqlite3_value_type C function
+            sqlite3_value_type_numba = context.get_constant_generic(
+                builder,
+                ctypes_utils.make_function_type(sqlite3_value_type),
+                sqlite3_value_type
+            )
+            value_type = builder.call(sqlite3_value_type_numba, [element])
+
+            # make the SQLITE_NULL value type constant available
+            sqlite_null_constant = context.get_constant(
+                types.int32, SQLITE_NULL)
+
+            # check whether the value is equal to SQLITE_NULL
+            is_null = cgutils.is_true(
+                builder,
+                builder.icmp_signed('==', value_type, sqlite_null_constant))
+
+            # setup value extraction #
             # get the appropriate ctypes extraction routine
             ctypes_function = VALUE_EXTRACTORS[argtype]
 
@@ -82,23 +107,20 @@ def make_arg_tuple(typingctx, func, argv):
             fn = context.get_constant_generic(
                 builder, converter, ctypes_function)
 
-            # get a pointer to the ith argument
-            element_pointer = cgutils.gep(builder, argv, i)
-
-            # deref that pointer
-            element = builder.load(element_pointer)
-
-            # call the value extraction routine
-            raw = builder.call(fn, [element])
-
             # if the argument is an optional type then pull out the underlying
             # type and make an optional value with it
             #
             # otherwise the raw value is the argument
+            raw = builder.call(fn, [element])
             if isinstance(argtype, types.Optional):
                 underlying_type = getattr(argtype, 'type', argtype)
-                instr = context.make_optional_value(
-                    builder, underlying_type, raw
+                instr = builder.select(
+                    is_null,
+                    context.make_optional_none(
+                        builder,
+                        underlying_type
+                    ),
+                    context.make_optional_value(builder, underlying_type, raw)
                 )
             else:
                 instr = raw
@@ -106,7 +128,8 @@ def make_arg_tuple(typingctx, func, argv):
             # collect the value into an argument list used to build the tuple
             converted_args.append(instr)
 
-        # construct a tuple using LLVM
+        # construct a tuple (fixed length and known types)
+        # similar to tuples in statically typed languages
         res = context.make_tuple(builder, tuple_type, converted_args)
         return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
     return sig, codegen
