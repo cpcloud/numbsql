@@ -1,6 +1,6 @@
 from typing import Callable, Type
 
-from numba import void, optional, cfunc
+from numba import void, cfunc
 from numba.types import voidptr, intc, CPointer
 from numba.typing import Signature
 
@@ -73,7 +73,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
 
         if is_window_function:
             # aggregates can always return a NULL value
-            value_signature = optional(signature.return_type)(instance_type)
+            value_signature = signature.return_type(instance_type)
             value_func.compile(value_signature)
 
             @cfunc(void(voidptr))
