@@ -73,7 +73,7 @@ def make_arg_tuple(typingctx, func, argv):
         converted_args = []
         for i, argtype in enumerate(argtypes):
             # get a pointer to the ith argument
-            element_pointer = cgutils.gep(builder, argv, i)
+            element_pointer = cgutils.gep(builder, argv, i, inbounds=True)
 
             # deref that pointer
             element = builder.load(element_pointer)
@@ -88,13 +88,13 @@ def make_arg_tuple(typingctx, func, argv):
             value_type = builder.call(sqlite3_value_type_numba, [element])
 
             # make the SQLITE_NULL value type constant available
-            sqlite_null_constant = context.get_constant(
-                types.int32, SQLITE_NULL)
+            sqlite_null = context.get_constant(types.int32, SQLITE_NULL)
 
             # check whether the value is equal to SQLITE_NULL
             is_null = cgutils.is_true(
                 builder,
-                builder.icmp_signed('==', value_type, sqlite_null_constant))
+                builder.icmp_signed('==', value_type, sqlite_null)
+            )
 
             # setup value extraction #
             # get the appropriate ctypes extraction routine
@@ -105,7 +105,8 @@ def make_arg_tuple(typingctx, func, argv):
 
             # get the function pointer instruction out
             fn = context.get_constant_generic(
-                builder, converter, ctypes_function)
+                builder, converter, ctypes_function
+            )
 
             # if the argument is an optional type then pull out the underlying
             # type and make an optional value with it
@@ -114,22 +115,24 @@ def make_arg_tuple(typingctx, func, argv):
             raw = builder.call(fn, [element])
             if isinstance(argtype, types.Optional):
                 underlying_type = getattr(argtype, 'type', argtype)
+
+                # make an optional none if the value is null, otherwise
+                # make an optional value from the raw
                 instr = builder.select(
                     is_null,
-                    context.make_optional_none(
-                        builder,
-                        underlying_type
-                    ),
+                    context.make_optional_none(builder, underlying_type),
                     context.make_optional_value(builder, underlying_type, raw)
                 )
             else:
+                # TODO: should check if a value is null and raise an error if
+                # it is
                 instr = raw
 
             # collect the value into an argument list used to build the tuple
             converted_args.append(instr)
 
-        # construct a tuple (fixed length and known types)
-        # similar to tuples in statically typed languages
+        # construct a tuple (fixed length and known types) similar to tuples in
+        # statically typed languages
         res = context.make_tuple(builder, tuple_type, converted_args)
         return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
     return sig, codegen
