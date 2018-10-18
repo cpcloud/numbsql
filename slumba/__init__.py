@@ -18,12 +18,12 @@ from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
 from ._version import get_versions
 
-__all__ = [
+__all__ = (
     'create_function',
     'create_aggregate',
     'sqlite_udf',
     'sqlite_udaf',
-]
+)
 
 __version__ = get_versions()['version']
 del get_versions
@@ -65,7 +65,9 @@ def create_function(
         stepfunc(0),
         finalizefunc(0),
     ) != SQLITE_OK:
-        raise RuntimeError(sqlite3_errmsg(sqlite_db))
+        raise sqlite3.OperationalError(
+            sqlite3_errmsg(sqlite_db).decode('utf8')
+        )
 
 
 def create_aggregate(
@@ -125,4 +127,6 @@ def create_aggregate(
             finalizefunc(aggregate_class.finalize.address),
         )
     if rc != SQLITE_OK:
-        raise RuntimeError(sqlite3_errmsg(sqlite_db))
+        raise sqlite3.OperationalError(
+            sqlite3_errmsg(sqlite_db).decode('utf8')
+        )
