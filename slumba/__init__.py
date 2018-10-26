@@ -65,9 +65,7 @@ def create_function(
         stepfunc(0),
         finalizefunc(0),
     ) != SQLITE_OK:
-        raise sqlite3.OperationalError(
-            sqlite3_errmsg(sqlite_db).decode('utf8')
-        )
+        raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
 
 
 def create_aggregate(
@@ -127,6 +125,4 @@ def create_aggregate(
             finalizefunc(aggregate_class.finalize.address),
         )
     if rc != SQLITE_OK:
-        raise sqlite3.OperationalError(
-            sqlite3_errmsg(sqlite_db).decode('utf8')
-        )
+        raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
