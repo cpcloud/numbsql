@@ -7,15 +7,16 @@ import numpy as np
 
 import pytest
 
-from numba import float64, int64, jitclass, optional
+from numba import float64, int64, optional
+from numba.experimental import jitclass
 from slumba import sqlite_udaf, create_aggregate
 from slumba.cslumba import SQLITE_VERSION
 
 
 xfail_if_no_window_functions = pytest.mark.xfail(
-    parse_version(SQLITE_VERSION) < parse_version('3.25.0'),
-    reason='Window functions are not supported in SQLite < 3.25.0',
-    raises=RuntimeError
+    parse_version(SQLITE_VERSION) < parse_version("3.25.0"),
+    reason="Window functions are not supported in SQLite < 3.25.0",
+    raises=RuntimeError,
 )
 
 
@@ -118,100 +119,114 @@ class AvgWithNulls:  # pragma: no cover
 
 @pytest.fixture
 def con():
-    con = sqlite3.connect(':memory:')
-    con.execute("""
+    con = sqlite3.connect(":memory:")
+    con.execute(
+        """
         CREATE TABLE t (
             id INTEGER PRIMARY KEY,
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """)
-    con.execute("""
+    """
+    )
+    con.execute(
+        """
         CREATE TABLE s (
             id INTEGER PRIMARY KEY,
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """)
+    """
+    )
 
     rows = [
-        ('a', 1.0),
-        ('a', 2.0),
-        ('b', 3.0),
-        ('c', 4.0),
-        ('c', 5.0),
-        ('c', None),
+        ("a", 1.0),
+        ("a", 2.0),
+        ("b", 3.0),
+        ("c", 4.0),
+        ("c", 5.0),
+        ("c", None),
     ]
-    con.executemany('INSERT INTO t (key, value) VALUES (?, ?)', rows)
-    create_aggregate(con, 'avg_numba', 1, Avg)
-    create_aggregate(con, 'winavg_numba', 1, WinAvg)
-    con.create_aggregate('winavg_python', 1, WinAvgPython)
+    con.executemany("INSERT INTO t (key, value) VALUES (?, ?)", rows)
+    create_aggregate(con, "avg_numba", 1, Avg)
+    create_aggregate(con, "winavg_numba", 1, WinAvg)
+    con.create_aggregate("winavg_python", 1, WinAvgPython)
     return con
 
 
 def test_aggregate(con):
-    result = list(con.execute('SELECT avg_numba(value) as c FROM t'))
-    assert result == list(con.execute('SELECT avg(value) FROM t'))
+    result = list(con.execute("SELECT avg_numba(value) as c FROM t"))
+    assert result == list(con.execute("SELECT avg(value) FROM t"))
 
 
 def test_aggregate_with_empty(con):
-    result = list(con.execute('SELECT avg_numba(value) as c FROM s'))
+    result = list(con.execute("SELECT avg_numba(value) as c FROM s"))
     assert result == [(None,)]
+
+
+xfail_missing_python_api = pytest.mark.xfail(
+    reason="Python has no API for defining window functions for SQLite",
+    raises=sqlite3.OperationalError,
+)
 
 
 @xfail_if_no_window_functions
 @pytest.mark.parametrize(
-    'func',
-    ['winavg_numba',
-     pytest.mark.xfail('winavg_python', raises=sqlite3.OperationalError)])
+    "func",
+    [
+        "winavg_numba",
+        pytest.param("winavg_python", marks=[xfail_missing_python_api]),
+    ],
+)
 def test_aggregate_window_numba(con, func):
-    result = list(
-        con.execute(
-            f'SELECT {func}(value) OVER (PARTITION BY key) as c FROM t'))
-    assert result == list(
-        con.execute('SELECT avg(value) OVER (PARTITION BY key) as c FROM t'))
+    query = f"SELECT {func}(value) OVER (PARTITION BY key) as c FROM t"
+    result = list(con.execute(query))
+    assert result == list(con.execute("SELECT avg(value) OVER (PARTITION BY key) as c FROM t"))
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def large_con():
-    with tempfile.NamedTemporaryFile(suffix='.db') as f:
+    with tempfile.NamedTemporaryFile(suffix=".db") as f:
         con = sqlite3.connect(f.name)
-        con.execute("""
+        con.execute(
+            """
             CREATE TABLE large_t (
                 key INTEGER,
                 value DOUBLE PRECISION
             )
-        """)
+        """
+        )
         n = int(1e4)
         rows = [
-            (key, value.item()) for key, value in zip(
+            (key, value.item())
+            for key, value in zip(
                 np.random.randint(0, int(0.01 * n), size=n),
                 np.random.randn(n),
             )
         ]
-        con.executemany('INSERT INTO large_t (key, value) VALUES (?, ?)', rows)
+        con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
         con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
-        create_aggregate(con, 'avg_numba', 1, Avg)
-        create_aggregate(con, 'winavg_numba', 1, WinAvg)
-        con.create_aggregate('avg_python', 1, AvgPython)
-        con.create_aggregate('winavg_python', 1, WinAvgPython)
+        create_aggregate(con, "avg_numba", 1, Avg)
+        create_aggregate(con, "winavg_numba", 1, WinAvg)
+        con.create_aggregate("avg_python", 1, AvgPython)
+        con.create_aggregate("winavg_python", 1, WinAvgPython)
         yield con
 
 
 def run_agg_group_by_numba(con):
-    query = 'SELECT key, avg_numba(value) AS result FROM large_t GROUP BY key'
+    query = "SELECT key, avg_numba(value) AS result FROM large_t GROUP BY key"
     result = con.execute(query)
     return result.fetchall()
 
 
 def run_agg_group_by_builtin(con):
-    query = 'SELECT key, avg(value) AS result FROM large_t GROUP BY key'
+    query = "SELECT key, avg(value) AS result FROM large_t GROUP BY key"
     result = con.execute(query)
     return result.fetchall()
 
 
 def run_agg_group_by_python(con):
-    query = 'SELECT key, avg_python(value) AS result FROM large_t GROUP BY key'
+    query = "SELECT key, avg_python(value) AS result FROM large_t GROUP BY key"
     result = con.execute(query)
     return result.fetchall()
 
@@ -232,19 +247,19 @@ def test_aggregate_group_by_bench_python(large_con, benchmark):
 
 
 def run_agg_numba(con):
-    query = 'SELECT key, avg_numba(value) AS result FROM large_t'
+    query = "SELECT key, avg_numba(value) AS result FROM large_t"
     result = con.execute(query)
     return result
 
 
 def run_agg_builtin(con):
-    query = 'SELECT key, avg(value) AS result FROM large_t'
+    query = "SELECT key, avg(value) AS result FROM large_t"
     result = con.execute(query)
     return result
 
 
 def run_agg_python(con):
-    query = 'SELECT key, avg_python(value) AS result FROM large_t'
+    query = "SELECT key, avg_python(value) AS result FROM large_t"
     result = con.execute(query)
     return result
 
@@ -300,18 +315,20 @@ def test_window_bench_builtin(large_con, benchmark):
 
 
 @xfail_if_no_window_functions
-@pytest.mark.xfail(raises=sqlite3.OperationalError)
+@xfail_missing_python_api
 def test_window_bench_python(large_con, benchmark):
     result = benchmark(run_agg_partition_by_python, large_con)
     assert result
 
 
 @sqlite_udaf(float64(float64))
-@jitclass([
-    ('mean', float64),
-    ('sum_of_squares_of_differences', float64),
-    ('count', int64),
-])
+@jitclass(
+    [
+        ("mean", float64),
+        ("sum_of_squares_of_differences", float64),
+        ("count", int64),
+    ]
+)
 class Var:  # pragma: no cover
     def __init__(self):
         self.mean = 0.0
@@ -329,12 +346,7 @@ class Var:  # pragma: no cover
 
 
 @sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
-@jitclass([
-    ('mean1', float64),
-    ('mean2', float64),
-    ('mean12', float64),
-    ('count', int64)
-])
+@jitclass([("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)])
 class Cov:  # pragma: no cover
     def __init__(self):
         self.mean1 = 0.0
@@ -360,7 +372,7 @@ class Cov:  # pragma: no cover
 
 
 @sqlite_udaf(optional(float64)(float64))
-@jitclass([('total', float64), ('count', int64)])
+@jitclass([("total", float64), ("count", int64)])
 class Sum:  # pragma: no cover
     def __init__(self):
         self.total = 0.0

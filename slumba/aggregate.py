@@ -2,7 +2,7 @@ from typing import Callable, Type
 
 from numba import void, cfunc
 from numba.types import voidptr, intc, CPointer
-from numba.typing import Signature
+from numba.core.typing import Signature
 
 from slumba.sqlite import sqlite3_aggregate_context, sqlite3_result_null
 from slumba.numbaext import (
@@ -27,7 +27,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         class_type = cls.class_type
         instance_type = class_type.instance_type
 
-        step_func = class_type.jitmethods['step']
+        step_func = class_type.jit_methods['step']
         step_signature = void(instance_type, *signature.args)
         step_func.compile(step_signature)
 
@@ -39,7 +39,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                 args = make_arg_tuple(step_func, argv)
                 agg_ctx.step(*args)
 
-        finalize_func = class_type.jitmethods['finalize']
+        finalize_func = class_type.jit_methods['finalize']
         finalize_signature: Signature = signature.return_type(instance_type)
         finalize_func.compile(finalize_signature)
 
@@ -56,14 +56,14 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                     result_setter(ctx, result)
 
         try:
-            value_func = class_type.jitmethods['value']
+            value_func = class_type.jit_methods['value']
         except KeyError:
             has_value_func = False
         else:
             has_value_func = True
 
         try:
-            inverse_func = class_type.jitmethods['inverse']
+            inverse_func = class_type.jit_methods['inverse']
         except KeyError:
             has_inverse_func = False
         else:

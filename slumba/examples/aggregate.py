@@ -5,7 +5,8 @@ import string
 from operator import attrgetter
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
-from numba import float64, int64, jitclass, optional
+from numba import float64, int64, optional
+from numba.experimental import jitclass
 from numba.types import ClassType
 
 from slumba import sqlite_udaf, create_aggregate

@@ -1,9 +1,9 @@
 from typing import Any, Callable
 
 from numba import njit, cfunc
-from numba.ccallback import CFunc
+from numba.core.ccallback import CFunc
 from numba.types import void, voidptr, intc, CPointer
-from numba.typing import Signature
+from numba.core.typing import Signature
 
 from slumba.sqlite import sqlite3_result_null
 from slumba.numbaext import get_sqlite3_result_function, make_arg_tuple

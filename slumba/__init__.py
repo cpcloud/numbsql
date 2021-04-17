@@ -16,7 +16,6 @@ from .sqlite import (
 )
 from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
-from ._version import get_versions
 
 __all__ = (
     'create_function',
@@ -24,10 +23,6 @@ __all__ = (
     'sqlite_udf',
     'sqlite_udaf',
 )
-
-__version__ = get_versions()['version']
-del get_versions
-
 
 def create_function(
     con: sqlite3.Connection,
