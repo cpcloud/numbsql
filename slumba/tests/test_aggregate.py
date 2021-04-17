@@ -75,8 +75,8 @@ class WinAvg:  # pragma: no cover
 
     def inverse(self, value):
         if value is not None:
-            self.total += value
-            self.count += 1
+            self.total -= value
+            self.count -= 1
 
 
 class WinAvgPython:  # pragma: no cover
