@@ -12,5 +12,6 @@ in pkgs.mkShell {
     poetry
     poetryEnv
     sqlite
+    rlwrap
   ];
 }
