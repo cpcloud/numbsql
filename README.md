@@ -12,7 +12,7 @@ integers might be unsafe, then you shouldn't use this library.
 
 ## Requirements
 
-* Python >=3.5
+* Python >=3.7
 * `numba`
 
 ## Installation
