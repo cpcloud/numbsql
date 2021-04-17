@@ -1,7 +1,5 @@
 # Put some Numba in your SQLite
 
-[![Circle CI](https://circleci.com/gh/cpcloud/slumba.svg?style=shield&circle-token=:circle-token)](https://github.com/cpcloud/slumba)
-
 ## Fair Warning
 
 This library does unsafe things like pass around function pointer addresses
