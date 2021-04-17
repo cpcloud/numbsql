@@ -13,8 +13,10 @@ integers might be unsafe, then you shouldn't use this library.
 * Python >=3.7
 * `numba`
 
+Use `nix-shell` from the repository to avoid dependency hell.
+
 ## Installation
-* `python setup.py develop`
+* `poetry install`
 
 ## Examples
 
@@ -33,7 +35,7 @@ def add_one(x):
     """Add one to `x` if `x` is not NULL
     """
     if x is not None:
-	return x + 1
+        return x + 1
     return None
 ```
 
@@ -61,11 +63,11 @@ class Avg:
 
     def step(self, value):
         if value is not None:
-	    self.total += value
-	    self.count += 1
+            self.total += value
+            self.count += 1
 
     def finalize(self):
-	if not self.count:
-	    return None
+        if not self.count:
+            return None
         return self.total / self.count
 ```
