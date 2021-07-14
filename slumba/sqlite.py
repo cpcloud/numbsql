@@ -9,9 +9,9 @@ from numba import float64, int64, int32, optional
 from .cslumba import SQLITE_DETERMINISTIC, SQLITE_UTF8, SQLITE_OK  # noqa: F401
 
 
-sqlite3_path: Optional[str] = find_library('sqlite3')
+sqlite3_path: Optional[str] = find_library("sqlite3")
 if sqlite3_path is None:  # pragma: no cover
-    raise RuntimeError('Unable to find sqlite3 library')
+    raise RuntimeError("Unable to find sqlite3 library")
 
 libsqlite3 = CDLL(sqlite3_path)
 
@@ -33,7 +33,7 @@ sqlite3_result_int64.restype = None
 sqlite3_result_int.argtypes = c_void_p, c_int
 sqlite3_result_int.restype = None
 
-sqlite3_result_null.argtypes = c_void_p,
+sqlite3_result_null.argtypes = (c_void_p,)
 sqlite3_result_null.restype = None
 
 scalarfunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
@@ -88,37 +88,37 @@ RESULT_SETTERS = {
 
 
 value_methods = {
-    'double': c_double,
-    'int': c_int,
-    'int64': c_int64,
-    'type': c_int,
+    "double": c_double,
+    "int": c_int,
+    "int64": c_int64,
+    "type": c_int,
 }
 
 
 def add_value_method(typename: str, restype):
-    method = getattr(libsqlite3, f'sqlite3_value_{typename}')
-    method.argtypes = c_void_p,
+    method = getattr(libsqlite3, f"sqlite3_value_{typename}")
+    method.argtypes = (c_void_p,)
     method.restype = restype
     return method
 
 
 VALUE_EXTRACTORS = {
-    optional(float64): add_value_method('double', c_double),
-    optional(int64): add_value_method('int64', c_int64),
-    optional(int32): add_value_method('int', c_int),
-    float64: add_value_method('double', c_double),
-    int64: add_value_method('int64', c_int64),
-    int32: add_value_method('int', c_int),
+    optional(float64): add_value_method("double", c_double),
+    optional(int64): add_value_method("int64", c_int64),
+    optional(int32): add_value_method("int", c_int),
+    float64: add_value_method("double", c_double),
+    int64: add_value_method("int64", c_int64),
+    int32: add_value_method("int", c_int),
 }
 
 sqlite3_value_type = libsqlite3.sqlite3_value_type
-sqlite3_value_type.argtypes = c_void_p,
+sqlite3_value_type.argtypes = (c_void_p,)
 sqlite3_restype = c_int
 
 _sqlite3_errmsg = libsqlite3.sqlite3_errmsg
-_sqlite3_errmsg.argtypes = c_void_p,
+_sqlite3_errmsg.argtypes = (c_void_p,)
 _sqlite3_errmsg.restype = c_char_p
 
 
 def sqlite3_errmsg(db):
-    return _sqlite3_errmsg(db).decode('utf8')
+    return _sqlite3_errmsg(db).decode("utf8")

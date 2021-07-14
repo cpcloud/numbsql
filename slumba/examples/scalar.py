@@ -7,7 +7,7 @@ from numba import float64
 from slumba import create_function, sqlite_udf
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import random
     from numba import optional
     from math import sqrt, pi, exp
@@ -21,21 +21,19 @@ if __name__ == '__main__':
         c = 1.0 / (sigma * sqrt(2.0 * pi))
         return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
 
-    con = sqlite3.connect(':memory:')
-    con.execute('CREATE TABLE t (random_numbers DOUBLE PRECISION)')
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE t (random_numbers DOUBLE PRECISION)")
 
-    random_numbers: List[Tuple[float]] = [
-        (random.random(),) for _ in range(50000)
-    ]
-    con.executemany('INSERT INTO t VALUES (?)', random_numbers)
+    random_numbers: List[Tuple[float]] = [(random.random(),) for _ in range(50000)]
+    con.executemany("INSERT INTO t VALUES (?)", random_numbers)
 
     # new way of registering C functions
-    create_function(con, 'normal', 3, normal, deterministic=True)
+    create_function(con, "normal", 3, normal, deterministic=True)
 
     # old way
-    con.create_function('oldnormal', 3, oldnormal)
-    query1 = 'select normal(random_numbers, 0.0, 1.0) from t'
-    query2 = 'select oldnormal(random_numbers, 0.0, 1.0) from t'
+    con.create_function("oldnormal", 3, oldnormal)
+    query1 = "select normal(random_numbers, 0.0, 1.0) from t"
+    query2 = "select oldnormal(random_numbers, 0.0, 1.0) from t"
 
     start1 = time.time()
     exe1 = con.execute(query1)
@@ -48,5 +46,5 @@ if __name__ == '__main__':
     t2 = time.time() - start2
 
     print(result1 == result2)
-    print(f't1 == {t1:.2f}')
-    print(f't2 == {t1:.2f}')
+    print(f"t1 == {t1:.2f}")
+    print(f"t2 == {t1:.2f}")

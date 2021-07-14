@@ -13,11 +13,13 @@ from slumba import sqlite_udaf, create_aggregate
 
 
 @sqlite_udaf(float64(float64))
-@jitclass([
-    ('mean', float64),
-    ('sum_of_squares_of_differences', float64),
-    ('count', int64),
-])
+@jitclass(
+    [
+        ("mean", float64),
+        ("sum_of_squares_of_differences", float64),
+        ("count", int64),
+    ]
+)
 class Var:
     def __init__(self):
         self.mean = 0.0
@@ -35,12 +37,7 @@ class Var:
 
 
 @sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
-@jitclass([
-    ('mean1', float64),
-    ('mean2', float64),
-    ('mean12', float64),
-    ('count', int64)
-])
+@jitclass([("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)])
 class Cov:
     def __init__(self):
         self.mean1 = 0.0
@@ -66,7 +63,7 @@ class Cov:
 
 
 @sqlite_udaf(optional(float64)(optional(float64)))
-@jitclass([('total', float64), ('count', int64)])
+@jitclass([("total", float64), ("count", int64)])
 class Avg:
     def __init__(self):
         self.total = 0.0
@@ -84,7 +81,7 @@ class Avg:
 
 
 @sqlite_udaf(optional(float64)(float64))
-@jitclass([('total', float64), ('count', int64)])
+@jitclass([("total", float64), ("count", int64)])
 class Sum:
     def __init__(self):
         self.total = 0.0
@@ -102,56 +99,49 @@ class Sum:
 def main() -> None:
     import random
 
-    con = sqlite3.connect(':memory:')
-    con.execute("""
+    con = sqlite3.connect(":memory:")
+    con.execute(
+        """
         CREATE TABLE t (
           id INTEGER PRIMARY KEY,
           key VARCHAR(1),
           value DOUBLE PRECISION
         )
-    """)
-    con.execute('CREATE INDEX key_index ON t (key)')
+    """
+    )
+    con.execute("CREATE INDEX key_index ON t (key)")
 
     random_numbers: List[Tuple[str, float]] = [
-        (
-            random.choice(string.ascii_lowercase[:2]),
-            random.random()
-        ) for _ in range(500000)
+        (random.choice(string.ascii_lowercase[:2]), random.random()) for _ in range(500000)
     ]
 
-    placeholders = ', '.join('?' * len(random_numbers[0]))
-    query = f'INSERT INTO t (key, value) VALUES ({placeholders})'
+    placeholders = ", ".join("?" * len(random_numbers[0]))
+    query = f"INSERT INTO t (key, value) VALUES ({placeholders})"
     con.executemany(query, random_numbers)
 
     cls: ClassType = Avg
 
     builtin = cls.__name__.lower()
-    cfunc_defined = f'my{builtin}'
-    python_defined = f'my{builtin}2'
+    cfunc_defined = f"my{builtin}"
+    python_defined = f"my{builtin}2"
 
     # new way of registering UDAFs using cfuncs
     create_aggregate(con, cfunc_defined, 1, cls)
 
     con.create_aggregate(python_defined, 1, cls.class_type.class_def)
 
-    query1 = (f'select key, {builtin}(value) as builtin_{builtin} from t '
-              f'group by 1')
-    query2 = (f'select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} '
-              f'from t group by 1')
-    query3 = (f'select key, {python_defined}(value) as python_{python_defined}'
-              f' from t group by 1')
+    query1 = f"select key, {builtin}(value) as builtin_{builtin} from t " f"group by 1"
+    query2 = f"select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} " f"from t group by 1"
+    query3 = f"select key, {python_defined}(value) as python_{python_defined}" f" from t group by 1"
 
     queries: Dict[str, str] = {
-        f'{builtin}_builtin': query1,
-        f'{cfunc_defined}_cfunc': query2,
-        f'{python_defined}_python': query3,
+        f"{builtin}_builtin": query1,
+        f"{cfunc_defined}_cfunc": query2,
+        f"{python_defined}_python": query3,
     }
 
     Result = NamedTuple(
-        'Result',
-        [('name', str),
-         ('result', List[Tuple[str, float]]),
-         ('duration', float)]
+        "Result", [("name", str), ("result", List[Tuple[str, float]]), ("duration", float)]
     )
 
     results: List[Result] = []
@@ -167,19 +157,20 @@ def main() -> None:
 
     builtin_result: List = results[0].result
 
-    results.sort(key=attrgetter('duration'))
+    results.sort(key=attrgetter("duration"))
 
     strings: List[str] = [
         (
-            f'{name} duration == {duration:.2f}s | '
-            f'{round(results[-1].duration / duration):d}x faster | '
+            f"{name} duration == {duration:.2f}s | "
+            f"{round(results[-1].duration / duration):d}x faster | "
             f"values equal? {'yes' if builtin_result == result else 'no'}"
-        ) for name, result, duration in results
+        )
+        for name, result, duration in results
     ]
 
     width = max(map(len, strings))
-    print('\n'.join(string.rjust(width, ' ')) for string in strings)
+    print("\n".join(string.rjust(width, " ")) for string in strings)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

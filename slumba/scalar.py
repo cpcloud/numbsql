@@ -24,6 +24,7 @@ def sqlite_udf(
         Any additional keyword arguments supported by numba's jit decorator.
 
     """
+
     def wrapper(func: Callable) -> CFunc:
         compiled_func = njit(signature, nogil=nogil, **njit_kwargs)(func)
 
@@ -36,5 +37,7 @@ def sqlite_udf(
             else:
                 result_setter = get_sqlite3_result_function(result)
                 result_setter(ctx, result)
+
         return scalar
+
     return wrapper

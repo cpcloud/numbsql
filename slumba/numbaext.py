@@ -27,9 +27,7 @@ def unsafe_cast(typingctx, src, dst):
     Returns
     -------
     """
-    if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(
-        dst, types.ClassType
-    ):
+    if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(dst, types.ClassType):
         inst_typ = dst.instance_type
         sig = inst_typ(types.voidptr, dst)
 
@@ -43,17 +41,15 @@ def unsafe_cast(typingctx, src, dst):
             #
             # If you don't set this attribute to a NULL value, then numba
             # thinks it owns the memory, when in fact SQLite is the owner.
-            inst_struct.meminfo = cgutils.get_null_value(
-                inst_struct.meminfo.type)
+            inst_struct.meminfo = cgutils.get_null_value(inst_struct.meminfo.type)
 
             # Set data from the given pointer
             inst_struct.data = builder.bitcast(ptr, alloc_type.as_pointer())
             return inst_struct._getvalue()
+
         return sig, codegen
     else:
-        raise TypeError(
-            f'Unable to cast pointer type {src} to class type {dst}'
-        )
+        raise TypeError(f"Unable to cast pointer type {src} to class type {dst}")
 
 
 @extending.intrinsic
@@ -62,8 +58,7 @@ def make_arg_tuple(typingctx, func, argv):
     first_arg, *_ = args = func_type.args
 
     # skip the first argument if `func` is a method call
-    first_argument_position = int(
-        isinstance(first_arg, types.ClassInstanceType))
+    first_argument_position = int(isinstance(first_arg, types.ClassInstanceType))
     argtypes = args[first_argument_position:]
     tuple_type = types.Tuple(argtypes)
     sig = tuple_type(func, types.CPointer(types.voidptr))
@@ -81,9 +76,7 @@ def make_arg_tuple(typingctx, func, argv):
             # check for null values #
             # get a pointer to the sqlite3_value_type C function
             sqlite3_value_type_numba = context.get_constant_generic(
-                builder,
-                ctypes_utils.make_function_type(sqlite3_value_type),
-                sqlite3_value_type
+                builder, ctypes_utils.make_function_type(sqlite3_value_type), sqlite3_value_type
             )
             value_type = builder.call(sqlite3_value_type_numba, [element])
 
@@ -91,10 +84,7 @@ def make_arg_tuple(typingctx, func, argv):
             sqlite_null = context.get_constant(types.int32, SQLITE_NULL)
 
             # check whether the value is equal to SQLITE_NULL
-            is_null = cgutils.is_true(
-                builder,
-                builder.icmp_signed('==', value_type, sqlite_null)
-            )
+            is_null = cgutils.is_true(builder, builder.icmp_signed("==", value_type, sqlite_null))
 
             # setup value extraction #
             # get the appropriate ctypes extraction routine
@@ -104,9 +94,7 @@ def make_arg_tuple(typingctx, func, argv):
             converter = ctypes_utils.make_function_type(ctypes_function)
 
             # get the function pointer instruction out
-            fn = context.get_constant_generic(
-                builder, converter, ctypes_function
-            )
+            fn = context.get_constant_generic(builder, converter, ctypes_function)
 
             # if the argument is an optional type then pull out the underlying
             # type and make an optional value with it
@@ -114,14 +102,14 @@ def make_arg_tuple(typingctx, func, argv):
             # otherwise the raw value is the argument
             raw = builder.call(fn, [element])
             if isinstance(argtype, types.Optional):
-                underlying_type = getattr(argtype, 'type', argtype)
+                underlying_type = getattr(argtype, "type", argtype)
 
                 # make an optional none if the value is null, otherwise
                 # make an optional value from the raw
                 instr = builder.select(
                     is_null,
                     context.make_optional_none(builder, underlying_type),
-                    context.make_optional_value(builder, underlying_type, raw)
+                    context.make_optional_value(builder, underlying_type, raw),
                 )
             else:
                 # TODO: should check if a value is null and raise an error if
@@ -135,16 +123,16 @@ def make_arg_tuple(typingctx, func, argv):
         # statically typed languages
         res = context.make_tuple(builder, tuple_type, converted_args)
         return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
+
     return sig, codegen
 
 
 @extending.intrinsic
 def get_sqlite3_result_function(typingctx, value_type):
-    underlying_type = getattr(value_type, 'type', value_type)
+    underlying_type = getattr(value_type, "type", value_type)
     func_type = types.void(types.voidptr, underlying_type)
 
-    external_function_pointer = types.ExternalFunctionPointer(
-        func_type, ctypes_utils.get_pointer)
+    external_function_pointer = types.ExternalFunctionPointer(func_type, ctypes_utils.get_pointer)
     sig = external_function_pointer(underlying_type)
 
     def codegen(context, builder, signature, args):
@@ -155,9 +143,9 @@ def get_sqlite3_result_function(typingctx, value_type):
         converter = ctypes_utils.make_function_type(ctypes_function)
 
         # get the function pointer instruction out
-        fn = context.get_constant_generic(
-            builder, converter, ctypes_function)
+        fn = context.get_constant_generic(builder, converter, ctypes_function)
         return fn
+
     return sig, codegen
 
 
@@ -170,9 +158,10 @@ def sizeof(typingctx, src):
             data_type = context.get_data_type(src.instance_type)
             size_of_data_type = context.get_abi_sizeof(data_type)
             return context.get_constant(sig.return_type, size_of_data_type)
+
         return sig, codegen
     else:
-        raise TypeError('Cannot get sizeof non jitclass')
+        raise TypeError("Cannot get sizeof non jitclass")
 
 
 def generate_null_checker(func):
@@ -181,19 +170,19 @@ def generate_null_checker(func):
             sig = types.boolean(src)
 
             def codegen(context, builder, signature, args):
-                instance, = args
+                (instance,) = args
 
                 # TODO: probably a more general way to do this
                 second_element = builder.extract_value(instance, [1])
                 result = func(builder, second_element)
                 return result
+
             return sig, codegen
         else:
-            raise TypeError(
-                'Cannot check null pointer status of a non-jitclass type')
+            raise TypeError("Cannot check null pointer status of a non-jitclass type")
+
     return null_pointer_checker
 
 
 is_null_pointer = extending.intrinsic(generate_null_checker(cgutils.is_null))
-is_not_null_pointer = extending.intrinsic(
-    generate_null_checker(cgutils.is_not_null))
+is_not_null_pointer = extending.intrinsic(generate_null_checker(cgutils.is_not_null))

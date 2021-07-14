@@ -7,7 +7,12 @@ from numba.types import ClassType
 from .cslumba import get_sqlite_db
 from .sqlite import (
     sqlite3_create_function,
-    scalarfunc, stepfunc, finalizefunc, valuefunc, inversefunc, destroyfunc,
+    scalarfunc,
+    stepfunc,
+    finalizefunc,
+    valuefunc,
+    inversefunc,
+    destroyfunc,
     sqlite3_create_window_function,
     sqlite3_errmsg,
     SQLITE_DETERMINISTIC,
@@ -18,18 +23,15 @@ from .scalar import sqlite_udf
 from .aggregate import sqlite_udaf
 
 __all__ = (
-    'create_function',
-    'create_aggregate',
-    'sqlite_udf',
-    'sqlite_udaf',
+    "create_function",
+    "create_aggregate",
+    "sqlite_udf",
+    "sqlite_udaf",
 )
 
+
 def create_function(
-    con: sqlite3.Connection,
-    name: str,
-    num_params: int,
-    func: Callable,
-    deterministic: bool = False
+    con: sqlite3.Connection, name: str, num_params: int, func: Callable, deterministic: bool = False
 ) -> None:
     """Register a UDF with name `name` with the SQLite connection `con`.
 
@@ -50,16 +52,19 @@ def create_function(
 
     """
     sqlite_db = get_sqlite_db(con)
-    if sqlite3_create_function(
-        sqlite_db,
-        name.encode('utf8'),
-        num_params,
-        SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
-        None,
-        scalarfunc(getattr(func, 'address')),
-        stepfunc(0),
-        finalizefunc(0),
-    ) != SQLITE_OK:
+    if (
+        sqlite3_create_function(
+            sqlite_db,
+            name.encode("utf8"),
+            num_params,
+            SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
+            None,
+            scalarfunc(getattr(func, "address")),
+            stepfunc(0),
+            finalizefunc(0),
+        )
+        != SQLITE_OK
+    ):
         raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
 
 
@@ -68,7 +73,7 @@ def create_aggregate(
     name: str,
     num_params: int,
     aggregate_class: ClassType,
-    deterministic: bool = False
+    deterministic: bool = False,
 ) -> None:
     """Register an aggregate named `name` with the SQLite connection `con`.
 
@@ -91,11 +96,9 @@ def create_aggregate(
         Most functions are deterministic.
 
     """
-    namebytes = name.encode('utf8')
+    namebytes = name.encode("utf8")
     sqlite_db = get_sqlite_db(con)
-    if hasattr(aggregate_class, 'value') and hasattr(
-        aggregate_class, 'inverse'
-    ):
+    if hasattr(aggregate_class, "value") and hasattr(aggregate_class, "inverse"):
         rc = sqlite3_create_window_function(
             sqlite_db,
             namebytes,
