@@ -13,5 +13,7 @@ in pkgs.mkShell {
     poetryEnv
     sqlite
     rlwrap
+    gcc
+    clang-tools
   ];
 }
