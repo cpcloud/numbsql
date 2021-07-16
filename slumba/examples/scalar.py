@@ -1,16 +1,15 @@
-import time
 import sqlite3
-
+import time
 from typing import List, Tuple
 
 from numba import float64
 from slumba import create_function, sqlite_udf
 
-
 if __name__ == "__main__":
     import random
+    from math import exp, pi, sqrt
+
     from numba import optional
-    from math import sqrt, pi, exp
 
     @sqlite_udf(optional(float64)(float64, float64, float64))
     def normal(x: float, mu: float, sigma: float) -> float:

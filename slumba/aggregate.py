@@ -1,17 +1,17 @@
 from typing import Callable, Type
 
-from numba import void, cfunc
-from numba.types import voidptr, intc, CPointer
+from numba import cfunc, void
 from numba.core.typing import Signature
+from numba.types import CPointer, intc, voidptr
 
-from slumba.sqlite import sqlite3_aggregate_context, sqlite3_result_null
 from slumba.numbaext import (
-    unsafe_cast,
-    sizeof,
+    get_sqlite3_result_function,
     is_not_null_pointer,
     make_arg_tuple,
-    get_sqlite3_result_function,
+    sizeof,
+    unsafe_cast,
 )
+from slumba.sqlite import sqlite3_aggregate_context, sqlite3_result_null
 
 
 def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:

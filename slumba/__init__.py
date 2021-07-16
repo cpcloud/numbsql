@@ -1,26 +1,25 @@
 import sqlite3
-
 from typing import Callable
 
 from numba.types import ClassType
 
+from .aggregate import sqlite_udaf
 from .cslumba import get_sqlite_db
+from .scalar import sqlite_udf
 from .sqlite import (
-    sqlite3_create_function,
-    scalarfunc,
-    stepfunc,
-    finalizefunc,
-    valuefunc,
-    inversefunc,
+    SQLITE_DETERMINISTIC,
+    SQLITE_OK,
+    SQLITE_UTF8,
     destroyfunc,
+    finalizefunc,
+    inversefunc,
+    scalarfunc,
+    sqlite3_create_function,
     sqlite3_create_window_function,
     sqlite3_errmsg,
-    SQLITE_DETERMINISTIC,
-    SQLITE_UTF8,
-    SQLITE_OK,
+    stepfunc,
+    valuefunc,
 )
-from .scalar import sqlite_udf
-from .aggregate import sqlite_udaf
 
 __all__ = (
     "create_function",

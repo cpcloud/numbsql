@@ -1,13 +1,19 @@
-from ctypes import CDLL, c_void_p, c_double, c_int, c_int64, CFUNCTYPE
-from ctypes import POINTER, c_char_p
+from ctypes import (
+    CDLL,
+    CFUNCTYPE,
+    POINTER,
+    c_char_p,
+    c_double,
+    c_int,
+    c_int64,
+    c_void_p,
+)
 from ctypes.util import find_library
-
 from typing import Optional
 
-from numba import float64, int64, int32, optional
+from numba import float64, int32, int64, optional
 
-from .cslumba import SQLITE_DETERMINISTIC, SQLITE_UTF8, SQLITE_OK  # noqa: F401
-
+from .cslumba import SQLITE_DETERMINISTIC, SQLITE_OK, SQLITE_UTF8  # noqa: F401
 
 sqlite3_path: Optional[str] = find_library("sqlite3")
 if sqlite3_path is None:  # pragma: no cover

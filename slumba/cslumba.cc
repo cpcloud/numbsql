@@ -22,7 +22,7 @@ PYBIND11_MODULE(cslumba, m) {
       "get_sqlite_db",
       [](py::object connection) {
         return reinterpret_cast<std::intptr_t>(
-            py::cast<Connection>(connection).db);
+            reinterpret_cast<Connection *>(connection.ptr())->db);
       },
       "Get the address of the sqlite3* db instance", py::arg("connection"));
 }

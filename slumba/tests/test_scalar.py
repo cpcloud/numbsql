@@ -1,12 +1,10 @@
-import sqlite3
 import random
+import sqlite3
 
 import numpy as np
-
 import pytest
-
+from numba import float64, int64, optional
 from slumba import create_function, sqlite_udf
-from numba import int64, float64, optional
 
 
 @sqlite_udf(float64(float64))

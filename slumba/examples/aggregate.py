@@ -1,15 +1,13 @@
 import sqlite3
-import time
 import string
-
+import time
 from operator import attrgetter
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 from numba import float64, int64, optional
 from numba.experimental import jitclass
 from numba.types import ClassType
-
-from slumba import sqlite_udaf, create_aggregate
+from slumba import create_aggregate, sqlite_udaf
 
 
 @sqlite_udaf(float64(float64))

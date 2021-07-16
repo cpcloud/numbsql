@@ -1,17 +1,13 @@
 import sqlite3
 import tempfile
 
-from pkg_resources import parse_version
-
 import numpy as np
-
 import pytest
-
 from numba import float64, int64, optional
 from numba.experimental import jitclass
-from slumba import sqlite_udaf, create_aggregate
+from pkg_resources import parse_version
+from slumba import create_aggregate, sqlite_udaf
 from slumba.cslumba import SQLITE_VERSION
-
 
 xfail_if_no_window_functions = pytest.mark.xfail(
     parse_version(SQLITE_VERSION) < parse_version("3.25.0"),
