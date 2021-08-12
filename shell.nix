@@ -16,7 +16,8 @@ let
   rlwrap-sqlite = pkgs.writeShellScriptBin "rsqlite" ''
     ${pkgs.rlwrap}/bin/rlwrap ${pkgs.sqlite}/bin/sqlite3 "$@"
   '';
-in pkgs.mkShell {
+in
+pkgs.mkShell {
   name = "slumba";
   buildInputs = with pkgs; [
     clang-tools
