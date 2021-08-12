@@ -13,8 +13,8 @@ let
       slumba = ./slumba;
     };
   };
-  rlwrap-sqlite = pkgs.writeShellScriptBin "sqlite" ''
-    ${pkgs.rlwrap}/bin/rlwrap ${pkgs.sqlite}/bin/sqlite "$@"
+  rlwrap-sqlite = pkgs.writeShellScriptBin "rsqlite" ''
+    ${pkgs.rlwrap}/bin/rlwrap ${pkgs.sqlite}/bin/sqlite3 "$@"
   '';
 in pkgs.mkShell {
   name = "slumba";
