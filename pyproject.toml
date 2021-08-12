@@ -18,7 +18,6 @@ mypy = "0.812"
 mypy-extensions = "0.4.3"
 pytest = "6.2.2"
 pytest-benchmark = "*"
-ipython = "^7.22.0"
 
 [tool.pytest.ini_options]
 addopts = ["--ignore=site-packages", "--ignore=dist-packages"]
