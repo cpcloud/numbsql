@@ -21,7 +21,6 @@ pkgs.mkShell {
   name = "slumba";
   buildInputs = with pkgs; [
     clang-tools
-    gcc
     niv
     poetry
     poetryEnv
