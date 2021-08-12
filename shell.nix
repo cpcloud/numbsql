@@ -2,6 +2,13 @@ let
   pkgs = import ./nix;
   poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
     projectDir = ./.;
+    overrides = pkgs.poetry2nix.overrides.withDefaults (self: super: {
+      llvmlite = super.llvmlite.overridePythonAttrs (old: {
+        preConfigure = ''
+          export LLVM_CONFIG=${pkgs.llvm.dev}/bin/llvm-config
+        '';
+      });
+    });
     editablePackageSources = {
       slumba = ./slumba;
     };
