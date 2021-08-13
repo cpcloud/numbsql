@@ -74,6 +74,7 @@ jobs:
         name: Run tests
         run: |
           conda activate slumba
+          pip install .
           pytest --benchmark-disable
 
   release:
