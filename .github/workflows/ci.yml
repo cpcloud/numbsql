@@ -60,22 +60,26 @@ jobs:
       - name: Setup conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-update-conda: false
+          auto-update-conda: true
+          python-version: ${{ matrix.python_version }}
+          channels: conda-forge
+          show-channel-urls: true
           activate-environment: slumba
-          environment-file: conda/${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
+
+      - name: Install sqlite
+        run: conda install -n slumba -y sqlite poetry
 
       - shell: bash -l {0}
+        name: Activate environment and run tests
         run: |
           conda activate slumba
-          conda info
-          conda list
+          poetry install
 
       - shell: bash -l {0}
         name: Run tests
         run: |
           conda activate slumba
-          pip install .
-          pytest --benchmark-disable
+          poetry run pytest --benchmark-disable
 
   release:
     needs: [nix, conda]
