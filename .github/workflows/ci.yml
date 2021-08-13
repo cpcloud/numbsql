@@ -53,6 +53,9 @@ jobs:
       - name: Install poetry
         run: pip install poetry
 
+      - name: Install package into poetry environment
+        run: poetry install
+
       - name: Run tests
         run: poetry run pytest
 
