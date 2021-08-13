@@ -60,9 +60,7 @@ jobs:
       - name: Setup conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python_version }}
-          channels: conda-forge
-          show-channel-urls: true
+          auto-update-conda: false
           activate-environment: slumba
           environment-file: conda/${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
 
