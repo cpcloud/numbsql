@@ -48,9 +48,9 @@ jobs:
 
           - image: macos-latest
             conda_platform: osx
-          #
-          # - image: windows-latest
-          #   conda_platform: win
+
+          - image: windows-latest
+            conda_platform: win
 
     runs-on: ${{ matrix.os.image }}
     steps:
@@ -67,16 +67,33 @@ jobs:
           activate-environment: slumba
 
       - name: Install sqlite
-        run: conda install -n slumba -y sqlite poetry
+        run: conda install -n slumba -y sqlite
+
+      - name: Install poetry
+        run: conda install -n slumba -y poetry
 
       - shell: bash -l {0}
         name: Activate environment and run tests
+        if: ${{ matrix.os.image != 'windows-latest' }}
+        run: |
+          conda activate slumba
+          poetry install
+
+      - name: Activate environment and run tests
+        if: ${{ matrix.os.image == 'windows-latest' }}
         run: |
           conda activate slumba
           poetry install
 
       - shell: bash -l {0}
         name: Run tests
+        if: ${{ matrix.os.image != 'windows-latest' }}
+        run: |
+          conda activate slumba
+          poetry run pytest --benchmark-disable
+
+      - name: Run tests
+        if: ${{ matrix.os.image == 'windows-latest' }}
         run: |
           conda activate slumba
           poetry run pytest --benchmark-disable
