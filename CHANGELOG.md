@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.0 (2021-08-13)
+### Feature
+* Add __version__ to slumba/__init__.py ([`86fbcdd`](https://github.com/cpcloud/slumba/commit/86fbcdd0122495a5b0a55c3c57913b9dc34c5bae))
+
 ## v1.0.6 (2021-08-13)
 ### Fix
 * Release them all ... again ([`fc90f22`](https://github.com/cpcloud/slumba/commit/fc90f22278bbffd8261e0cee562af15891785dbb))
