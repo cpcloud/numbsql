@@ -47,7 +47,7 @@ norecursedirs = ["site-packages", "dist-packages"]
 version_toml = "pyproject.toml:tool.poetry.version"
 branch = "master"
 upload_to_pypi = true
-build_command = false
+build_command = "poetry build"
 
 [tool.black]
 line_length = 88

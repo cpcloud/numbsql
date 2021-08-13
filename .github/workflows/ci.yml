@@ -81,21 +81,22 @@ jobs:
           conda activate slumba
           poetry run pytest --benchmark-disable
 
-  build-artifacts:
-    needs: [nix, conda]
+  release:
+    needs: [build-artifacts]
+    runs-on: ubuntu-latest
+    concurrency: release
     strategy:
       matrix:
         python_version:
           - "3.7"
           - "3.8"
           - "3.9"
-        os:
-          - ubuntu-latest
-          # - macos-latest
-    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -106,38 +107,10 @@ jobs:
         run: pip install poetry
 
       - name: Install poetry env
-        run: poetry install --no-root
+        run: poetry export --dev --without-hashes > requirements.txt
 
-      - name: Build artifacts
-        run: poetry build
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: slumba-artfacts
-          path: dist
-
-  release:
-    needs: [build-artifacts]
-    runs-on: ubuntu-latest
-    concurrency: release
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Grab artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: slumba-artfacts
-          path: dist
-
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python_version }}
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Install Semantic release
         run: pip install python-semantic-release
