@@ -28,6 +28,15 @@ __all__ = (
     "sqlite_udaf",
 )
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata  # type: ignore
+
+__version__ = importlib_metadata.version(__name__)
+
+del importlib_metadata
+
 
 def create_function(
     con: sqlite3.Connection,

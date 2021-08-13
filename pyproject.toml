@@ -27,6 +27,7 @@ numba = "0.53.1"
 [tool.poetry.dev-dependencies]
 black = "20.8b1"
 flake8 = "^3"
+importlib-metadata = { version = "^4.6.1", python = "<3.8" }
 isort = "^5"
 mypy = "0.812"
 pybind11 = "2.7.1"
@@ -46,8 +47,8 @@ norecursedirs = ["site-packages", "dist-packages"]
 [tool.semantic_release]
 version_toml = "pyproject.toml:tool.poetry.version"
 branch = "master"
-upload_to_pypi = true
-build_command = "poetry build"
+upload_to_pypi = false
+build_command = false
 
 [tool.black]
 line_length = 88
