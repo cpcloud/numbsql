@@ -2,7 +2,8 @@
 name = "slumba"
 version = "1.0.0"
 description = "JITted SQLite user-defined functions and aggregates"
-authors = ["Phillip Cloud <cpcloud@gmail.com>"]
+readme = "./README.md"
+authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 build = "build.py"
 
 [tool.poetry.dependencies]
