@@ -1,10 +1,25 @@
 [tool.poetry]
 name = "slumba"
+packages = [{ include = "slumba" }]
+# don't ship tests with the install
+exclude = ["slumba/tests"]
+homepage = "https://github.com/cpcloud/slumba"
+repository = "https://github.com/cpcloud/slumba"
 version = "1.0.0"
 description = "JITted SQLite user-defined functions and aggregates"
-readme = "./README.md"
+readme = "README.md"
 authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
+maintainers = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 build = "build.py"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.10"
