@@ -57,7 +57,7 @@ jobs:
         run: poetry install
 
       - name: Run tests
-        run: poetry run pytest
+        run: poetry run pytest --benchmark-disable
 
   release:
     needs: [linux_macos, windows]
