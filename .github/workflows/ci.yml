@@ -49,9 +49,6 @@ jobs:
           - image: macos-latest
             conda_platform: osx
 
-          - image: windows-latest
-            conda_platform: win
-
     runs-on: ${{ matrix.os.image }}
     steps:
       - name: Checkout
@@ -79,21 +76,9 @@ jobs:
           conda activate slumba
           poetry install
 
-      - name: Activate environment and run tests
-        if: ${{ matrix.os.image == 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry install
-
       - shell: bash -l {0}
         name: Run tests
         if: ${{ matrix.os.image != 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry run pytest --benchmark-disable
-
-      - name: Run tests
-        if: ${{ matrix.os.image == 'windows-latest' }}
         run: |
           conda activate slumba
           poetry run pytest --benchmark-disable
