@@ -70,7 +70,9 @@ jobs:
         run: conda install -n test -y conda-lock
 
       - name: Generate conda environment lock file
-        run: conda-lock -f pyproject.toml -p ${{ matrix.os.conda_platform }}-${{ matrix.bits }} --kind explicit
+        run: |
+          conda activate test
+          conda-lock -f pyproject.toml -p ${{ matrix.os.conda_platform }}-${{ matrix.bits }} --kind explicit
 
       - name: Show the lockfile contents
         run: conda-${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
