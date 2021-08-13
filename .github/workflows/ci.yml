@@ -144,11 +144,15 @@ jobs:
       - name: Build dist
         run: poetry build --format wheel
 
+      - name: Check before upload
+        run: twine check dist/*
+
       - name: Publish distribution to Test PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+        run: twine upload --verbose dist/*
+        env:
+          TWINE_USER: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
       # - name: Publish distribution to PyPI
       #   uses: pypa/gh-action-pypi-publish@master
