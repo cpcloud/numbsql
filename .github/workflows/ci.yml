@@ -63,7 +63,8 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python_version }}
           channels: conda-forge
-          miniconda-version: "latest"
+          miniconda-version: latest
+          activate-environment: test
 
       - name: Install conda-lock
         run: conda install -y conda-lock
