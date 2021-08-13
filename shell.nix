@@ -40,7 +40,6 @@ pkgs.lib.listToAttrs
             poetry
             prettier
             sqlite
-            pkg-config
           ]
         ) ++ [
           (mkPoetryEnv pkgs.${name})
