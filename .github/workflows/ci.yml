@@ -71,14 +71,12 @@ jobs:
 
       - shell: bash -l {0}
         name: Activate environment and run tests
-        if: ${{ matrix.os.image != 'windows-latest' }}
         run: |
           conda activate slumba
           poetry install
 
       - shell: bash -l {0}
         name: Run tests
-        if: ${{ matrix.os.image != 'windows-latest' }}
         run: |
           conda activate slumba
           poetry run pytest --benchmark-disable
