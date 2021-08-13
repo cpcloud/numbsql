@@ -65,6 +65,7 @@ jobs:
           environment-file: conda/${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
 
       - run: |
+          conda activate slumba
           conda info
           conda list
 
