@@ -53,6 +53,9 @@ jobs:
       - name: Install sqlite
         run: choco install sqlite
 
+      - name: Install pkg-config
+        run: choco install pkgconfiglite
+
       - name: Install poetry
         run: pip install poetry
 
