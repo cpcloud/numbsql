@@ -57,8 +57,7 @@ jobs:
         run: poetry run pytest
 
   release:
-    # needs: [linux_macos, windows]
-    needs: [linux_macos]
+    needs: [linux_macos, windows]
     runs-on: ubuntu-latest
     concurrency: release
 
