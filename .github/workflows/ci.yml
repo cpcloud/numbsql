@@ -41,29 +41,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup python on windows
-        uses: actions/setup-python@v2
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.python_version }}
-          architecture: x64
+          channels: conda-forge
+          miniconda-version: "latest"
 
-      - name: Install llvm # numba needs llvm 10
-        run: choco install llvm --version 10.0.0
+      - name: Install conda-lock
+        run: conda install -y -c conda-forge conda-lock
 
-      - name: Install sqlite
-        run: choco install sqlite
+      - name: Generate conda environment.yml
+        run: conda-lock -f pyproject.toml -p win-64 --kind explicit
 
-      - name: Install pkg-config
-        run: choco install pkgconfiglite
+      - name: Create an environment from the lock file
+        run: conda create -y -n slumba --file conda-win-64.lock
 
-      - name: Install poetry
-        run: pip install poetry
+      - name: Remove lockfile
+        run: del /Q conda-win-64.lock
 
-      - name: Install package into poetry environment
-        run: poetry install
-
-      - name: Run tests
-        run: poetry run pytest --benchmark-disable
+      - name: Activate environment and run tests
+        run: |
+          conda activate slumba
+          pytest --benchmark-disable
 
   release:
     needs: [linux_macos, windows]
