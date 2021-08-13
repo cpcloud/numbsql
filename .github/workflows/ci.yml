@@ -82,9 +82,9 @@ jobs:
           poetry run pytest --benchmark-disable
 
   release:
-    needs:
-      - nix
-      - conda
+    # needs:
+    #   - nix
+    #   - conda
     runs-on: ubuntu-latest
     concurrency: release
     strategy:
@@ -108,11 +108,11 @@ jobs:
       - name: Install poetry
         run: pip install poetry
 
-      - name: Install poetry env
-        run: poetry export --dev --without-hashes > requirements.txt
+      - name: Activate poetry env
+        run: poetry env use $(which python)
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install poetry env
+        run: poetry install --no-root
 
       - name: Install Semantic release
         run: pip install python-semantic-release
