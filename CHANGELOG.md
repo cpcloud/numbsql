@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.5 (2021-08-13)
+### Fix
+* Fix workflow ([`9f48cb4`](https://github.com/cpcloud/slumba/commit/9f48cb4dfbdb4ef0b6705f534680b8b5de7b8670))
+* Try to run with every python version separately ([`6c2fd69`](https://github.com/cpcloud/slumba/commit/6c2fd69a4bcfa278079e72c6c098121936901cef))
+
 ## v1.0.4 (2021-08-13)
 ### Fix
 * Install the right library and invoke it correctly ([`0d91168`](https://github.com/cpcloud/slumba/commit/0d91168ace122c5d513f8baa90466cac2335a18c))
