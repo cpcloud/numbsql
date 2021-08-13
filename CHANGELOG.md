@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.4 (2021-08-13)
+### Fix
+* Install the right library and invoke it correctly ([`0d91168`](https://github.com/cpcloud/slumba/commit/0d91168ace122c5d513f8baa90466cac2335a18c))
+* Fix semantic release package name on install ([`68b8031`](https://github.com/cpcloud/slumba/commit/68b8031ab0eb2b3df6a21023d557491f71f569cf))
+* Actually install semantic release ([`f82319b`](https://github.com/cpcloud/slumba/commit/f82319b536ba99b46281f40add02d23981dc8ea8))
+* Fix setup python keys ([`55c9bd9`](https://github.com/cpcloud/slumba/commit/55c9bd98da187ec07d2ee2abd42b4213b87d8425))
+* Checkout and fix name ([`8931ecd`](https://github.com/cpcloud/slumba/commit/8931ecde6dcf62a7a91544dc76f711ffef18bd4d))
+* Rework semantic release ([`c4f6fa8`](https://github.com/cpcloud/slumba/commit/c4f6fa886c94489d56a766018dedcd2e643428eb))
+
 ## v1.0.3 (2021-08-13)
 ### Fix
 * **pypi:** Leave the license classifier out for now ([`6f685a5`](https://github.com/cpcloud/slumba/commit/6f685a50b652eeade8d8b72fd6b292839b0e17d4))

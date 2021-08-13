@@ -5,7 +5,7 @@ packages = [{ include = "slumba" }]
 exclude = ["slumba/tests", "slumba/cslumba.cc"]
 homepage = "https://github.com/cpcloud/slumba"
 repository = "https://github.com/cpcloud/slumba"
-version = "1.0.3"
+version = "1.0.4"
 description = "JITted SQLite user-defined functions and aggregates"
 readme = "README.md"
 authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
