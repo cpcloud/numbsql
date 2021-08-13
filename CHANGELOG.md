@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.1 (2021-08-13)
+### Fix
+* Feed the tagged commit through ([`2b74cb6`](https://github.com/cpcloud/slumba/commit/2b74cb634ddd2d2e6112b495f1c78ae4a15c644e))
+* Only build wheels ([`8b3ae90`](https://github.com/cpcloud/slumba/commit/8b3ae901b29c6a749fdc867bd5d0185563d19679))
+
 ## v1.1.0 (2021-08-13)
 ### Feature
 * Add __version__ to slumba/__init__.py ([`86fbcdd`](https://github.com/cpcloud/slumba/commit/86fbcdd0122495a5b0a55c3c57913b9dc34c5bae))
