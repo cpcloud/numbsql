@@ -86,6 +86,8 @@ jobs:
     #   - nix
     #   - conda
     runs-on: ubuntu-latest
+    outputs:
+      new_sha: ${{ steps.sha.outputs.SHA }}
     concurrency: release
     steps:
       - name: Checkout
@@ -104,6 +106,10 @@ jobs:
           semantic-release publish -v DEBUG -D commit_author="github-actions <action@github.com>"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get SHA of just-committed tag
+        id: sha
+        run: echo "::set-output name=SHA::$(git rev-parse HEAD)"
+
   publish:
     needs:
       - release
@@ -118,6 +124,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
+          ref: ${{ needs.release.outputs.new_sha }}
           fetch-depth: 0
 
       - name: Setup python
