@@ -25,5 +25,6 @@ pkgs.mkShell {
     poetry
     poetryEnv
     rlwrap-sqlite
+    sqlite
   ];
 }
