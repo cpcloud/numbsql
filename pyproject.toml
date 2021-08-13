@@ -33,7 +33,7 @@ norecursedirs = ["site-packages", "dist-packages"]
 [tool.semantic_release]
 version_toml = "pyproject.toml:tool.poetry.version"
 branch = "master"
-upload_to_pypi = true
+upload_to_pypi = false
 build_command = "pip install poetry && poetry build"
 
 [tool.black]
