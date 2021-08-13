@@ -47,7 +47,7 @@ jobs:
           python-version: ${{ matrix.python_version }}
           architecture: x64
 
-      - name: Install llvm
+      - name: Install llvm # numba needs llvm 10
         run: choco install llvm --version 10.0.0
 
       - name: Install poetry
