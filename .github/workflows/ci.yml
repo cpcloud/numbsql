@@ -21,7 +21,7 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v12
 
-      - name: Setup slumba push/pull and nix-community pull caches
+      - name: Setup Cachix
         uses: cachix/cachix-action@v10
         with:
           name: slumba
