@@ -1,9 +1,15 @@
 let
   pkgs = import ./nix;
-  poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
+  prettier = pkgs.writeShellScriptBin "prettier" ''
+    ${pkgs.nodePackages.prettier}/bin/prettier \
+    --plugin-search-dir "${pkgs.nodePackages.prettier-plugin-toml}/lib" \
+    "$@"
+  '';
+  mkPoetryEnv = python: pkgs.poetry2nix.mkPoetryEnv {
+    inherit python;
     projectDir = ./.;
-    overrides = pkgs.poetry2nix.overrides.withDefaults (self: super: {
-      llvmlite = super.llvmlite.overridePythonAttrs (old: {
+    overrides = pkgs.poetry2nix.overrides.withDefaults (_: super: {
+      llvmlite = super.llvmlite.overridePythonAttrs (_: {
         preConfigure = ''
           export LLVM_CONFIG=${pkgs.llvm.dev}/bin/llvm-config
         '';
@@ -13,18 +19,30 @@ let
       slumba = ./slumba;
     };
   };
-  rlwrap-sqlite = pkgs.writeShellScriptBin "rsqlite" ''
-    ${pkgs.rlwrap}/bin/rlwrap ${pkgs.sqlite}/bin/sqlite3 "$@"
-  '';
+  versions = [ "python37" "python38" "python39" ];
 in
-pkgs.mkShell {
-  name = "slumba";
-  buildInputs = with pkgs; [
-    clang-tools
-    niv
-    poetry
-    poetryEnv
-    rlwrap-sqlite
-    sqlite
-  ];
-}
+pkgs.lib.listToAttrs
+  (map
+    (name: {
+      inherit name;
+      value = pkgs.mkShell {
+        name = "slumba-dev-${name}";
+        shellHook = ''
+          ${(import ./pre-commit.nix).pre-commit-check.shellHook}
+        '';
+        buildInputs = (
+          with pkgs; [
+            clang-tools
+            git
+            niv
+            nix-linter
+            nixpkgs-fmt
+            poetry
+            prettier
+          ]
+        ) ++ [
+          (mkPoetryEnv pkgs.${name})
+        ];
+      };
+    })
+    versions)
