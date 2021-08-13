@@ -140,13 +140,13 @@ jobs:
           python-version: ${{ matrix.python_version }}
 
       - name: Install Semantic release
-        run: pip install semantic-release
+        run: pip install python-semantic-release
 
       - name: Semantic release
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "action@github.com"
-          python -m semantic_release publish -v DEBUG -D commit_author="github-actions <action@github.com>"
+          semantic-release publish -v DEBUG -D commit_author="github-actions <action@github.com>"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
