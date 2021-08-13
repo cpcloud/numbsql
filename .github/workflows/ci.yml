@@ -82,9 +82,9 @@ jobs:
           poetry run pytest --benchmark-disable
 
   release:
-    needs:
-      - nix
-      - conda
+    # needs:
+    #   - nix
+    #   - conda
     runs-on: ubuntu-latest
     concurrency: release
     strategy:
