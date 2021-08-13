@@ -46,8 +46,8 @@ jobs:
           - image: ubuntu-latest
             conda_platform: linux
 
-          # - image: macos-latest
-          #   conda_platform: osx
+          - image: macos-latest
+            conda_platform: osx
           #
           # - image: windows-latest
           #   conda_platform: win
