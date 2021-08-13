@@ -37,7 +37,7 @@ pytest = "^6"
 pytest-benchmark = "^3"
 
 [tool.conda-lock]
-channels = ["conda-forge"]
+channels = ["conda-forge", "defaults"]
 
 [tool.conda-lock.dependencies]
 sqlite = ">=3.25"
