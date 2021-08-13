@@ -5,6 +5,7 @@ let
     { poetry2nix
     , python
     , lib
+    , pkg-config
     , sqlite
     , stdenv
     }:
@@ -17,6 +18,7 @@ let
       src = lib.cleanSource ./.;
 
       buildInputs = [ sqlite ];
+      nativeBuildInputs = [ pkg-config ];
 
       overrides = pkgs.poetry2nix.overrides.withDefaults (_: super: {
         llvmlite = super.llvmlite.overridePythonAttrs (_: {
