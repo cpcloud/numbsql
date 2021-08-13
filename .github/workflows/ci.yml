@@ -93,7 +93,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Python semantic release
-        uses: relekang/python-semantic-release@v7.16.2
+        uses: relekang/python-semantic-release@v7.18.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # pypi_token: ${{ secrets.PYPI_TOKEN }}
