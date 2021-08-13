@@ -39,6 +39,7 @@ pkgs.lib.listToAttrs
             nixpkgs-fmt
             poetry
             prettier
+            sqlite
           ]
         ) ++ [
           (mkPoetryEnv pkgs.${name})
