@@ -64,6 +64,10 @@ jobs:
           activate-environment: slumba
           environment-file: conda/${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
 
+      - run: |
+          conda info
+          conda list
+
       - name: Show the Python interpreter version
         run: python --version
 
