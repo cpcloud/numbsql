@@ -92,3 +92,4 @@ ENV/
 .mypy_cache
 .direnv
 .vim
+.pre-commit-config.yaml
