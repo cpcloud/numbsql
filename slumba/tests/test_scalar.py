@@ -4,6 +4,7 @@ import sqlite3
 import numpy as np
 import pytest
 from numba import float64, int64, optional
+
 from slumba import create_function, sqlite_udf
 
 

@@ -6,6 +6,7 @@ import pytest
 from numba import float64, int64, optional
 from numba.experimental import jitclass
 from pkg_resources import parse_version
+
 from slumba import create_aggregate, sqlite_udaf
 from slumba.cslumba import SQLITE_VERSION
 

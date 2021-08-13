@@ -1,5 +1,6 @@
 import pytest
 from numba import TypingError, boolean, int64, njit
+
 from slumba.numbaext import is_not_null_pointer, sizeof, unsafe_cast
 
 

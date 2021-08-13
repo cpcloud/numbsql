@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 from numba import float64, int64, optional
 from numba.experimental import jitclass
 from numba.types import ClassType
+
 from slumba import create_aggregate, sqlite_udaf
 
 

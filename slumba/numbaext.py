@@ -1,9 +1,9 @@
-from numba import types, extending
+from numba import extending, types
 from numba.core import cgutils, imputils
 from numba.core.typing import ctypes_utils
 
 from slumba.cslumba import SQLITE_NULL
-from slumba.sqlite import VALUE_EXTRACTORS, RESULT_SETTERS, sqlite3_value_type
+from slumba.sqlite import RESULT_SETTERS, VALUE_EXTRACTORS, sqlite3_value_type
 
 
 @extending.intrinsic

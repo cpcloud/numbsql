@@ -3,6 +3,7 @@ import time
 from typing import List, Tuple
 
 from numba import float64
+
 from slumba import create_function, sqlite_udf
 
 if __name__ == "__main__":
