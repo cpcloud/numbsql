@@ -52,7 +52,7 @@ jobs:
       - name: Install conda-lock
         run: conda install -y -c conda-forge conda-lock
 
-      - name: Generate conda environment.yml
+      - name: Generate conda environment lock file
         run: conda-lock -f pyproject.toml -p win-64 --kind explicit
 
       - name: Create an environment from the lock file
