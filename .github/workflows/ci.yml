@@ -9,7 +9,7 @@ jobs:
   linux_macos:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
         # os: [macos-latest, ubuntu-latest]
         python_version: ["3.9"]
         # python_version: ["3.7", "3.8", "3.9"]
