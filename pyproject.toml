@@ -22,7 +22,12 @@ pytest = "^6"
 pytest-benchmark = "^3"
 
 [tool.pytest.ini_options]
-addopts = ["--ignore=site-packages", "--ignore=dist-packages"]
+xfail_strict = true
+addopts = [
+  "--ignore=site-packages",
+  "--ignore=dist-packages",
+  "--strict-markers"
+]
 norecursedirs = ["site-packages", "dist-packages"]
 
 [tool.black]
