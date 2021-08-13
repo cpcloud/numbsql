@@ -1,4 +1,3 @@
-import glob
 from typing import Any, MutableMapping
 
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -6,7 +5,7 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 ext_modules = [
     Pybind11Extension(
         name="slumba.cslumba",
-        sources=sorted(glob.glob("slumba/*.cc")),
+        sources=["slumba/cslumba.cc"],
         libraries=["sqlite3"],
     )
 ]
