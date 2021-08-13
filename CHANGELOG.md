@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.3 (2021-08-13)
+### Fix
+* **pypi:** Leave the license classifier out for now ([`6f685a5`](https://github.com/cpcloud/slumba/commit/6f685a50b652eeade8d8b72fd6b292839b0e17d4))
+
 ## v1.0.2 (2021-08-13)
 ### Fix
 * Start uploading to pypi ([`b3b9ba1`](https://github.com/cpcloud/slumba/commit/b3b9ba1f50210a6d617d0d09bf80077aa37fb902))
