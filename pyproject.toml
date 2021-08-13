@@ -14,7 +14,6 @@ build = "build.py"
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT",
   "Natural Language :: English",
   "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
