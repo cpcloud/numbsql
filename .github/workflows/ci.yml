@@ -83,10 +83,15 @@ jobs:
           conda activate slumba
           poetry run pytest --benchmark-disable
 
-  release:
+  build-artifacts:
     needs: [nix, conda]
     runs-on: ubuntu-latest
-    concurrency: release
+    strategy:
+      matrix:
+        python_version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -94,8 +99,48 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Python semantic release
-        uses: relekang/python-semantic-release@v7.18.0
+      - name: actions/setup-python@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pypi_token: ${{ secrets.PYPI_TOKEN }}
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install Semantic release
+        run: pip install semantic-release
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install poetry env
+        run: poetry install --no-root
+
+      - name: Build artifacts
+        run: poetry build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: slumba-artfacts
+          path: dist
+
+  release:
+    needs: [build-artifacts]
+    runs-on: ubuntu-latest
+    concurrency: release
+    steps:
+      - name: Grab artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: slumba-artfacts
+          path: dist
+
+      - name: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Semantic release
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "action@github.com"
+          python -m semantic_release publish -v DEBUG -D commit_author="github-actions <action@github.com>"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
