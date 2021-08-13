@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.6 (2021-08-13)
+### Fix
+* Release them all ... again ([`fc90f22`](https://github.com/cpcloud/slumba/commit/fc90f22278bbffd8261e0cee562af15891785dbb))
+* Release just one ([`0794a7b`](https://github.com/cpcloud/slumba/commit/0794a7b7ca6663265a64f9f1e6c01ec81e6a5b41))
+
 ## v1.0.5 (2021-08-13)
 ### Fix
 * Fix workflow ([`9f48cb4`](https://github.com/cpcloud/slumba/commit/9f48cb4dfbdb4ef0b6705f534680b8b5de7b8670))
