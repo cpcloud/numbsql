@@ -25,6 +25,7 @@ let
     set -o pipefail
     set -o errexit
     set -o nounset
+
     ${pkgs.conda}/bin/conda-shell -c "$*"
   '';
 in
