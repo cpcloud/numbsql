@@ -20,14 +20,6 @@ let
     };
   };
   versions = [ "python37" "python38" "python39" ];
-  conda-shell-run = pkgs.writeShellScriptBin "conda-shell-run" ''
-    set -eu
-    set -o pipefail
-    set -o errexit
-    set -o nounset
-
-    ${pkgs.conda}/bin/conda-shell -c "$*"
-  '';
 in
 pkgs.lib.listToAttrs
   (map
@@ -51,7 +43,6 @@ pkgs.lib.listToAttrs
           ]
         ) ++ [
           (mkPoetryEnv pkgs.${name})
-          conda-shell-run
         ];
       };
     })

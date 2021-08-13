@@ -35,12 +35,6 @@ pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
 
-[tool.conda-lock]
-channels = ["conda-forge"]
-
-[tool.conda-lock.dependencies]
-sqlite = ">=3.25"
-
 [tool.pytest.ini_options]
 xfail_strict = true
 addopts = [
