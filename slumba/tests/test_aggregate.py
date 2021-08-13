@@ -177,7 +177,9 @@ xfail_missing_python_api = pytest.mark.xfail(
 def test_aggregate_window_numba(con, func):
     query = f"SELECT {func}(value) OVER (PARTITION BY key) as c FROM t"
     result = list(con.execute(query))
-    assert result == list(con.execute("SELECT avg(value) OVER (PARTITION BY key) as c FROM t"))
+    assert result == list(
+        con.execute("SELECT avg(value) OVER (PARTITION BY key) as c FROM t")
+    )
 
 
 @pytest.fixture(scope="module")
@@ -342,7 +344,9 @@ class Var:  # pragma: no cover
 
 
 @sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
-@jitclass([("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)])
+@jitclass(
+    [("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)]
+)
 class Cov:  # pragma: no cover
     def __init__(self):
         self.mean1 = 0.0

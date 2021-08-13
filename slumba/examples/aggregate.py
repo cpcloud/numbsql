@@ -35,7 +35,9 @@ class Var:
 
 
 @sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
-@jitclass([("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)])
+@jitclass(
+    [("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)]
+)
 class Cov:
     def __init__(self):
         self.mean1 = 0.0
@@ -110,7 +112,8 @@ def main() -> None:
     con.execute("CREATE INDEX key_index ON t (key)")
 
     random_numbers: List[Tuple[str, float]] = [
-        (random.choice(string.ascii_lowercase[:2]), random.random()) for _ in range(500000)
+        (random.choice(string.ascii_lowercase[:2]), random.random())
+        for _ in range(500000)
     ]
 
     placeholders = ", ".join("?" * len(random_numbers[0]))
@@ -129,8 +132,14 @@ def main() -> None:
     con.create_aggregate(python_defined, 1, cls.class_type.class_def)
 
     query1 = f"select key, {builtin}(value) as builtin_{builtin} from t " f"group by 1"
-    query2 = f"select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} " f"from t group by 1"
-    query3 = f"select key, {python_defined}(value) as python_{python_defined}" f" from t group by 1"
+    query2 = (
+        f"select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} "
+        f"from t group by 1"
+    )
+    query3 = (
+        f"select key, {python_defined}(value) as python_{python_defined}"
+        f" from t group by 1"
+    )
 
     queries: Dict[str, str] = {
         f"{builtin}_builtin": query1,
@@ -139,7 +148,8 @@ def main() -> None:
     }
 
     Result = NamedTuple(
-        "Result", [("name", str), ("result", List[Tuple[str, float]]), ("duration", float)]
+        "Result",
+        [("name", str), ("result", List[Tuple[str, float]]), ("duration", float)],
     )
 
     results: List[Result] = []

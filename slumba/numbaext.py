@@ -27,7 +27,9 @@ def unsafe_cast(typingctx, src, dst):
     Returns
     -------
     """
-    if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(dst, types.ClassType):
+    if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(
+        dst, types.ClassType
+    ):
         inst_typ = dst.instance_type
         sig = inst_typ(types.voidptr, dst)
 
@@ -76,7 +78,9 @@ def make_arg_tuple(typingctx, func, argv):
             # check for null values #
             # get a pointer to the sqlite3_value_type C function
             sqlite3_value_type_numba = context.get_constant_generic(
-                builder, ctypes_utils.make_function_type(sqlite3_value_type), sqlite3_value_type
+                builder,
+                ctypes_utils.make_function_type(sqlite3_value_type),
+                sqlite3_value_type,
             )
             value_type = builder.call(sqlite3_value_type_numba, [element])
 
@@ -84,7 +88,9 @@ def make_arg_tuple(typingctx, func, argv):
             sqlite_null = context.get_constant(types.int32, SQLITE_NULL)
 
             # check whether the value is equal to SQLITE_NULL
-            is_null = cgutils.is_true(builder, builder.icmp_signed("==", value_type, sqlite_null))
+            is_null = cgutils.is_true(
+                builder, builder.icmp_signed("==", value_type, sqlite_null)
+            )
 
             # setup value extraction #
             # get the appropriate ctypes extraction routine
@@ -132,7 +138,9 @@ def get_sqlite3_result_function(typingctx, value_type):
     underlying_type = getattr(value_type, "type", value_type)
     func_type = types.void(types.voidptr, underlying_type)
 
-    external_function_pointer = types.ExternalFunctionPointer(func_type, ctypes_utils.get_pointer)
+    external_function_pointer = types.ExternalFunctionPointer(
+        func_type, ctypes_utils.get_pointer
+    )
     sig = external_function_pointer(underlying_type)
 
     def codegen(context, builder, signature, args):

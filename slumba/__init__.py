@@ -30,7 +30,11 @@ __all__ = (
 
 
 def create_function(
-    con: sqlite3.Connection, name: str, num_params: int, func: Callable, deterministic: bool = False
+    con: sqlite3.Connection,
+    name: str,
+    num_params: int,
+    func: Callable,
+    deterministic: bool = False,
 ) -> None:
     """Register a UDF with name `name` with the SQLite connection `con`.
 
