@@ -2,7 +2,7 @@
 name = "slumba"
 packages = [{ include = "slumba" }]
 # don't ship tests with the install
-exclude = ["slumba/tests"]
+exclude = ["slumba/tests", "slumba/cslumba.cc"]
 homepage = "https://github.com/cpcloud/slumba"
 repository = "https://github.com/cpcloud/slumba"
 version = "1.0.0"
