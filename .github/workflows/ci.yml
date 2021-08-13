@@ -6,12 +6,16 @@ on:
 name: Continuous Integration
 
 jobs:
-  linux_macos:
+  nix:
     strategy:
       matrix:
-        # os: [ubuntu-latest, macos-latest]
-        os: [ubuntu-latest]
-        python_version: ["3.7", "3.8", "3.9"]
+        os:
+          - ubuntu-latest
+          # - macos-latest
+        python_version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -29,13 +33,26 @@ jobs:
 
       - name: Build package and run tests
         run: nix build -L --argstr python python${{ matrix.python_version }}
-
-  windows:
+  conda:
     strategy:
       matrix:
-        # python_version: ["3.7", "3.8", "3.9"]
-        python_version: ["3.9"]
-    runs-on: windows-latest
+        python_version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+        bits:
+          - "64"
+        os:
+          # - image: ubuntu-latest
+          #   conda_platform: linux
+          #
+          # - image: macos-latest
+          #   conda_platform: osx
+
+          - image: windows-latest
+            conda_platform: win
+
+    runs-on: ${{ matrix.os.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -49,16 +66,21 @@ jobs:
           miniconda-version: "latest"
 
       - name: Install conda-lock
-        run: conda install -y -c conda-forge conda-lock
+        run: conda install -y conda-lock
 
       - name: Generate conda environment lock file
-        run: conda-lock -f pyproject.toml -p win-64 --kind explicit
+        run: conda-lock -f pyproject.toml -p ${{ matrix.os.conda_platform }}-${{ matrix.bits }} --kind explicit
 
       - name: Create an environment from the lock file
-        run: conda create -y -n slumba --file conda-win-64.lock
+        run: conda create -y -n slumba --file conda-${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
 
-      - name: Remove lockfile
-        run: del /Q conda-win-64.lock
+      - name: Remove windows lockfile
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: Remove-Item conda-${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
+
+      - name: Remove non-windows lockfile
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: rm -f conda-${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
 
       - name: Activate environment and run tests
         run: |
@@ -66,10 +88,9 @@ jobs:
           pytest --benchmark-disable
 
   release:
-    needs: [linux_macos, windows]
+    needs: [nix, conda]
     runs-on: ubuntu-latest
     concurrency: release
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
