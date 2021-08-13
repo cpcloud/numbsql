@@ -64,7 +64,8 @@ jobs:
           activate-environment: slumba
           environment-file: conda/${{ matrix.os.conda_platform }}-${{ matrix.bits }}.lock
 
-      - run: |
+      - shell: bash -l {0}
+        run: |
           conda activate slumba
           conda info
           conda list
