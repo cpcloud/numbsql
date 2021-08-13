@@ -102,9 +102,6 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
-      - name: Install Semantic release
-        run: pip install semantic-release
-
       - name: Install poetry
         run: pip install poetry
 
@@ -142,8 +139,8 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
-      - name: Install semantic release
-        run: pip install semantic_release
+      - name: Install Semantic release
+        run: pip install semantic-release
 
       - name: Semantic release
         run: |
