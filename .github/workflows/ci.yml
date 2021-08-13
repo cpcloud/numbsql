@@ -86,12 +86,12 @@ jobs:
     #   - nix
     #   - conda
     runs-on: ubuntu-latest
-    concurrency: release
+    # concurrency: release
     strategy:
       matrix:
         python_version:
-          - "3.7"
-          - "3.8"
+          # - "3.7"
+          # - "3.8"
           - "3.9"
     steps:
       - name: Checkout
