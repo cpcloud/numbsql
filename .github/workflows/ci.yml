@@ -117,8 +117,8 @@ jobs:
       matrix:
         python_version:
           - "3.7"
-          - "3.8"
-          - "3.9"
+          # - "3.8"
+          # - "3.9"
         os:
           - ubuntu-latest
           - macos-latest
@@ -145,17 +145,18 @@ jobs:
         run: poetry build --format wheel
 
       - name: Check before upload
-        run: twine check dist/*
+        run: poetry run twine check dist/*
 
       - name: Publish distribution to Test PyPI
-        run: twine upload --verbose dist/*
+        run: poetry run twine upload --verbose dist/*
         env:
           TWINE_USER: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
           TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
       # - name: Publish distribution to PyPI
-      #   uses: pypa/gh-action-pypi-publish@master
       #   if: startsWith(github.ref, 'refs/tags')
-      #   with:
-      #     password: ${{ secrets.PYPI_TOKEN }}
+      #   run: poetry run twine upload --verbose dist/*
+      #   env:
+      #     TWINE_USER: __token__
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
