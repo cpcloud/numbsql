@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.0.2 (2021-08-13)
+### Fix
+* Start uploading to pypi ([`b3b9ba1`](https://github.com/cpcloud/slumba/commit/b3b9ba1f50210a6d617d0d09bf80077aa37fb902))
+
 ## v1.0.1 (2021-08-13)
 ### Fix
 * **setup:** Include pkg-config in the build ([`1b1de91`](https://github.com/cpcloud/slumba/commit/1b1de918f59b7a68851541ee68c00e10dc4266fd))
