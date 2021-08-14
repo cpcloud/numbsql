@@ -6,85 +6,84 @@ on:
 name: Continuous Integration
 
 jobs:
-  nix:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          # - macos-latest
-        python_version:
-          # - "3.7"
-          # - "3.8"
-          - "3.9"
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v12
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v10
-        with:
-          name: slumba
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          extraPullNames: nix-community
-
-      - name: Build package and run tests
-        run: nix build -L --argstr python python${{ matrix.python_version }}
-  conda:
-    strategy:
-      matrix:
-        python_version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
-        bits:
-          - "64"
-        os:
-          - image: ubuntu-latest
-            conda_platform: linux
-
-          - image: macos-latest
-            conda_platform: osx
-
-    runs-on: ${{ matrix.os.image }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python_version }}
-          channels: conda-forge
-          show-channel-urls: true
-          activate-environment: slumba
-
-      - name: Install sqlite
-        run: conda install -n slumba -y sqlite
-
-      - name: Install poetry
-        run: conda install -n slumba -y poetry
-
-      - shell: bash -l {0}
-        name: Activate environment and install dependencies
-        run: |
-          conda activate slumba
-          poetry install
-
-      - shell: bash -l {0}
-        name: Run tests
-        run: |
-          conda activate slumba
-          poetry run pytest --benchmark-disable
-
+  # nix:
+  #   strategy:
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #         # - macos-latest
+  #       python_version:
+  #         # - "3.7"
+  #         # - "3.8"
+  #         - "3.9"
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #
+  #     - name: Install Nix
+  #       uses: cachix/install-nix-action@v12
+  #
+  #     - name: Setup Cachix
+  #       uses: cachix/cachix-action@v10
+  #       with:
+  #         name: slumba
+  #         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+  #         extraPullNames: nix-community
+  #
+  #     - name: Build package and run tests
+  #       run: nix build -L --argstr python python${{ matrix.python_version }}
+  # conda:
+  #   strategy:
+  #     matrix:
+  #       python_version:
+  #         # - "3.7"
+  #         # - "3.8"
+  #         - "3.9"
+  #       bits:
+  #         - "64"
+  #       os:
+  #         - image: ubuntu-latest
+  #           conda_platform: linux
+  #
+  #         - image: macos-latest
+  #           conda_platform: osx
+  #
+  #   runs-on: ${{ matrix.os.image }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #
+  #     - name: Setup conda
+  #       uses: conda-incubator/setup-miniconda@v2
+  #       with:
+  #         auto-update-conda: true
+  #         python-version: ${{ matrix.python_version }}
+  #         channels: conda-forge
+  #         show-channel-urls: true
+  #         activate-environment: slumba
+  #
+  #     - name: Install sqlite
+  #       run: conda install -n slumba -y sqlite
+  #
+  #     - name: Install poetry
+  #       run: conda install -n slumba -y poetry
+  #
+  #     - shell: bash -l {0}
+  #       name: Activate environment and install dependencies
+  #       run: |
+  #         conda activate slumba
+  #         poetry install
+  #
+  #     - shell: bash -l {0}
+  #       name: Run tests
+  #       run: |
+  #         conda activate slumba
+  #         poetry run pytest --benchmark-disable
   release:
-    needs:
-      - nix
-      - conda
+    # needs:
+    #   - nix
+    #   - conda
     runs-on: ubuntu-latest
     concurrency: release
     steps:
@@ -97,6 +96,18 @@ jobs:
       - name: Install Semantic release
         run: pip install python-semantic-release
 
+      - name: Get current version
+        id: get_current_version
+        run: echo ::set-output name=value::$(semantic-release print-version --current)
+
+      - name: Get new version
+        id: get_new_version
+        run: echo ::set-output name=value::$(semantic-release print-version)
+
+      - name: Get whether to publish
+        id: should_publish
+        run: echo ::set-output name=value::${{ steps.get_current_version.outputs.value != steps.get_new_version.outputs.value }}
+
       - name: Semantic release
         run: |
           git config --global user.name "github-actions"
@@ -104,3 +115,52 @@ jobs:
           semantic-release publish -v DEBUG -D commit_subject="chore(release): {version}" -D commit_author="github-actions <github-actions@github.com>"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  publish:
+    needs:
+      - release
+    strategy:
+      matrix:
+        python_version:
+          # - "3.7"
+          # - "3.8"
+          - "3.9"
+        os:
+          - ubuntu-latest
+          # - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install poetry env
+        run: poetry install --no-root
+
+      - name: Build dist
+        run: poetry build --format wheel
+
+      - name: Check before upload
+        run: poetry run twine check dist/*
+
+      - name: Publish distribution to Test PyPI
+        run: poetry run twine upload --non-interactive --verbose dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+
+      - name: Publish distribution to PyPI
+        if: ${{ fromJSON(release.steps.should_publish.outputs.value) }}
+        run: poetry run twine upload --non-interactive --verbose dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
