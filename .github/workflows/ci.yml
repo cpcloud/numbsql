@@ -78,18 +78,18 @@ jobs:
           conda activate slumba
           poetry install
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ matrix.os == 'windows-latest' && github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.debug_enabled) }}
+        with:
+          limit-access-to-actor: true
+          sudo: false
+
       - name: Activate environment and install dependencies
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           conda activate slumba
           poetry install
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.debug_enabled) }}
-        with:
-          limit-access-to-actor: true
-          sudo: false
 
       - shell: bash -l {0}
         name: Run tests
