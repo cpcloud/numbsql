@@ -159,7 +159,7 @@ jobs:
           TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
       - name: Publish distribution to PyPI
-        if: ${{ fromJSON(release.steps.should_publish.outputs.value) }}
+        if: ${{ fromJSON(needs.release.steps.should_publish.outputs.value) }}
         run: poetry run twine upload --non-interactive --verbose dist/*
         env:
           TWINE_USERNAME: __token__
