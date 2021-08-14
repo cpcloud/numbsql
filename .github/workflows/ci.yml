@@ -170,8 +170,12 @@ jobs:
         if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: poetry publish --verbose --username __token__ --password ${{ secrets.PYPI_TOKEN }}
 
-      - name: Add assets to GitHub release
-        uses: softprops/action-gh-release@v1
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
         if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
         with:
-          files: dist/*.whl
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          tag: v${{ needs.release.outputs.new_version }}
+          overwrite: true
+          file_glob: true
