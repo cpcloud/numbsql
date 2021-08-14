@@ -148,7 +148,7 @@ jobs:
         run: poetry run twine check dist/*
 
       - name: Publish distribution to Test PyPI
-        run: poetry run twine upload --verbose dist/*
+        run: poetry run twine upload --non-interactive --verbose dist/*
         env:
           TWINE_USER: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
