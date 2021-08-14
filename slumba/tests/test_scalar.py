@@ -118,7 +118,7 @@ def large_con(request, tmp_path):
         """
     )
     n = int(1e5)
-    rows = ((value,) for value in random.normalvariate(0.0, 1.0) for _ in range(n))
+    rows = ((random.normalvariate(0.0, 1.0),) for _ in range(n))
     con.executemany("INSERT INTO large_t (value) VALUES (?)", rows)
     create_function(con, "add_one_numba", 1, add_one_optional)
     con.create_function("add_one_python", 1, add_one_python)
