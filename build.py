@@ -10,7 +10,10 @@ ext_modules = [
         sources=["slumba/cslumba.cc"],
         libraries=["sqlite3"],
         library_dirs=(
-            [os.path.join(os.environ["CONDA_PREFIX"], "Libs")]
+            [
+                os.path.join(os.environ["CONDA_PREFIX"], "Library", part)
+                for part in ("lib", "bin")
+            ]
             if sys.platform == "win32"
             else []
         ),
