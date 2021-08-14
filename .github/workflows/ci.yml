@@ -47,7 +47,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        shell: powershell
+        shell: pwsh
     steps:
       - name: Checkout
         uses: actions/checkout@v2
