@@ -20,7 +20,7 @@ from slumba import create_aggregate, sqlite_udaf
     ]
 )
 class Var:
-    def __init__(self):
+    def __init__(self) -> None:
         self.mean = 0.0
         self.sum_of_squares_of_differences = 0.0
         self.count = 0
@@ -40,7 +40,7 @@ class Var:
     [("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)]
 )
 class Cov:
-    def __init__(self):
+    def __init__(self) -> None:
         self.mean1 = 0.0
         self.mean2 = 0.0
         self.mean12 = 0.0
@@ -66,7 +66,7 @@ class Cov:
 @sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass([("total", float64), ("count", int64)])
 class Avg:
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
@@ -84,7 +84,7 @@ class Avg:
 @sqlite_udaf(optional(float64)(float64))
 @jitclass([("total", float64), ("count", int64)])
 class Sum:
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
