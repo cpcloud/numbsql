@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.12 (2021-08-14)
+### Fix
+* Fix library paths on windows ([`82e0e97`](https://github.com/cpcloud/slumba/commit/82e0e9757bedb3112ceff4ba34d6d1fc7008d58a))
+* Publish with poetry instead of twine ([`4101223`](https://github.com/cpcloud/slumba/commit/41012233fad34208c12ad493a05bc7f3bf070381))
+
 ## v1.1.11 (2021-08-14)
 ### Fix
 * Fix publishing ([`1ad3353`](https://github.com/cpcloud/slumba/commit/1ad33538ac13601804670f8d9c4342bd78cab7d5))
