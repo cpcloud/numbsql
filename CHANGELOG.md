@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.9 (2021-08-14)
+### Fix
+* Forget about using fromJSON ([`27e0590`](https://github.com/cpcloud/slumba/commit/27e0590e6bcff7c10ba33049b2b862bbd927379e))
+
 ## v1.1.8 (2021-08-14)
 ### Fix
 * Get the correct ref from the release step ([`e771857`](https://github.com/cpcloud/slumba/commit/e77185756e6a28fe766cba3114614e328fb43b93))
