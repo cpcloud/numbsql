@@ -111,10 +111,6 @@ jobs:
           semantic-release publish -v DEBUG -D commit_subject="chore(release): {version}" -D commit_author="github-actions <github-actions@github.com>"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get ref from commit
-        id: get_ref
-        run: echo "::set-output name=sha::$(git rev-parse HEAD)"
   publish:
     needs:
       - release
@@ -132,7 +128,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: ${{ needs.release.steps.get_ref.outputs.sha }}
+          ref: v${{ needs.release.steps.get_new_version.outputs.value }}
           fetch-depth: 0
 
       - name: Setup python
