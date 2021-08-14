@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.16 (2021-08-14)
+### Fix
+* Use poetry config for tokens ([`e41647e`](https://github.com/cpcloud/slumba/commit/e41647e729df9b11cf4d9cc712225a1249b796dd))
+
 ## v1.1.15 (2021-08-14)
 ### Fix
 * Don't try to publish on PRs ([`a8995d0`](https://github.com/cpcloud/slumba/commit/a8995d03a5f6e0655ca1740bd50a55690475888b))
