@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.17 (2021-08-14)
+### Fix
+* Make unset a parameter ([`e7e5e60`](https://github.com/cpcloud/slumba/commit/e7e5e609a3e313acdbbc5f24b15c408130755be6))
+
 ## v1.1.16 (2021-08-14)
 ### Fix
 * Use poetry config for tokens ([`e41647e`](https://github.com/cpcloud/slumba/commit/e41647e729df9b11cf4d9cc712225a1249b796dd))
