@@ -161,7 +161,7 @@ jobs:
         run: poetry install --no-root
 
       - name: Build wheels
-        run: poetry build
+        run: poetry build --format wheel
 
       - name: Build and publish distribution to Test PyPI
         run: poetry publish --verbose --username __token__ --password ${{ secrets.TEST_PYPI_TOKEN }} --repository-url https://test.pypi.org/legacy
