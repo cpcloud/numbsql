@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.8 (2021-08-14)
+### Fix
+* Get the correct ref from the release step ([`e771857`](https://github.com/cpcloud/slumba/commit/e77185756e6a28fe766cba3114614e328fb43b93))
+
 ## v1.1.7 (2021-08-14)
 ### Fix
 * Fix publishing again ([`0dbf1d0`](https://github.com/cpcloud/slumba/commit/0dbf1d061c140bee55ce7f6cb1e1773135725b2d))
