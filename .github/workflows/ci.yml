@@ -157,28 +157,18 @@ jobs:
       - name: Install poetry
         run: pip install poetry
 
-      - name: Install poetry env
+      - name: Install dependencies
         run: poetry install --no-root
 
-      - name: Build dist
+      - name: Build wheels
         run: poetry build
 
-      - name: Check before upload
-        run: poetry run twine check dist/*
-
-      - name: Publish distribution to Test PyPI
-        run: poetry run twine upload --non-interactive --verbose dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
-          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+      - name: Build and publish distribution to Test PyPI
+        run: poetry publish --verbose --username __token__ --password ${{ secrets.TEST_PYPI_TOKEN }} --repository-url https://test.pypi.org/legacy
 
       - name: Publish distribution to PyPI
         if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
-        run: poetry run twine upload --skip-existing --non-interactive --verbose dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: poetry publish --verbose --username __token__ --password ${{ secrets.PYPI_TOKEN }}
 
       - name: Add assets to GitHub release
         uses: softprops/action-gh-release@v1
