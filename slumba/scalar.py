@@ -28,8 +28,10 @@ def sqlite_udf(
     def wrapper(func: Callable) -> CFunc:
         compiled_func = njit(signature, nogil=nogil, **njit_kwargs)(func)
 
-        @cfunc(void(voidptr, intc, CPointer(voidptr)))
-        def scalar(ctx, argc, argv):  # pragma: no cover
+        @cfunc(void(voidptr, intc, CPointer(voidptr)))  # type: ignore[misc]
+        def scalar(  # type: ignore[no-untyped-def]
+            ctx, argc: int, argv
+        ):  # pragma: no cover
             args = make_arg_tuple(compiled_func, argv)
             result = compiled_func(*args)
             if result is None:

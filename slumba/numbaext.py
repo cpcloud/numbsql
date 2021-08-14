@@ -1,13 +1,33 @@
+from typing import Callable, Tuple, Union
+
+from llvmlite.ir.instructions import (
+    CastInstr,
+    Constant,
+    ICMPInstr,
+    InsertValue,
+    LoadInstr,
+    Value,
+)
+from llvmlite.llvmpy.core import Builder
 from numba import extending, types
 from numba.core import cgutils, imputils
+from numba.core.base import BaseContext
 from numba.core.typing import ctypes_utils
+from numba.core.typing.context import Context
+from numba.core.typing.templates import Signature
 
 from slumba.cslumba import SQLITE_NULL
 from slumba.sqlite import RESULT_SETTERS, VALUE_EXTRACTORS, sqlite3_value_type
 
 
-@extending.intrinsic
-def unsafe_cast(typingctx, src, dst):
+@extending.intrinsic  # type: ignore[misc]
+def unsafe_cast(
+    typingctx: Context,
+    src: Union[types.RawPointer, types.Integer],
+    dst: types.ClassType,
+) -> Tuple[
+    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], LoadInstr]
+]:
     """Cast a void pointer to a jitclass.
 
     Parameters
@@ -23,9 +43,6 @@ def unsafe_cast(typingctx, src, dst):
     TypeError
         If `src` is not a raw pointer or integer or `dst` is not a jitclass
         type.
-
-    Returns
-    -------
     """
     if isinstance(src, (types.RawPointer, types.Integer)) and isinstance(
         dst, types.ClassType
@@ -33,7 +50,12 @@ def unsafe_cast(typingctx, src, dst):
         inst_typ = dst.instance_type
         sig = inst_typ(types.voidptr, dst)
 
-        def codegen(context, builder, signature, args):
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value, ...],
+        ) -> LoadInstr:
             ptr, _ = args
             alloc_type = context.get_data_type(inst_typ.get_data_type())
 
@@ -54,8 +76,13 @@ def unsafe_cast(typingctx, src, dst):
         raise TypeError(f"Unable to cast pointer type {src} to class type {dst}")
 
 
-@extending.intrinsic
-def make_arg_tuple(typingctx, func, argv):
+@extending.intrinsic  # type: ignore[misc]
+def make_arg_tuple(
+    typingctx: Context, func: types.Callable, argv: types.CPointer
+) -> Tuple[
+    Signature,
+    Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], InsertValue],
+]:
     (func_type,), _ = func.get_call_signatures()
     first_arg, *_ = args = func_type.args
 
@@ -65,7 +92,13 @@ def make_arg_tuple(typingctx, func, argv):
     tuple_type = types.Tuple(argtypes)
     sig = tuple_type(func, types.CPointer(types.voidptr))
 
-    def codegen(context, builder, signature, args):
+    def codegen(
+        context: BaseContext,
+        builder: Builder,
+        signature: Signature,
+        args: Tuple[Value, ...],
+    ) -> InsertValue:
+        # first argument is the instance, and we don't need it here
         _, argv = args
         converted_args = []
         for i, argtype in enumerate(argtypes):
@@ -125,16 +158,20 @@ def make_arg_tuple(typingctx, func, argv):
             # collect the value into an argument list used to build the tuple
             converted_args.append(instr)
 
-        # construct a tuple (fixed length and known types) similar to tuples in
-        # statically typed languages
+        # construct a tuple of arguments (fixed length and known types)
         res = context.make_tuple(builder, tuple_type, converted_args)
         return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
 
     return sig, codegen
 
 
-@extending.intrinsic
-def get_sqlite3_result_function(typingctx, value_type):
+@extending.intrinsic  # type: ignore[misc]
+def get_sqlite3_result_function(
+    typingctx: Context, value_type: types.Type
+) -> Tuple[
+    Signature,
+    Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], CastInstr],
+]:
     underlying_type = getattr(value_type, "type", value_type)
     func_type = types.void(types.voidptr, underlying_type)
 
@@ -143,7 +180,12 @@ def get_sqlite3_result_function(typingctx, value_type):
     )
     sig = external_function_pointer(underlying_type)
 
-    def codegen(context, builder, signature, args):
+    def codegen(
+        context: BaseContext,
+        builder: Builder,
+        signature: Signature,
+        args: Tuple[Value, ...],
+    ) -> CastInstr:
         # get the appropriate ctypes extraction routine
         ctypes_function = RESULT_SETTERS[value_type]
 
@@ -151,18 +193,27 @@ def get_sqlite3_result_function(typingctx, value_type):
         converter = ctypes_utils.make_function_type(ctypes_function)
 
         # get the function pointer instruction out
-        fn = context.get_constant_generic(builder, converter, ctypes_function)
-        return fn
+        return context.get_constant_generic(builder, converter, ctypes_function)
 
     return sig, codegen
 
 
-@extending.intrinsic
-def sizeof(typingctx, src):
+@extending.intrinsic  # type: ignore[misc]
+def sizeof(
+    typingctx: Context, src: types.ClassType
+) -> Tuple[
+    Signature,
+    Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], Constant],
+]:
     if isinstance(src, types.ClassType):
         sig = types.int64(src)
 
-        def codegen(context, builder, signature, args):
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value, ...],
+        ) -> Constant:
             data_type = context.get_data_type(src.instance_type)
             size_of_data_type = context.get_abi_sizeof(data_type)
             return context.get_constant(sig.return_type, size_of_data_type)
@@ -172,18 +223,35 @@ def sizeof(typingctx, src):
         raise TypeError("Cannot get sizeof non jitclass")
 
 
-def generate_null_checker(func):
-    def null_pointer_checker(typingctx, src):
+def generate_null_checker(
+    func: Callable[[Builder, Value], Value]
+) -> Callable[
+    [Context, types.ClassInstanceType],
+    Tuple[
+        Signature,
+        Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], ICMPInstr],
+    ],
+]:
+    def null_pointer_checker(
+        typingctx: Context, src: types.ClassInstanceType
+    ) -> Tuple[
+        Signature,
+        Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], ICMPInstr],
+    ]:
         if isinstance(src, types.ClassInstanceType):
             sig = types.boolean(src)
 
-            def codegen(context, builder, signature, args):
+            def codegen(
+                context: BaseContext,
+                builder: Builder,
+                signature: Signature,
+                args: Tuple[Value, ...],
+            ) -> ICMPInstr:
                 (instance,) = args
 
                 # TODO: probably a more general way to do this
                 second_element = builder.extract_value(instance, [1])
-                result = func(builder, second_element)
-                return result
+                return func(builder, second_element)
 
             return sig, codegen
         else:

@@ -9,7 +9,7 @@ from ctypes import (
     c_void_p,
 )
 from ctypes.util import find_library
-from typing import Optional
+from typing import Any, Optional, Type, Union
 
 from numba import float64, int32, int64, optional
 
@@ -101,7 +101,9 @@ value_methods = {
 }
 
 
-def add_value_method(typename: str, restype):
+def _add_value_method(
+    typename: str, restype: Union[Type[c_double], Type[c_int64], Type[c_int]]
+) -> Any:
     method = getattr(libsqlite3, f"sqlite3_value_{typename}")
     method.argtypes = (c_void_p,)
     method.restype = restype
@@ -109,12 +111,12 @@ def add_value_method(typename: str, restype):
 
 
 VALUE_EXTRACTORS = {
-    optional(float64): add_value_method("double", c_double),
-    optional(int64): add_value_method("int64", c_int64),
-    optional(int32): add_value_method("int", c_int),
-    float64: add_value_method("double", c_double),
-    int64: add_value_method("int64", c_int64),
-    int32: add_value_method("int", c_int),
+    optional(float64): _add_value_method("double", c_double),
+    optional(int64): _add_value_method("int64", c_int64),
+    optional(int32): _add_value_method("int", c_int),
+    float64: _add_value_method("double", c_double),
+    int64: _add_value_method("int64", c_int64),
+    int32: _add_value_method("int", c_int),
 }
 
 sqlite3_value_type = libsqlite3.sqlite3_value_type
@@ -126,5 +128,6 @@ _sqlite3_errmsg.argtypes = (c_void_p,)
 _sqlite3_errmsg.restype = c_char_p
 
 
-def sqlite3_errmsg(db):
+def sqlite3_errmsg(db: int) -> str:
+    """Get the most recent error message from the SQLite database."""
     return _sqlite3_errmsg(db).decode("utf8")

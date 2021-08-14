@@ -32,8 +32,10 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         step_signature = void(instance_type, *signature.args)
         step_func.compile(step_signature)
 
-        @cfunc(void(voidptr, intc, CPointer(voidptr)))
-        def step(ctx, argc, argv):  # pragma: no cover
+        @cfunc(void(voidptr, intc, CPointer(voidptr)))  # type: ignore[misc]
+        def step(  # type: ignore[no-untyped-def]
+            ctx, argc: int, argv
+        ) -> None:  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
             if is_not_null_pointer(agg_ctx):
@@ -44,8 +46,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         finalize_signature: Signature = signature.return_type(instance_type)
         finalize_func.compile(finalize_signature)
 
-        @cfunc(void(voidptr))
-        def finalize(ctx):  # pragma: no cover
+        @cfunc(void(voidptr))  # type: ignore[misc]
+        def finalize(ctx) -> None:  # type: ignore[no-untyped-def]  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
             if is_not_null_pointer(agg_ctx):
@@ -77,8 +79,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             value_signature = signature.return_type(instance_type)
             value_func.compile(value_signature)
 
-            @cfunc(void(voidptr))
-            def value(ctx):  # pragma: no cover
+            @cfunc(void(voidptr))  # type: ignore[misc]
+            def value(ctx) -> None:  # type: ignore[no-untyped-def]  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 if is_not_null_pointer(agg_ctx):
@@ -92,8 +94,10 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             inverse_signature: Signature = step_signature
             inverse_func.compile(inverse_signature)
 
-            @cfunc(void(voidptr, intc, CPointer(voidptr)))
-            def inverse(ctx, argc, argv):  # pragma: no cover
+            @cfunc(void(voidptr, intc, CPointer(voidptr)))  # type: ignore[misc,]
+            def inverse(  # type: ignore[no-untyped-def]
+                ctx, argc: int, argv
+            ) -> None:  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 if is_not_null_pointer(agg_ctx):

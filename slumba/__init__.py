@@ -1,6 +1,6 @@
 import sqlite3
-from typing import Callable
 
+from numba.core.ccallback import CFunc
 from numba.types import ClassType
 
 from .aggregate import sqlite_udaf
@@ -42,7 +42,7 @@ def create_function(
     con: sqlite3.Connection,
     name: str,
     num_params: int,
-    func: Callable,
+    func: CFunc,
     deterministic: bool = False,
 ) -> None:
     """Register a UDF with name `name` with the SQLite connection `con`.
@@ -71,7 +71,7 @@ def create_function(
             num_params,
             SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
             None,
-            scalarfunc(getattr(func, "address")),
+            scalarfunc(func.address),
             stepfunc(0),
             finalizefunc(0),
         )
