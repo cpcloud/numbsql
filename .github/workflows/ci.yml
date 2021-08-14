@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda activate slumba
-          poetry install
+          poetry install -vvv
 
       - name: Run tests
         run: |
@@ -160,7 +160,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda activate slumba
-          poetry install --no-root
+          poetry install -vvv --no-root
 
       - name: Build wheels
         run: |
