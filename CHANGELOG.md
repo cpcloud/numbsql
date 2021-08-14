@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.10 (2021-08-14)
+### Fix
+* Don't try to anticipate the version ([`4e326c3`](https://github.com/cpcloud/slumba/commit/4e326c37bf781f3cc6d727326acac6334955b525))
+* Get the new version tag directly ([`960b65a`](https://github.com/cpcloud/slumba/commit/960b65a48684a0a9220ba5f0523bb2dd6b3969bf))
+
 ## v1.1.9 (2021-08-14)
 ### Fix
 * Forget about using fromJSON ([`27e0590`](https://github.com/cpcloud/slumba/commit/27e0590e6bcff7c10ba33049b2b862bbd927379e))
