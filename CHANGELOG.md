@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.13 (2021-08-14)
+### Fix
+* Try publishing on pypi ([`584337c`](https://github.com/cpcloud/slumba/commit/584337c3197ed586959300835b3deabe3a08229d))
+
 ## v1.1.12 (2021-08-14)
 ### Fix
 * Fix library paths on windows ([`82e0e97`](https://github.com/cpcloud/slumba/commit/82e0e9757bedb3112ceff4ba34d6d1fc7008d58a))
