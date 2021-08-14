@@ -1,0 +1,54 @@
+on:
+  release:
+    types:
+      - published
+
+name: Publish
+
+jobs:
+  publish:
+    strategy:
+      matrix:
+        python_version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install poetry env
+        run: poetry install --no-root
+
+      - name: Build dist
+        run: poetry build --format wheel
+
+      - name: Check before upload
+        run: poetry run twine check dist/*
+
+      - name: Publish distribution to Test PyPI
+        run: poetry run twine upload --non-interactive --verbose dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+
+      - name: Publish distribution to PyPI
+        run: poetry run twine upload --non-interactive --verbose dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
