@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.3 (2021-08-14)
+### Fix
+* Publish on a published release event ([`3067a56`](https://github.com/cpcloud/slumba/commit/3067a5611fa8170112abe41e951441b378d33d98))
+
 ## v1.1.2 (2021-08-14)
 ### Fix
 * Fix publishing on pypi ([`52876ab`](https://github.com/cpcloud/slumba/commit/52876ab065787d254f1d02cc1e2f609e6ea599ec))
