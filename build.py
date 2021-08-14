@@ -1,3 +1,5 @@
+import os
+import sys
 from typing import Any, MutableMapping
 
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -7,6 +9,16 @@ ext_modules = [
         name="slumba.cslumba",
         sources=["slumba/cslumba.cc"],
         libraries=["sqlite3"],
+        library_dirs=(
+            [os.path.join(os.environ["CONDA_PREFIX"], "Libs")]
+            if sys.platform == "win32"
+            else []
+        ),
+        include_dirs=(
+            [os.path.join(os.environ["CONDA_PREFIX"], "Library", "include")]
+            if sys.platform == "win32"
+            else []
+        ),
     )
 ]
 
