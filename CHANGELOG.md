@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.6 (2021-08-14)
+### Fix
+* Try all the events ([`5b02218`](https://github.com/cpcloud/slumba/commit/5b0221857f8da6244d285ee1c83fb6ebaaa208c2))
+
 ## v1.1.5 (2021-08-14)
 ### Fix
 * Publish on released event ([`4e1d885`](https://github.com/cpcloud/slumba/commit/4e1d885656f56c7beed0a37202f430c983f0c236))
