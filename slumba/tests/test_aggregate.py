@@ -124,7 +124,7 @@ def con():
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """
+        """
     )
     con.execute(
         """
@@ -133,7 +133,7 @@ def con():
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """
+        """
     )
 
     rows = [

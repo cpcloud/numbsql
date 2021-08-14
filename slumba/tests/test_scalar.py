@@ -35,7 +35,7 @@ def con():
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """
+        """
     )
     con.execute(
         """
@@ -44,7 +44,7 @@ def con():
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """
+        """
     )
 
     con.execute(
@@ -54,7 +54,7 @@ def con():
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """
+        """
     )
 
     rows = [
@@ -106,7 +106,7 @@ def large_con():
             key VARCHAR(1),
             value DOUBLE PRECISION
         )
-    """
+        """
     )
     n = int(1e5)
     rows = [
