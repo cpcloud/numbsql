@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.14 (2021-08-14)
+### Fix
+* Fix poetry publishing ([`0a775dc`](https://github.com/cpcloud/slumba/commit/0a775dc9a26b7ec3b3e3451bbaa16a6078e2e75b))
+
 ## v1.1.13 (2021-08-14)
 ### Fix
 * Try publishing on pypi ([`584337c`](https://github.com/cpcloud/slumba/commit/584337c3197ed586959300835b3deabe3a08229d))
