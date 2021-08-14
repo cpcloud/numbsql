@@ -110,12 +110,13 @@ def create_aggregate(
     """
     namebytes = name.encode("utf8")
     sqlite_db = get_sqlite_db(con)
+    flags = SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0)
     if hasattr(aggregate_class, "value") and hasattr(aggregate_class, "inverse"):
         rc = sqlite3_create_window_function(
             sqlite_db,
             namebytes,
             num_params,
-            SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
+            flags,
             None,
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),
@@ -128,7 +129,7 @@ def create_aggregate(
             sqlite_db,
             namebytes,
             num_params,
-            SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
+            flags,
             None,
             scalarfunc(0),
             stepfunc(aggregate_class.step.address),
