@@ -130,9 +130,14 @@ jobs:
           - macos-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: v${{ needs.release.outputs.new_version }}
 
       - name: Setup conda
         uses: conda-incubator/setup-miniconda@v2
@@ -149,71 +154,30 @@ jobs:
       - name: Install poetry
         run: conda install -n slumba -y poetry
 
-      - name: Configure poetry ${{ matrix.os }}
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Configure poetry
         run: |
           conda activate slumba
           poetry config repositories.test https://test.pypi.org/legacy
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry config pypi-token.test ${{ secrets.TEST_PYPI_TOKEN }}
 
-      - name: Configure poetry ${{ matrix.os }}
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry config repositories.test https://test.pypi.org/legacy
-          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
-          poetry config pypi-token.test ${{ secrets.TEST_PYPI_TOKEN }}
-
-      - name: Install dependencies ${{ matrix.os }}
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Install dependencies
         run: |
           conda activate slumba
           poetry install --no-root
 
-      - name: Install dependencies ${{ matrix.os }}
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry install --no-root
-
-      - name: Build wheels ${{ matrix.os }}
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Build wheels
         run: |
           conda activate slumba
           poetry build --format wheel
 
-      - name: Build wheels ${{ matrix.os }}
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry build --format wheel
-
-      - name: Build and publish distribution to Test PyPI ${{ matrix.os }}
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Build and publish distribution to Test PyPI
         run: |
           conda activate slumba
           poetry publish --verbose --repository test
 
-      - name: Build and publish distribution to Test PyPI ${{ matrix.os }}
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry publish --verbose --repository test
-
-      - name: Publish distribution to PyPI ${{ matrix.os }}
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
-        run: |
-          conda activate slumba
-          poetry publish --verbose
-
-      - name: Publish distribution to PyPI ${{ matrix.os }}
-        if: ${{ matrix.os == 'windows-latest' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
+      - name: Publish distribution to PyPI
+        if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: |
           conda activate slumba
           poetry publish --verbose
