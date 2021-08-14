@@ -2,6 +2,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 name: Continuous Integration
 
@@ -11,7 +14,6 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          # - macos-latest
         python_version:
           - "3.7"
           - "3.8"
@@ -103,6 +105,7 @@ jobs:
           echo ::set-output name=value::$current_version
 
       - name: Semantic release
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
@@ -158,8 +161,6 @@ jobs:
         run: |
           conda activate slumba
           poetry config repositories.test https://test.pypi.org/legacy
-          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
-          poetry config pypi-token.test ${{ secrets.TEST_PYPI_TOKEN }}
 
       - name: Install dependencies
         run: |
@@ -172,19 +173,24 @@ jobs:
           poetry build --format wheel
 
       - name: Build and publish distribution to Test PyPI
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           conda activate slumba
           poetry publish --verbose --repository test
+        env:
+          POETRY_PYPI_TOKEN_TEST: ${{ secrets.TEST_PYPI_TOKEN }}
 
       - name: Publish distribution to PyPI
-        if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
+        if: ${{ github.event_name != 'pull_request' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: |
           conda activate slumba
           poetry publish --verbose
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
-        if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
+        if: ${{ github.event_name != 'pull_request' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
