@@ -44,8 +44,10 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
-
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: powershell
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -66,27 +68,11 @@ jobs:
         run: conda install -n slumba -y poetry
 
       - name: Install dependencies
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry install
-
-      - name: Install dependencies
-        if: ${{ matrix.os == 'windows-latest' }}
         run: |
           conda activate slumba
           poetry install
 
       - name: Run tests ${{ matrix.os }}
-        shell: bash -l {0}
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: |
-          conda activate slumba
-          poetry run pytest --benchmark-disable
-
-      - name: Run tests ${{ matrix.os }}
-        if: ${{ matrix.os == 'windows-latest' }}
         run: |
           conda activate slumba
           poetry run pytest --benchmark-disable
