@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.15 (2021-08-14)
+### Fix
+* Don't try to publish on PRs ([`a8995d0`](https://github.com/cpcloud/slumba/commit/a8995d03a5f6e0655ca1740bd50a55690475888b))
+* **ci:** Checkout the right tag ([`a0119a2`](https://github.com/cpcloud/slumba/commit/a0119a2689ae56021e3225bd872debb5b97dde18))
+
 ## v1.1.14 (2021-08-14)
 ### Fix
 * Fix poetry publishing ([`0a775dc`](https://github.com/cpcloud/slumba/commit/0a775dc9a26b7ec3b3e3451bbaa16a6078e2e75b))
