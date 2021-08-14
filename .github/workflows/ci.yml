@@ -163,6 +163,23 @@ jobs:
       - name: Install poetry
         run: conda install -n slumba -y poetry
 
+      - name: Configure poetry ${{ matrix.os }}
+        shell: bash -l {0}
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          conda activate slumba
+          poetry config repositories.test https://test.pypi.org/legacy
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+          poetry config pypi-token.test ${{ secrets.TEST_PYPI_TOKEN }}
+
+      - name: Configure poetry ${{ matrix.os }}
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          conda activate slumba
+          poetry config repositories.test https://test.pypi.org/legacy
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+          poetry config pypi-token.test ${{ secrets.TEST_PYPI_TOKEN }}
+
       - name: Install dependencies ${{ matrix.os }}
         shell: bash -l {0}
         if: ${{ matrix.os != 'windows-latest' }}
@@ -194,26 +211,26 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           conda activate slumba
-          poetry publish --verbose --username __token__ --password ${{ secrets.TEST_PYPI_TOKEN }} --repository https://test.pypi.org/legacy
+          poetry publish --verbose --repository test
 
       - name: Build and publish distribution to Test PyPI ${{ matrix.os }}
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           conda activate slumba
-          poetry publish --verbose --username __token__ --password ${{ secrets.TEST_PYPI_TOKEN }} --repository https://test.pypi.org/legacy
+          poetry publish --verbose --repository test
 
       - name: Publish distribution to PyPI ${{ matrix.os }}
         shell: bash -l {0}
         if: ${{ matrix.os != 'windows-latest' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: |
           conda activate slumba
-          poetry publish --verbose --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish --verbose
 
       - name: Publish distribution to PyPI ${{ matrix.os }}
         if: ${{ matrix.os == 'windows-latest' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: |
           conda activate slumba
-          poetry publish --verbose --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish --verbose
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
