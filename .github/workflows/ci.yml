@@ -63,11 +63,8 @@ jobs:
           show-channel-urls: true
           activate-environment: slumba
 
-      - name: Install sqlite
-        run: conda install -n slumba -y sqlite
-
-      - name: Install poetry
-        run: conda install -n slumba -y poetry
+      - name: Install sqlite and poetry
+        run: conda install -n slumba -y sqlite poetry
 
       - name: Install dependencies
         run: |
@@ -90,9 +87,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        if: ${{ github.event_name != 'pull_request' }}
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout PR
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Install Semantic release
         run: pip install python-semantic-release
@@ -151,16 +154,8 @@ jobs:
           show-channel-urls: true
           activate-environment: slumba
 
-      - name: Install sqlite
-        run: conda install -n slumba -y sqlite
-
-      - name: Install poetry
-        run: conda install -n slumba -y poetry
-
-      - name: Configure poetry
-        run: |
-          conda activate slumba
-          poetry config repositories.test https://test.pypi.org/legacy
+      - name: Install sqlite and poetry
+        run: conda install -n slumba -y sqlite poetry
 
       - name: Install dependencies
         run: |
@@ -176,17 +171,24 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         run: |
           conda activate slumba
+
+          poetry config repositories.test https://test.pypi.org/legacy
+          poetry config pypi-token.test ${{ secrets.TEST_PYPI_TOKEN }}
+
           poetry publish --verbose --repository test
-        env:
-          POETRY_PYPI_TOKEN_TEST: ${{ secrets.TEST_PYPI_TOKEN }}
+
+          poetry config unset pypi-token.test
 
       - name: Publish distribution to PyPI
         if: ${{ github.event_name != 'pull_request' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: |
           conda activate slumba
+
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+
           poetry publish --verbose
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+
+          poetry config unset pypi-token.pypi
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
