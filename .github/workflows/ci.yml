@@ -177,7 +177,7 @@ jobs:
 
           poetry publish --verbose --repository test
 
-          poetry config unset pypi-token.test
+          poetry config --unset pypi-token.test
 
       - name: Publish distribution to PyPI
         if: ${{ github.event_name != 'pull_request' && needs.release.outputs.current_version != needs.release.outputs.new_version }}
@@ -188,7 +188,7 @@ jobs:
 
           poetry publish --verbose
 
-          poetry config unset pypi-token.pypi
+          poetry config --unset pypi-token.pypi
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
