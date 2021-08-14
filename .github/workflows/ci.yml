@@ -84,6 +84,9 @@ jobs:
     # needs:
     #   - nix
     #   - conda
+    outputs:
+      current_version: ${{ steps.get_current_version.outputs.value }}
+      new_version: ${{ steps.get_new_version.outputs.value }}
     runs-on: ubuntu-latest
     concurrency: release
     steps:
@@ -98,7 +101,10 @@ jobs:
 
       - name: Get current version
         id: get_current_version
-        run: echo ::set-output name=value::$(semantic-release print-version --current)
+        run: |
+          current_version="$(semantic-release print-version --current)"
+          echo "current version: $current_version"
+          echo ::set-output name=value::$current_version
 
       - name: Semantic release
         run: |
@@ -131,7 +137,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: v${{ needs.release.steps.get_new_version.outputs.value }}
+          ref: v${{ needs.release.outputs.new_version }}
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -158,7 +164,7 @@ jobs:
           TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
       - name: Publish distribution to PyPI
-        if: ${{ needs.release.steps.get_current_version.outputs.value != needs.release.steps.get_new_version.outputs.value }}
+        if: ${{ needs.release.outputs.current_version != needs.release.outputs.new_version }}
         run: poetry run twine upload --non-interactive --verbose dist/*
         env:
           TWINE_USERNAME: __token__
