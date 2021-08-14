@@ -1,7 +1,7 @@
+import itertools
 import random
 import sqlite3
 
-import numpy as np
 import pytest
 from numba import float64, int64, optional
 
@@ -96,49 +96,39 @@ def add_one_python(x):
     return 1.0 if x is not None else None
 
 
-@pytest.fixture
-def large_con():
-    con = sqlite3.connect(":memory:")
+@pytest.fixture(
+    params=[
+        pytest.param((in_memory, index), id=f"{in_memory_name}-{index_name}")
+        for (in_memory, in_memory_name), (index, index_name) in itertools.product(
+            [(True, "in_memory"), (False, "on_disk")],
+            [(True, "with_index"), (False, "no_index")],
+        )
+    ],
+)
+def large_con(request, tmp_path):
+    in_memory, index = request.param
+    path = ":memory:" if in_memory else str(tmp_path / "test.db")
+    con = sqlite3.connect(path)
     con.execute(
         """
         CREATE TABLE large_t (
             id INTEGER PRIMARY KEY,
-            key VARCHAR(1),
             value DOUBLE PRECISION
         )
         """
     )
     n = int(1e5)
-    rows = [
-        (key, value.item())
-        for key, value in zip(
-            np.random.choice(list("abcde"), size=n),
-            np.random.randn(n),
-        )
-    ]
-    con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
+    rows = ((value,) for value in random.normalvariate(0.0, 1.0) for _ in range(n))
+    con.executemany("INSERT INTO large_t (value) VALUES (?)", rows)
     create_function(con, "add_one_numba", 1, add_one_optional)
     con.create_function("add_one_python", 1, add_one_python)
     return con
 
 
-def run_scalar_numba(con):
-    query = "SELECT add_one_numba(value) AS result FROM large_t"
-    result = con.execute(query)
-    return result
+def run_scalar(con, func):
+    return con.execute(f"SELECT {func}(value) AS result FROM large_t").fetchall()
 
 
-def run_scalar_python(con):
-    query = "SELECT add_one_python(value) AS result FROM large_t"
-    result = con.execute(query)
-    return result
-
-
-def test_scalar_bench_numba(large_con, benchmark):
-    result = benchmark(run_scalar_numba, large_con)
-    assert result
-
-
-def test_scalar_bench_python(large_con, benchmark):
-    result = benchmark(run_scalar_python, large_con)
-    assert result
+@pytest.mark.parametrize("func", ["add_one_numba", "add_one_python"])
+def test_scalar_bench(large_con, benchmark, func):
+    assert benchmark(run_scalar, large_con, func)

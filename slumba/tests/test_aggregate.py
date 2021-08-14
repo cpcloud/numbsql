@@ -1,7 +1,7 @@
+import itertools
+import random
 import sqlite3
-import tempfile
 
-import numpy as np
 import pytest
 from numba import float64, int64, optional
 from numba.experimental import jitclass
@@ -9,12 +9,6 @@ from pkg_resources import parse_version
 
 from slumba import create_aggregate, sqlite_udaf
 from slumba.cslumba import SQLITE_VERSION
-
-xfail_if_no_window_functions = pytest.mark.xfail(
-    parse_version(SQLITE_VERSION) < parse_version("3.25.0"),
-    reason="Window functions are not supported in SQLite < 3.25.0",
-    raises=RuntimeError,
-)
 
 
 @sqlite_udaf(optional(float64)(optional(float64)))
@@ -167,7 +161,6 @@ xfail_missing_python_api = pytest.mark.xfail(
 )
 
 
-@xfail_if_no_window_functions
 @pytest.mark.parametrize(
     "func",
     [
@@ -183,141 +176,94 @@ def test_aggregate_window_numba(con, func):
     )
 
 
-@pytest.fixture(scope="module")
-def large_con():
-    with tempfile.NamedTemporaryFile(suffix=".db") as f:
-        con = sqlite3.connect(f.name)
-        con.execute(
-            """
-            CREATE TABLE large_t (
-                key INTEGER,
-                value DOUBLE PRECISION
-            )
-        """
+@pytest.fixture(
+    params=[
+        pytest.param((in_memory, index), id=f"{in_memory_name}-{index_name}")
+        for (in_memory, in_memory_name), (index, index_name) in itertools.product(
+            [(True, "in_memory"), (False, "on_disk")],
+            [(True, "with_index"), (False, "no_index")],
         )
-        n = int(1e4)
-        rows = [
-            (key, value.item())
-            for key, value in zip(
-                np.random.randint(0, int(0.01 * n), size=n),
-                np.random.randn(n),
-            )
-        ]
-        con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
+    ],
+)
+def large_con(request, tmp_path):
+    in_memory, index = request.param
+    path = ":memory:" if in_memory else str(tmp_path / "test.db")
+    con = sqlite3.connect(path)
+    con.execute(
+        """
+        CREATE TABLE large_t (
+            key INTEGER,
+            value DOUBLE PRECISION
+        )
+        """
+    )
+    n = int(1e5)
+    rows = zip(
+        (random.randrange(0, int(0.01 * n)) for _ in range(n)),
+        (random.normalvariate(0.0, 1.0) for _ in range(n)),
+    )
+
+    con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
+    if request.param:
         con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
-        create_aggregate(con, "avg_numba", 1, Avg)
-        create_aggregate(con, "winavg_numba", 1, WinAvg)
-        con.create_aggregate("avg_python", 1, AvgPython)
-        con.create_aggregate("winavg_python", 1, WinAvgPython)
+    create_aggregate(con, "avg_numba", 1, Avg)
+    create_aggregate(con, "winavg_numba", 1, WinAvg)
+    con.create_aggregate("avg_python", 1, AvgPython)
+    con.create_aggregate("winavg_python", 1, WinAvgPython)
+    try:
         yield con
+    finally:
+        if request.param:
+            con.execute("DROP INDEX large_t_key_index")
+        con.execute("DROP TABLE large_t")
 
 
-def run_agg_group_by_numba(con):
-    query = "SELECT key, avg_numba(value) AS result FROM large_t GROUP BY key"
-    result = con.execute(query)
-    return result.fetchall()
+def run_agg_group_by(con, func):
+    return con.execute(
+        f"SELECT key, {func}(value) AS result FROM large_t GROUP BY key"
+    ).fetchall()
 
 
-def run_agg_group_by_builtin(con):
-    query = "SELECT key, avg(value) AS result FROM large_t GROUP BY key"
-    result = con.execute(query)
-    return result.fetchall()
+@pytest.mark.parametrize("func", ["avg", "avg_numba", "avg_python"])
+def test_aggregate_group_by_bench(large_con, benchmark, func):
+    assert benchmark(run_agg_group_by, large_con, func)
 
 
-def run_agg_group_by_python(con):
-    query = "SELECT key, avg_python(value) AS result FROM large_t GROUP BY key"
-    result = con.execute(query)
-    return result.fetchall()
+def run_agg(con, func):
+    return con.execute(f"SELECT key, {func}(value) AS result FROM large_t").fetchall()
 
 
-def test_aggregate_group_by_bench_numba(large_con, benchmark):
-    result = benchmark(run_agg_group_by_numba, large_con)
-    assert result
+@pytest.mark.parametrize("func", ["avg", "avg_numba", "avg_python"])
+def test_aggregate_bench(large_con, benchmark, func):
+    assert benchmark(run_agg, large_con, func)
 
 
-def test_aggregate_group_by_bench_builtin(large_con, benchmark):
-    result = benchmark(run_agg_group_by_builtin, large_con)
-    assert result
+def run_agg_partition_by(con, func):
+    return con.execute(
+        f"SELECT key, {func}(value) OVER (PARTITION BY key) AS result FROM large_t"
+    ).fetchall()
 
 
-def test_aggregate_group_by_bench_python(large_con, benchmark):
-    result = benchmark(run_agg_group_by_python, large_con)
-    assert result
-
-
-def run_agg_numba(con):
-    query = "SELECT key, avg_numba(value) AS result FROM large_t"
-    result = con.execute(query)
-    return result
-
-
-def run_agg_builtin(con):
-    query = "SELECT key, avg(value) AS result FROM large_t"
-    result = con.execute(query)
-    return result
-
-
-def run_agg_python(con):
-    query = "SELECT key, avg_python(value) AS result FROM large_t"
-    result = con.execute(query)
-    return result
-
-
-def test_aggregate_bench_numba(large_con, benchmark):
-    result = benchmark(run_agg_numba, large_con)
-    assert result
-
-
-def test_aggregate_bench_builtin(large_con, benchmark):
-    result = benchmark(run_agg_builtin, large_con)
-    assert result
-
-
-def test_aggregate_bench_python(large_con, benchmark):
-    result = benchmark(run_agg_python, large_con)
-    assert result
-
-
-def run_agg_partition_by_numba(con):
-    query = """
-SELECT key, winavg_numba(value) OVER (PARTITION BY key) AS result FROM large_t
-"""
-    result = con.execute(query)
-    return result.fetchall()
-
-
-def run_agg_partition_by_builtin(con):
-    query = """
-SELECT key, avg(value) OVER (PARTITION BY key) AS result FROM large_t"""
-    result = con.execute(query)
-    return result.fetchall()
-
-
-def run_agg_partition_by_python(con):
-    query = """
-SELECT key, winavg_python(value) OVER (PARTITION BY key) AS result FROM large_t
-"""
-    result = con.execute(query)
-    return result.fetchall()
-
-
-@xfail_if_no_window_functions
-def test_window_bench_numba(large_con, benchmark):
-    result = benchmark(run_agg_partition_by_numba, large_con)
-    assert result
-
-
-@xfail_if_no_window_functions
-def test_window_bench_builtin(large_con, benchmark):
-    result = benchmark(run_agg_partition_by_builtin, large_con)
-    assert result
-
-
-@xfail_if_no_window_functions
-@xfail_missing_python_api
-def test_window_bench_python(large_con, benchmark):
-    result = benchmark(run_agg_partition_by_python, large_con)
-    assert result
+@pytest.mark.parametrize(
+    "func",
+    [
+        "avg",
+        "winavg_numba",
+        pytest.param(
+            "winavg_python",
+            marks=[
+                xfail_missing_python_api,
+                pytest.mark.xfail(
+                    parse_version(SQLITE_VERSION) < parse_version("3.25.0"),
+                    reason="Window functions are not supported in SQLite < 3.25.0",
+                    raises=RuntimeError,
+                ),
+            ],
+        ),
+    ],
+)
+def test_window_bench(large_con, benchmark, func):
+    assert benchmark(run_agg_partition_by, large_con, func)
 
 
 @sqlite_udaf(float64(float64))
