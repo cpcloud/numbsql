@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.4 (2021-08-14)
+### Fix
+* Don't upload to releases ([`4f8af98`](https://github.com/cpcloud/slumba/commit/4f8af982831d71bf459c457ca5a4ce0efaa3d670))
+
 ## v1.1.3 (2021-08-14)
 ### Fix
 * Publish on a published release event ([`3067a56`](https://github.com/cpcloud/slumba/commit/3067a5611fa8170112abe41e951441b378d33d98))
