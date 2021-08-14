@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.11 (2021-08-14)
+### Fix
+* Fix publishing ([`1ad3353`](https://github.com/cpcloud/slumba/commit/1ad33538ac13601804670f8d9c4342bd78cab7d5))
+
 ## v1.1.10 (2021-08-14)
 ### Fix
 * Don't try to anticipate the version ([`4e326c3`](https://github.com/cpcloud/slumba/commit/4e326c37bf781f3cc6d727326acac6334955b525))
