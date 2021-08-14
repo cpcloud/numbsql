@@ -62,14 +62,14 @@ jobs:
       - name: Install sqlite
         run: conda install -n slumba -y sqlite
 
-      - name: Install poetry
-        run: conda install -n slumba -y poetry
-
       - name: Show paths on windows nested
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           conda activate slumba
           Get-ChildItem -Path %CONDA_PREFIX%\envs\slumba\*sqlite* -Recurse -Force
+
+      - name: Install poetry
+        run: conda install -n slumba -y poetry
 
       - shell: bash -l {0}
         name: Activate environment and install dependencies
