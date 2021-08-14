@@ -2,12 +2,6 @@ on:
   push:
     branches:
       - master
-  workflow_dispatch:
-    inputs:
-      debug_enabled:
-        description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
-        required: false
-        default: "false"
 
 name: Continuous Integration
 
@@ -71,12 +65,11 @@ jobs:
       - name: Install poetry
         run: conda install -n slumba -y poetry
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ matrix.os == 'windows-latest' && github.event_name == 'workflow_dispatch' && fromJSON(github.event.inputs.debug_enabled) }}
-        with:
-          limit-access-to-actor: true
-          sudo: false
+      - name: Show paths on windows nested
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          conda activate slumba
+          Get-ChildItem -Path %CONDA_PREFIX%\envs\slumba\*sqlite* -Recurse -Force
 
       - shell: bash -l {0}
         name: Activate environment and install dependencies
