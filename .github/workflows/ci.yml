@@ -40,16 +40,12 @@ jobs:
           - "3.7"
           - "3.8"
           - "3.9"
-        bits:
-          - "64"
         os:
-          - image: ubuntu-latest
-            conda_platform: linux
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
 
-          - image: macos-latest
-            conda_platform: osx
-
-    runs-on: ${{ matrix.os.image }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
