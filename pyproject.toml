@@ -34,7 +34,6 @@ pybind11 = "2.7.1"
 pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
-twine = "3.4.2"
 
 [tool.pytest.ini_options]
 xfail_strict = true
