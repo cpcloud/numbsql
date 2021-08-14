@@ -72,7 +72,7 @@ jobs:
           conda activate slumba
           poetry install
 
-      - name: Run tests ${{ matrix.os }}
+      - name: Run tests
         run: |
           conda activate slumba
           poetry run pytest --benchmark-disable
