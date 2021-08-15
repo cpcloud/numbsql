@@ -2,7 +2,7 @@
 name = "slumba"
 packages = [{ include = "slumba" }]
 # don't ship tests with the install
-exclude = ["slumba/tests", "slumba/cslumba.cc"]
+exclude = ["slumba/tests"]
 homepage = "https://github.com/cpcloud/slumba"
 repository = "https://github.com/cpcloud/slumba"
 version = "1.1.17"
@@ -10,7 +10,6 @@ description = "JITted SQLite user-defined functions and aggregates"
 readme = "README.md"
 authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 maintainers = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
-build = "build.py"
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Developers",
@@ -31,10 +30,10 @@ flake8 = "^3"
 importlib-metadata = { version = "^4.6.1", python = "<3.8" }
 isort = "^5"
 mypy = "0.812"
-pybind11 = "2.7.1"
 pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
+pytest-xdist = "^2"
 
 [tool.pytest.ini_options]
 xfail_strict = true
@@ -48,9 +47,11 @@ norecursedirs = ["site-packages", "dist-packages"]
 [tool.semantic_release]
 version_toml = "pyproject.toml:tool.poetry.version"
 branch = "master"
-upload_to_pypi = false
-upload_to_release = false
-build_command = false
+upload_to_pypi = true
+upload_to_release = true
+build_command = "poetry build"
+commit_subject = "chore(release): {version}"
+commit_author = "github-actions <github-actions@github.com>"
 
 [tool.black]
 line_length = 88
@@ -65,5 +66,5 @@ add_ignore = ["D105", "D213", "D203"]
 match-dir = "slumba"
 
 [build-system]
-requires = ["poetry>=0.12", "pybind11==2.7.1"]
+requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

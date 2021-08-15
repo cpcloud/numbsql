@@ -4,7 +4,6 @@ from numba.core.ccallback import CFunc
 from numba.types import ClassType
 
 from .aggregate import sqlite_udaf
-from .cslumba import get_sqlite_db
 from .scalar import sqlite_udf
 from .sqlite import (
     SQLITE_DETERMINISTIC,
@@ -12,6 +11,7 @@ from .sqlite import (
     SQLITE_UTF8,
     destroyfunc,
     finalizefunc,
+    get_sqlite_db,
     inversefunc,
     scalarfunc,
     sqlite3_create_function,

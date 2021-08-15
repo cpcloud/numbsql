@@ -55,6 +55,7 @@ in
         enable = true;
         entry = "mypy";
         types_or = [ "python" ];
+        excludes = [ "slumba/tests/test_.+\.py" ];
       };
     };
   };

@@ -5,8 +5,8 @@ from numba.core.ccallback import CFunc
 from numba.core.typing import Signature
 from numba.types import CPointer, intc, void, voidptr
 
-from slumba.numbaext import get_sqlite3_result_function, make_arg_tuple
-from slumba.sqlite import sqlite3_result_null
+from .numbaext import get_sqlite3_result_function, make_arg_tuple
+from .sqlite import sqlite3_result_null
 
 
 def sqlite_udf(

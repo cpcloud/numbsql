@@ -1,3 +1,5 @@
+import ctypes
+import sqlite3
 from ctypes import (
     CDLL,
     CFUNCTYPE,
@@ -6,14 +8,13 @@ from ctypes import (
     c_double,
     c_int,
     c_int64,
+    c_ssize_t,
     c_void_p,
 )
 from ctypes.util import find_library
 from typing import Any, Optional, Type, Union
 
 from numba import float64, int32, int64, optional
-
-from .cslumba import SQLITE_DETERMINISTIC, SQLITE_OK, SQLITE_UTF8  # noqa: F401
 
 sqlite3_path: Optional[str] = find_library("sqlite3")
 if sqlite3_path is None:  # pragma: no cover
@@ -47,7 +48,6 @@ stepfunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
 finalizefunc = CFUNCTYPE(None, c_void_p)
 valuefunc = CFUNCTYPE(None, c_void_p)
 inversefunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
-
 destroyfunc = CFUNCTYPE(None, c_void_p)
 
 sqlite3_create_function = libsqlite3.sqlite3_create_function
@@ -93,14 +93,6 @@ RESULT_SETTERS = {
 }
 
 
-value_methods = {
-    "double": c_double,
-    "int": c_int,
-    "int64": c_int64,
-    "type": c_int,
-}
-
-
 def _add_value_method(
     typename: str, restype: Union[Type[c_double], Type[c_int64], Type[c_int]]
 ) -> Any:
@@ -128,6 +120,26 @@ _sqlite3_errmsg.argtypes = (c_void_p,)
 _sqlite3_errmsg.restype = c_char_p
 
 
-def sqlite3_errmsg(db: int) -> str:
+def sqlite3_errmsg(db: c_void_p) -> str:
     """Get the most recent error message from the SQLite database."""
     return _sqlite3_errmsg(db).decode("utf8")
+
+
+class _RawConnection(ctypes.Structure):
+    _fields_ = [
+        ("ob_refcnt", c_ssize_t),
+        ("ob_type", c_void_p),
+        ("db", c_void_p),
+    ]
+
+
+SQLITE_OK = sqlite3.SQLITE_OK
+SQLITE_VERSION = sqlite3.sqlite_version
+SQLITE_UTF8 = 1
+SQLITE_NULL = 5
+SQLITE_DETERMINISTIC = 0x000000800
+
+
+def get_sqlite_db(connection: sqlite3.Connection) -> c_void_p:
+    """Get the address of the sqlite3* db instance in `connection`."""
+    return _RawConnection.from_address(id(connection)).db
