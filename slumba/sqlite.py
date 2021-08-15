@@ -1,5 +1,6 @@
 import ctypes
 import sqlite3
+import sys
 from ctypes import (
     CDLL,
     CFUNCTYPE,
@@ -8,19 +9,36 @@ from ctypes import (
     c_double,
     c_int,
     c_int64,
+    c_size_t,
     c_ssize_t,
+    c_ubyte,
     c_void_p,
 )
 from ctypes.util import find_library
-from typing import Any, Optional, Type, Union
+from typing import Any, Optional
 
 from numba import float64, int32, int64, optional
+from numba.types import string
+
+SQLITE_OK = sqlite3.SQLITE_OK
+SQLITE_VERSION = sqlite3.sqlite_version
+SQLITE_UTF8 = 1
+SQLITE_NULL = 5
+SQLITE_DETERMINISTIC = 0x000000800
 
 sqlite3_path: Optional[str] = find_library("sqlite3")
 if sqlite3_path is None:  # pragma: no cover
     raise RuntimeError("Unable to find sqlite3 library")
 
 libsqlite3 = CDLL(sqlite3_path)
+
+if sys.platform != "win32":
+    libc_path: Optional[str] = find_library("c")
+    if libc_path is None:  # pragma: no cover
+        raise RuntimeError("Unable to find libc library")
+    libc = CDLL(libc_path)
+else:
+    libc = ctypes.cdll.msvcrt
 
 sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
 sqlite3_aggregate_context.argtypes = c_void_p, c_int
@@ -93,8 +111,12 @@ RESULT_SETTERS = {
 }
 
 
-def _add_value_method(
-    typename: str, restype: Union[Type[c_double], Type[c_int64], Type[c_int]]
+c_ubyte_p = POINTER(c_ubyte)
+
+
+def _get_value_method(
+    typename: str,
+    restype: Any,
 ) -> Any:
     method = getattr(libsqlite3, f"sqlite3_value_{typename}")
     method.argtypes = (c_void_p,)
@@ -103,12 +125,14 @@ def _add_value_method(
 
 
 VALUE_EXTRACTORS = {
-    optional(float64): _add_value_method("double", c_double),
-    optional(int64): _add_value_method("int64", c_int64),
-    optional(int32): _add_value_method("int", c_int),
-    float64: _add_value_method("double", c_double),
-    int64: _add_value_method("int64", c_int64),
-    int32: _add_value_method("int", c_int),
+    optional(float64): _get_value_method("double", c_double),
+    optional(int64): _get_value_method("int64", c_int64),
+    optional(int32): _get_value_method("int", c_int),
+    optional(string): _get_value_method("text", c_ubyte_p),
+    float64: _get_value_method("double", c_double),
+    int64: _get_value_method("int64", c_int64),
+    int32: _get_value_method("int", c_int),
+    string: _get_value_method("text", c_ubyte_p),
 }
 
 sqlite3_value_type = libsqlite3.sqlite3_value_type
@@ -118,6 +142,10 @@ sqlite3_restype = c_int
 _sqlite3_errmsg = libsqlite3.sqlite3_errmsg
 _sqlite3_errmsg.argtypes = (c_void_p,)
 _sqlite3_errmsg.restype = c_char_p
+
+strlen = libc.strlen
+strlen.argtypes = (c_ubyte_p,)
+strlen.restype = c_size_t
 
 
 def sqlite3_errmsg(db: c_void_p) -> str:
@@ -131,13 +159,6 @@ class _RawConnection(ctypes.Structure):
         ("ob_type", c_void_p),
         ("db", c_void_p),
     ]
-
-
-SQLITE_OK = sqlite3.SQLITE_OK
-SQLITE_VERSION = sqlite3.sqlite_version
-SQLITE_UTF8 = 1
-SQLITE_NULL = 5
-SQLITE_DETERMINISTIC = 0x000000800
 
 
 def get_sqlite_db(connection: sqlite3.Connection) -> c_void_p:

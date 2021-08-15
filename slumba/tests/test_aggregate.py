@@ -1,11 +1,11 @@
 import itertools
-import pathlib
 import random
 import sqlite3
 from typing import Generator, List, Optional, Tuple
 
 import pytest
 from _pytest.fixtures import SubRequest
+from _pytest.tmpdir import TempPathFactory
 from numba import float64, int64, optional
 from numba.experimental import jitclass
 from pkg_resources import parse_version
@@ -95,7 +95,7 @@ class WinAvgPython:  # pragma: no cover
             self.count -= 1
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture(scope="module")  # type: ignore[misc]
 def con() -> sqlite3.Connection:
     con = sqlite3.connect(":memory:")
     con.execute(
@@ -174,12 +174,13 @@ def test_aggregate_window_numba(con: sqlite3.Connection, func: str) -> None:
             [(True, "with_index"), (False, "no_index")],
         )
     ],
+    scope="module",
 )
 def large_con(
-    request: SubRequest, tmp_path: pathlib.Path
+    request: SubRequest, tmp_path_factory: TempPathFactory
 ) -> Generator[sqlite3.Connection, None, None]:
     in_memory, index = request.param
-    path = ":memory:" if in_memory else str(tmp_path / "test.db")
+    path = ":memory:" if in_memory else str(tmp_path_factory.mktemp("test") / "test.db")
     con = sqlite3.connect(path)
     con.execute(
         """
@@ -195,9 +196,10 @@ def large_con(
         (random.normalvariate(0.0, 1.0) for _ in range(n)),
     )
 
-    con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
     if index:
         con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
+
+    con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
     create_aggregate(con, "avg_numba", 1, Avg)
     create_aggregate(con, "winavg_numba", 1, WinAvg)
     con.create_aggregate("avg_python", 1, AvgPython)

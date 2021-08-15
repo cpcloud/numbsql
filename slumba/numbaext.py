@@ -1,5 +1,6 @@
 from typing import Callable, Tuple, Union
 
+import numba
 from llvmlite.ir.instructions import (
     CastInstr,
     Constant,
@@ -16,7 +17,13 @@ from numba.core.typing import ctypes_utils
 from numba.core.typing.context import Context
 from numba.core.typing.templates import Signature
 
-from .sqlite import RESULT_SETTERS, SQLITE_NULL, VALUE_EXTRACTORS, sqlite3_value_type
+from .sqlite import (
+    RESULT_SETTERS,
+    SQLITE_NULL,
+    VALUE_EXTRACTORS,
+    sqlite3_value_type,
+    strlen,
+)
 
 
 @extending.intrinsic  # type: ignore[misc]
@@ -116,6 +123,8 @@ def make_arg_tuple(
                 ctypes_utils.make_function_type(sqlite3_value_type),
                 sqlite3_value_type,
             )
+
+            # get the value type
             value_type = builder.call(sqlite3_value_type_numba, [element])
 
             # make the SQLITE_NULL value type constant available
@@ -141,23 +150,62 @@ def make_arg_tuple(
             #
             # otherwise the raw value is the argument
             raw = builder.call(fn, [element])
-            if isinstance(argtype, types.Optional):
-                underlying_type = getattr(argtype, "type", argtype)
+            out_type = context.get_value_type(argtype)
+            instr = cgutils.alloca_once(builder, out_type)
+            underlying_type = getattr(argtype, "type", argtype)
 
-                # make a optional value if the value is not null, otherwise
-                # make an none value
-                instr = builder.select(
-                    is_not_null,
-                    context.make_optional_value(builder, underlying_type, raw),
-                    context.make_optional_none(builder, underlying_type),
-                )
-            else:
-                with builder.if_else(is_not_null, likely=True) as (then, otherwise):
-                    # TODO: should check if a value is null and raise an error if
-                    # it is
+            if isinstance(argtype, types.Optional):
+                with builder.if_else(is_not_null) as (then, otherwise):
                     with then:
-                        instr = raw
+                        # you _must_ put code that only executes in this block,
+                        # in the part of the context manager that will execute
+                        # it, otherwise the code outside of the block can be
+                        # executed unconditionally, leading to sadness
+                        #
+                        # in this case, we put string wrapping here so that
+                        # strlen isn't called on invalid data
+                        value = context.make_optional_value(
+                            builder,
+                            underlying_type,
+                            (
+                                raw
+                                if not isinstance(underlying_type, types.UnicodeType)
+                                else map_sqlite_string_to_numba_uni_str(
+                                    context,
+                                    builder,
+                                    data=builder.inttoptr(raw, element.type),
+                                )
+                            ),
+                        )
+                        builder.store(value, instr)
+
                     with otherwise:
+                        # create a none value, because we encounted a NULL
+                        none = context.make_optional_none(builder, underlying_type)
+                        builder.store(none, instr)
+            else:
+                # check for NULLs, and raise an exception if the value is NULL,
+                # because the input doesn't have an option type
+                #
+                # favor the branch where the value isn't null, since it's
+                # an error condition to accept null values without an option type
+                with builder.if_else(is_not_null, likely=True) as (then, otherwise):
+                    with then:
+                        value = (
+                            raw
+                            if not isinstance(underlying_type, types.UnicodeType)
+                            else map_sqlite_string_to_numba_uni_str(
+                                context,
+                                builder,
+                                data=builder.inttoptr(raw, element.type),
+                            )
+                        )
+
+                        builder.store(value, instr)
+
+                    with otherwise:
+                        # without the GIL here we're deep in undefined behavior
+                        # land
                         gil = pyapi.gil_ensure()
                         pyapi.err_set_string(
                             "PyExc_ValueError",
@@ -169,14 +217,69 @@ def make_arg_tuple(
                         )
                         pyapi.gil_release(gil)
 
-            # collect the value into an argument list used to build the tuple
-            converted_args.append(instr)
+            # instr is a pointer, so we need to dereference it to use it later
+            # in the argument tuple
+            converted_args.append(builder.load(instr))
 
         # construct a tuple of arguments (fixed length and known types)
         res = context.make_tuple(builder, tuple_type, converted_args)
         return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
 
     return sig, codegen
+
+
+def map_sqlite_string_to_numba_uni_str(
+    context: BaseContext,
+    builder: Builder,
+    *,
+    data: Value,
+) -> LoadInstr:
+    """Construct a Numba string from a raw C string coming from SQLite.
+
+    Notes
+    -----
+    This implementation is probably FULL of undefined behavior
+
+    We tell numba to treat a const unsigned char* coming from SQLite as a
+    numba-unmanaged unicode string.
+    """
+    # construct a numba-aware struct wrapper for a string
+    uni_str = cgutils.create_struct_proxy(types.string)(context, builder)
+
+    # point it at the SQLite string data
+    uni_str.data = data
+
+    # compute the length of the string
+    uni_str.length = builder.call(
+        context.get_constant_generic(
+            builder,
+            ctypes_utils.make_function_type(strlen),
+            strlen,
+        ),
+        [data],
+    )
+
+    # This is the Python string kind, which numba will use in various string
+    # algorithms.
+    #
+    # TODO: figure out how this maps to the different SQLite text types.
+    uni_str.kind = uni_str.kind.type(numba.cpython.unicode.PY_UNICODE_1BYTE_KIND)
+
+    # SQLite strings are never guaranteed to be anything really, and most
+    # certainly not ASCII.
+    uni_str.is_ascii = uni_str.is_ascii.type(0)
+
+    # Tell numba to forget about owning the data, because SQLite owns it.
+    uni_str.meminfo = cgutils.get_null_value(uni_str.meminfo.type)
+
+    # Cribbed from numba string construction code
+    #
+    # Set hash to -1 to indicate that it should be computed.
+    #
+    # We cannot bake in the hash value because of hashseed
+    # randomization.
+    uni_str.hash = uni_str.hash.type(-1)
+    return uni_str._getvalue()
 
 
 @extending.intrinsic  # type: ignore[misc]
