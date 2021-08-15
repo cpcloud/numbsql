@@ -35,7 +35,7 @@ jobs:
 
       - name: Build package and run tests
         run: nix build -L --argstr python python${{ matrix.python-version }}
-  poetry:
+  conda:
     strategy:
       matrix:
         python-version:
@@ -47,29 +47,53 @@ jobs:
           - macos-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
-    if: always()
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: "x64"
+      - name: Show default SQLite version
+        run: sqlite3 --version
 
-      - name: Install poetry
-        run: pip install poetry
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge
+          show-channel-urls: true
+          activate-environment: slumba
+
+      - name: Install sqlite and poetry
+        run: conda install -n slumba -y sqlite poetry
+
+      - name: Show conda SQLite version
+        run: |
+          conda activate slumba
+          sqlite3 --version
 
       - name: Install dependencies
-        run: poetry install
+        run: |
+          conda activate slumba
+          poetry install
 
-      - name: Run tests
-        run: poetry run pytest --benchmark-disable
+      - name: Run tests ${{ matrix.os }}
+        if: ${{ matrix.os != 'macos-latest' }}
+        run: |
+          conda activate slumba
+          poetry run pytest --benchmark-disable --numprocesses=2
+
+      - name: Run tests macos-latest
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          conda activate slumba
+          poetry run pytest --benchmark-disable --numprocesses=3
   release:
     needs:
       - nix
-      - poetry
+      - conda
     runs-on: ubuntu-latest
     concurrency: release
     steps:
