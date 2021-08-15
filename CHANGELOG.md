@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.0 (2021-08-15)
+### Feature
+* **shim:** Remove C++ shim ([`8e7207a`](https://github.com/cpcloud/slumba/commit/8e7207a8b4446a3f5d121a9cd68a384b5edce3cf))
+
+### Fix
+* **ci:** Checkout with the same token ([`89e145b`](https://github.com/cpcloud/slumba/commit/89e145bb12baed71ef6d690e38c66a7e3160638c))
+* **ci:** Publish with PAT instead of the default github token ([`dd1137f`](https://github.com/cpcloud/slumba/commit/dd1137f38bfed4cf00359bcb597beda739657133))
+* **ci:** Remove display of sqlite version on windows ([`fa91171`](https://github.com/cpcloud/slumba/commit/fa911717d9c9f87570fb64ed3d20d131074facc4))
+* Back to conda and show sqlite3 versions ([`bb0d6d6`](https://github.com/cpcloud/slumba/commit/bb0d6d649fc77e270ca361734f4c0e6bac9ddc8d))
+* Make sure tokens are set correctly in release step ([`c69cb43`](https://github.com/cpcloud/slumba/commit/c69cb430d5c56a19b95129a0c77ad7a6615cca37))
+
 ## v1.1.17 (2021-08-14)
 ### Fix
 * Make unset a parameter ([`e7e5e60`](https://github.com/cpcloud/slumba/commit/e7e5e609a3e313acdbbc5f24b15c408130755be6))
