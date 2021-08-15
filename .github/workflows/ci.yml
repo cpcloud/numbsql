@@ -129,7 +129,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         run: semantic-release publish --verbosity=DEBUG
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT }}
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Semantic release
