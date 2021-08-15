@@ -14,7 +14,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-        python_version:
+        python-version:
           - "3.7"
           - "3.8"
           - "3.9"
@@ -34,11 +34,11 @@ jobs:
           extraPullNames: nix-community,stupidb
 
       - name: Build package and run tests
-        run: nix build -L --argstr python python${{ matrix.python_version }}
+        run: nix build -L --argstr python python${{ matrix.python-version }}
   conda:
     strategy:
       matrix:
-        python_version:
+        python-version:
           - "3.7"
           - "3.8"
           - "3.9"
@@ -58,7 +58,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: ${{ matrix.python_version }}
+          python-version: ${{ matrix.python-version }}
           channels: conda-forge
           show-channel-urls: true
           activate-environment: slumba
