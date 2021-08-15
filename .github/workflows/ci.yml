@@ -103,7 +103,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
 
       - name: Checkout PR
         uses: actions/checkout@v2
