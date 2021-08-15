@@ -32,7 +32,6 @@ pkgs.lib.listToAttrs
         '';
         buildInputs = (
           with pkgs; [
-            clang-tools
             git
             niv
             nix-linter

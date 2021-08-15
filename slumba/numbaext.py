@@ -16,8 +16,7 @@ from numba.core.typing import ctypes_utils
 from numba.core.typing.context import Context
 from numba.core.typing.templates import Signature
 
-from slumba.cslumba import SQLITE_NULL
-from slumba.sqlite import RESULT_SETTERS, VALUE_EXTRACTORS, sqlite3_value_type
+from .sqlite import RESULT_SETTERS, SQLITE_NULL, VALUE_EXTRACTORS, sqlite3_value_type
 
 
 @extending.intrinsic  # type: ignore[misc]
