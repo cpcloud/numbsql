@@ -47,6 +47,7 @@ jobs:
           - macos-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
+    if: always()
     steps:
       - name: Checkout
         uses: actions/checkout@v2
