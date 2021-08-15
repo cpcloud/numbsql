@@ -64,13 +64,8 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Run tests ${{ matrix.os }}
-        if: ${{ matrix.os != 'macos-latest' }}
-        run: poetry run pytest --benchmark-disable --numprocesses=2
-
-      - name: Run tests macos-latest
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: poetry run pytest --benchmark-disable --numprocesses=3
+      - name: Run tests
+        run: poetry run pytest --benchmark-disable
   release:
     needs:
       - nix
