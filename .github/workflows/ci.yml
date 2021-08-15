@@ -35,7 +35,7 @@ jobs:
 
       - name: Build package and run tests
         run: nix build -L --argstr python python${{ matrix.python-version }}
-  conda:
+  poetry:
     strategy:
       matrix:
         python-version:
@@ -47,38 +47,33 @@ jobs:
           - macos-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: pwsh
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          channels: conda-forge
-          show-channel-urls: true
-          activate-environment: slumba
+          architecture: "x64"
 
-      - name: Install sqlite and poetry
-        run: conda install -n slumba -y sqlite poetry
+      - name: Install poetry
+        run: pip install poetry
 
       - name: Install dependencies
-        run: |
-          conda activate slumba
-          poetry install
+        run: poetry install
 
-      - name: Run tests
-        run: |
-          conda activate slumba
-          poetry run pytest --benchmark-disable --numprocesses=2
+      - name: Run tests ${{ matrix.os }}
+        if: ${{ matrix.os != 'macos-latest' }}
+        run: poetry run pytest --benchmark-disable --numprocesses=2
+
+      - name: Run tests macos-latest
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: poetry run pytest --benchmark-disable --numprocesses=3
   release:
     needs:
       - nix
-      - conda
+      - poetry
     runs-on: ubuntu-latest
     concurrency: release
     steps:
@@ -100,16 +95,14 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-      - uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
           python-version: "3.x"
           architecture: "x64"
 
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Install semantic release
-        run: pip install python-semantic-release
+      - name: Install poetry and semantic-release
+        run: pip install poetry python-semantic-release
 
       - name: Semantic release
         if: ${{ github.event_name != 'pull_request' }}
