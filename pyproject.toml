@@ -26,6 +26,7 @@ numba = "0.53.1"
 
 [tool.poetry.dev-dependencies]
 black = "21.7b0"
+cython = ">=0.29.24,<1"
 flake8 = "^3"
 importlib-metadata = { version = "^4", python = "<3.8" }
 isort = "^5"
@@ -34,7 +35,6 @@ pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
 pytest-xdist = "^2"
-cython = ">=0.29.24"
 
 [tool.pytest.ini_options]
 xfail_strict = true
