@@ -115,22 +115,12 @@ def test_scalar_with_valid_nulls(
 
 @pytest.mark.parametrize(  # type: ignore[misc]
     "expr",
-    [
-        pytest.param(
-            "add_one_numba(value)",
-            id="scalar_add_one",
-            marks=[
-                pytest.mark.xfail(
-                    reason="error handling for invalid nulls is not yet implemented"
-                )
-            ],
-        )
-    ],
+    [pytest.param("add_one_numba(value)", id="scalar_add_one")],
 )
 def test_scalar_with_invalid_nulls(con: sqlite3.Connection, expr: str) -> None:
-    query = f"SELECT {expr} AS result FROM null_t"
+    cursor = con.execute(f"SELECT {expr} AS result FROM null_t")
     with pytest.raises(ValueError):
-        con.execute(query)
+        cursor.fetchall()
 
 
 @pytest.fixture(  # type: ignore[misc]
