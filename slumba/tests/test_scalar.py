@@ -25,6 +25,10 @@ def add_each_other_nulls(x, y):  # pragma: no cover
     return None
 
 
+def add_one_python(x):
+    return 1.0 if x is not None else None
+
+
 @pytest.fixture
 def con():
     con = sqlite3.connect(":memory:")
@@ -68,32 +72,8 @@ def con():
     random.shuffle(null_rows)
     con.executemany("INSERT INTO t (key, value) VALUES (?, ?)", rows)
     create_function(con, "add_one_optional", 1, add_one_optional)
+    create_function(con, "add_one", 1, add_one)
     return con
-
-
-def test_scalar(con):
-    assert list(con.execute("SELECT add_one_optional(value) AS c FROM t")) == [
-        (2.0,),
-        (3.0,),
-        (4.0,),
-        (5.0,),
-        (6.0,),
-    ]
-
-
-def test_scalar_with_aggregate(con):
-    assert list(con.execute("SELECT sum(add_one_optional(value)) as c FROM t")) == [
-        (20.0,)
-    ]
-
-
-def test_optional(con):
-    result = list(con.execute("SELECT add_one_optional(value) AS c FROM null_t"))
-    assert result == list(con.execute("SELECT value + 1.0 AS c FROM null_t"))
-
-
-def add_one_python(x):
-    return 1.0 if x is not None else None
 
 
 @pytest.fixture(
@@ -132,3 +112,30 @@ def run_scalar(con, func):
 @pytest.mark.parametrize("func", ["add_one_numba", "add_one_python"])
 def test_scalar_bench(large_con, benchmark, func):
     assert benchmark(run_scalar, large_con, func)
+
+
+def test_scalar(con):
+    assert list(con.execute("SELECT add_one_optional(value) AS c FROM t")) == [
+        (2.0,),
+        (3.0,),
+        (4.0,),
+        (5.0,),
+        (6.0,),
+    ]
+
+
+def test_scalar_with_aggregate(con):
+    assert list(con.execute("SELECT sum(add_one_optional(value)) as c FROM t")) == [
+        (20.0,)
+    ]
+
+
+def test_optional(con):
+    result = list(con.execute("SELECT add_one_optional(value) AS c FROM null_t"))
+    assert result == list(con.execute("SELECT value + 1.0 AS c FROM null_t"))
+
+
+def test_not_optional(con):
+    query = "SELECT add_one(NULL)"
+    with pytest.raises(ValueError, match="user-defined numba function 'add_one'"):
+        con.execute(query)
