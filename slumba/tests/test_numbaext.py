@@ -4,31 +4,25 @@ from numba import TypingError, boolean, int64, njit
 from slumba.numbaext import is_not_null_pointer, sizeof, unsafe_cast
 
 
-def test_sizeof_invalid():
-    dec = njit(int64(int64))
-
+def test_sizeof_invalid() -> None:
     with pytest.raises(TypingError):
 
-        @dec
-        def bad_sizeof(x):  # pragma: no cover
+        @njit(int64(int64))  # type: ignore[misc]
+        def bad_sizeof(x: int) -> int:  # pragma: no cover
             return sizeof(x)
 
 
-def test_not_null_invalid():
-    dec = njit(boolean(int64))
-
+def test_not_null_invalid() -> None:
     with pytest.raises(TypingError):
 
-        @dec
-        def bad_not_null(x):  # pragma: no cover
+        @njit(boolean(int64))  # type: ignore[misc]
+        def bad_not_null(x: int) -> bool:  # pragma: no cover
             return is_not_null_pointer(x)
 
 
-def test_unsafe_case_invalid():
-    dec = njit(int64(int64))
-
+def test_unsafe_case_invalid() -> None:
     with pytest.raises(TypingError):
 
-        @dec
-        def bad_unsafe_cast(x):  # pragma: no cover
+        @njit(int64(int64))  # type: ignore[misc]
+        def bad_unsafe_cast(x: int) -> int:  # pragma: no cover
             return unsafe_cast(x, int64)
