@@ -205,7 +205,7 @@ def large_con(
     try:
         yield con
     finally:
-        if request.param:
+        if index:
             con.execute("DROP INDEX large_t_key_index")
         con.execute("DROP TABLE large_t")
 
