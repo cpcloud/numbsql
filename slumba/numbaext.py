@@ -100,6 +100,8 @@ def make_arg_tuple(
         # first argument is the instance, and we don't need it here
         _, argv = args
         converted_args = []
+        pyapi = context.get_python_api(builder)
+
         for i, argtype in enumerate(argtypes):
             # get a pointer to the ith argument
             element_pointer = cgutils.gep(builder, argv, i, inbounds=True)
@@ -120,8 +122,8 @@ def make_arg_tuple(
             sqlite_null = context.get_constant(types.int32, SQLITE_NULL)
 
             # check whether the value is equal to SQLITE_NULL
-            is_null = cgutils.is_true(
-                builder, builder.icmp_signed("==", value_type, sqlite_null)
+            is_not_null = cgutils.is_true(
+                builder, builder.icmp_signed("!=", value_type, sqlite_null)
             )
 
             # setup value extraction #
@@ -142,17 +144,30 @@ def make_arg_tuple(
             if isinstance(argtype, types.Optional):
                 underlying_type = getattr(argtype, "type", argtype)
 
-                # make an optional none if the value is null, otherwise
-                # make an optional value from the raw
+                # make a optional value if the value is not null, otherwise
+                # make an none value
                 instr = builder.select(
-                    is_null,
-                    context.make_optional_none(builder, underlying_type),
+                    is_not_null,
                     context.make_optional_value(builder, underlying_type, raw),
+                    context.make_optional_none(builder, underlying_type),
                 )
             else:
-                # TODO: should check if a value is null and raise an error if
-                # it is
-                instr = raw
+                with builder.if_else(is_not_null, likely=True) as (then, otherwise):
+                    # TODO: should check if a value is null and raise an error if
+                    # it is
+                    with then:
+                        instr = raw
+                    with otherwise:
+                        gil = pyapi.gil_ensure()
+                        pyapi.err_set_string(
+                            "PyExc_ValueError",
+                            (
+                                "encountered unexpected NULL is call to "
+                                "user-defined numba function "
+                                f"{func.dispatcher.py_func.__name__!r}"
+                            ),
+                        )
+                        pyapi.gil_release(gil)
 
             # collect the value into an argument list used to build the tuple
             converted_args.append(instr)
