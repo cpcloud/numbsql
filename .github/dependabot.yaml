@@ -10,7 +10,7 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-  - package-ecosystem: python
+  - package-ecosystem: pip
     directory: "/"
     schedule:
       interval: daily
