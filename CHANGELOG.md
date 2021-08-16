@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.1 (2021-08-16)
+### Fix
+* Raise an exception when a null is passed into a function that doesn't accept it ([`2304ef1`](https://github.com/cpcloud/slumba/commit/2304ef1f8b2f1691cd0686d895ef969348f9cc62))
+
 ## v1.2.0 (2021-08-15)
 ### Feature
 * **shim:** Remove C++ shim ([`8e7207a`](https://github.com/cpcloud/slumba/commit/8e7207a8b4446a3f5d121a9cd68a384b5edce3cf))
