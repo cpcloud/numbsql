@@ -1,11 +1,15 @@
 import itertools
+import pathlib
 import random
 import sqlite3
+from typing import Generator, List, Optional, Tuple
 
 import pytest
+from _pytest.fixtures import SubRequest
 from numba import float64, int64, optional
 from numba.experimental import jitclass
 from pkg_resources import parse_version
+from pytest_benchmark.fixtures import BenchmarkFixture
 
 from slumba import create_aggregate, sqlite_udaf
 from slumba.sqlite import SQLITE_VERSION
@@ -14,102 +18,85 @@ from slumba.sqlite import SQLITE_VERSION
 @sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass(dict(total=float64, count=int64))
 class Avg:  # pragma: no cover
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: Optional[float]) -> None:
         if value is not None:
             self.total += value
             self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         count = self.count
-        if count:
-            return self.total / count
-        return None
+        return self.total / count if count else None
 
 
 class AvgPython:
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
-        self.total += value
-        self.count += 1
+    def step(self, value: Optional[float]) -> None:
+        if value is not None:
+            self.total += value
+            self.count += 1
 
-    def finalize(self):
-        return self.total / self.count
+    def finalize(self) -> Optional[float]:
+        count = self.count
+        return self.total / count if count else None
 
 
 @sqlite_udaf(optional(float64)(optional(float64)))
 @jitclass(dict(total=float64, count=int64))
 class WinAvg:  # pragma: no cover
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: Optional[float]) -> None:
         if value is not None:
             self.total += value
             self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         count = self.count
-        if count:
-            return self.total / count
-        return None
+        return self.total / count if count else None
 
-    def value(self):
+    def value(self) -> Optional[float]:
         return self.finalize()
 
-    def inverse(self, value):
+    def inverse(self, value: Optional[float]) -> None:
         if value is not None:
             self.total -= value
             self.count -= 1
 
 
 class WinAvgPython:  # pragma: no cover
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
-        self.total += value
-        self.count += 1
-
-    def finalize(self):
-        return self.total / self.count
-
-    def value(self):
-        return self.finalize()
-
-    def inverse(self, value):
-        self.total -= value
-        self.count -= 1
-
-
-@sqlite_udaf(optional(float64)(optional(float64)))
-@jitclass(dict(total=float64, count=int64))
-class AvgWithNulls:  # pragma: no cover
-    def __init__(self):
-        self.total = 0.0
-        self.count = 0
-
-    def step(self, value):
+    def step(self, value: Optional[float]) -> None:
         if value is not None:
             self.total += value
             self.count += 1
 
-    def finalize(self):
-        if not self.count:
-            return None
-        return self.total / self.count
+    def finalize(self) -> Optional[float]:
+        count = self.count
+        return self.total / count if count else None
+
+    def value(self) -> Optional[float]:
+        return self.finalize()
+
+    def inverse(self, value: Optional[float]) -> None:
+        if value is not None:
+            self.total -= value
+            self.count -= 1
 
 
-@pytest.fixture
-def con():
+@pytest.fixture  # type: ignore[misc]
+def con() -> sqlite3.Connection:
     con = sqlite3.connect(":memory:")
     con.execute(
         """
@@ -145,12 +132,12 @@ def con():
     return con
 
 
-def test_aggregate(con):
+def test_aggregate(con: sqlite3.Connection) -> None:
     result = list(con.execute("SELECT avg_numba(value) as c FROM t"))
     assert result == list(con.execute("SELECT avg(value) FROM t"))
 
 
-def test_aggregate_with_empty(con):
+def test_aggregate_with_empty(con: sqlite3.Connection) -> None:
     result = list(con.execute("SELECT avg_numba(value) as c FROM s"))
     assert result == [(None,)]
 
@@ -161,22 +148,25 @@ xfail_missing_python_api = pytest.mark.xfail(
 )
 
 
-@pytest.mark.parametrize(
+@pytest.mark.parametrize(  # type: ignore[misc]
     "func",
     [
         "winavg_numba",
         pytest.param("winavg_python", marks=[xfail_missing_python_api]),
     ],
 )
-def test_aggregate_window_numba(con, func):
+def test_aggregate_window_numba(con: sqlite3.Connection, func: str) -> None:
     query = f"SELECT {func}(value) OVER (PARTITION BY key) as c FROM t"
     result = list(con.execute(query))
-    assert result == list(
-        con.execute("SELECT avg(value) OVER (PARTITION BY key) as c FROM t")
+    assert (
+        result
+        == con.execute(
+            "SELECT avg(value) OVER (PARTITION BY key) as c FROM t"
+        ).fetchall()
     )
 
 
-@pytest.fixture(
+@pytest.fixture(  # type: ignore[misc]
     params=[
         pytest.param((in_memory, index), id=f"{in_memory_name}-{index_name}")
         for (in_memory, in_memory_name), (index, index_name) in itertools.product(
@@ -185,7 +175,9 @@ def test_aggregate_window_numba(con, func):
         )
     ],
 )
-def large_con(request, tmp_path):
+def large_con(
+    request: SubRequest, tmp_path: pathlib.Path
+) -> Generator[sqlite3.Connection, None, None]:
     in_memory, index = request.param
     path = ":memory:" if in_memory else str(tmp_path / "test.db")
     con = sqlite3.connect(path)
@@ -204,7 +196,7 @@ def large_con(request, tmp_path):
     )
 
     con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
-    if request.param:
+    if index:
         con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
     create_aggregate(con, "avg_numba", 1, Avg)
     create_aggregate(con, "winavg_numba", 1, WinAvg)
@@ -218,33 +210,45 @@ def large_con(request, tmp_path):
         con.execute("DROP TABLE large_t")
 
 
-def run_agg_group_by(con, func):
+def run_agg_group_by(
+    con: sqlite3.Connection, func: str
+) -> List[Tuple[str, Optional[float]]]:
     return con.execute(
         f"SELECT key, {func}(value) AS result FROM large_t GROUP BY key"
     ).fetchall()
 
 
-@pytest.mark.parametrize("func", ["avg", "avg_numba", "avg_python"])
-def test_aggregate_group_by_bench(large_con, benchmark, func):
+@pytest.mark.parametrize(  # type: ignore[misc]
+    "func", ["avg", "avg_numba", "avg_python"]
+)
+def test_aggregate_group_by_bench(
+    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
+) -> None:
     assert benchmark(run_agg_group_by, large_con, func)
 
 
-def run_agg(con, func):
+def run_agg(con: sqlite3.Connection, func: str) -> List[Tuple[str, Optional[float]]]:
     return con.execute(f"SELECT key, {func}(value) AS result FROM large_t").fetchall()
 
 
-@pytest.mark.parametrize("func", ["avg", "avg_numba", "avg_python"])
-def test_aggregate_bench(large_con, benchmark, func):
+@pytest.mark.parametrize(  # type: ignore[misc]
+    "func", ["avg", "avg_numba", "avg_python"]
+)
+def test_aggregate_bench(
+    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
+) -> None:
     assert benchmark(run_agg, large_con, func)
 
 
-def run_agg_partition_by(con, func):
+def run_agg_partition_by(
+    con: sqlite3.Connection, func: str
+) -> List[Tuple[str, Optional[float]]]:
     return con.execute(
         f"SELECT key, {func}(value) OVER (PARTITION BY key) AS result FROM large_t"
     ).fetchall()
 
 
-@pytest.mark.parametrize(
+@pytest.mark.parametrize(  # type: ignore[misc]
     "func",
     [
         "avg",
@@ -262,7 +266,9 @@ def run_agg_partition_by(con, func):
         ),
     ],
 )
-def test_window_bench(large_con, benchmark, func):
+def test_window_bench(
+    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
+) -> None:
     assert benchmark(run_agg_partition_by, large_con, func)
 
 
@@ -275,18 +281,18 @@ def test_window_bench(large_con, benchmark, func):
     ]
 )
 class Var:  # pragma: no cover
-    def __init__(self):
+    def __init__(self) -> None:
         self.mean = 0.0
         self.sum_of_squares_of_differences = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: float) -> None:
         self.count += 1
         delta = value - self.mean
         self.mean += delta
         self.sum_of_squares_of_differences += delta * (value - self.mean)
 
-    def finalize(self):
+    def finalize(self) -> float:
         return self.sum_of_squares_of_differences / (self.count - 1)
 
 
@@ -295,13 +301,13 @@ class Var:  # pragma: no cover
     [("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)]
 )
 class Cov:  # pragma: no cover
-    def __init__(self):
+    def __init__(self) -> None:
         self.mean1 = 0.0
         self.mean2 = 0.0
         self.mean12 = 0.0
         self.count = 0
 
-    def step(self, x, y):
+    def step(self, x: Optional[float], y: Optional[float]) -> None:
         if x is not None and y is not None:
             self.count += 1
             n = self.count
@@ -311,7 +317,7 @@ class Cov:  # pragma: no cover
             self.mean2 += delta2
             self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         n = self.count
         if not n:
             return None
@@ -321,14 +327,13 @@ class Cov:  # pragma: no cover
 @sqlite_udaf(optional(float64)(float64))
 @jitclass([("total", float64), ("count", int64)])
 class Sum:  # pragma: no cover
-    def __init__(self):
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
-        if value is not None:
-            self.total += value
-            self.count += 1
+    def step(self, value: float) -> None:
+        self.total += value
+        self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         return self.total if self.count > 0 else None
