@@ -14,16 +14,24 @@ from ctypes import (
     c_ubyte,
     c_void_p,
 )
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Tuple
 
-from numba import float64, int32, int64, optional
-from numba.types import string
+from llvmlite.ir.instructions import ExtractValue, Value
+from llvmlite.llvmpy.core import Builder
+from numba import cfunc, extending, float64, int32, int64, optional, types
+from numba.core.base import BaseContext
+from numba.core.typing.context import Context
+from numba.core.typing.templates import Signature
+from numba.types import string, void, voidptr
 
 from .exceptions import MissingLibrary
 
 SQLITE_OK = sqlite3.SQLITE_OK
 SQLITE_VERSION = sqlite3.sqlite_version
 SQLITE_UTF8 = 1
+SQLITE_UTF16LE = 2
+SQLITE_UTF16BE = 3
+SQLITE_UTF16 = 4
 SQLITE_NULL = 5
 SQLITE_DETERMINISTIC = 0x000000800
 
@@ -52,6 +60,7 @@ sqlite3_user_data.restype = c_void_p
 sqlite3_result_double = libsqlite3.sqlite3_result_double
 sqlite3_result_int64 = libsqlite3.sqlite3_result_int64
 sqlite3_result_int = libsqlite3.sqlite3_result_int
+sqlite3_result_text64 = libsqlite3.sqlite3_result_text64
 sqlite3_result_null = libsqlite3.sqlite3_result_null
 
 sqlite3_result_double.argtypes = c_void_p, c_double
@@ -63,8 +72,108 @@ sqlite3_result_int64.restype = None
 sqlite3_result_int.argtypes = c_void_p, c_int
 sqlite3_result_int.restype = None
 
+sqlite3_result_text64.argtypes = (
+    # context
+    c_void_p,
+    # result string
+    c_void_p,
+    # -1 for all chars in second param, otherwise a byte offset into the second param
+    c_size_t,
+    # destructor for the string, always -1 for now, to tell SQLite to make a copy
+    c_ssize_t,
+    # encoding
+    c_ubyte,
+)
+sqlite3_result_text64.restype = None
+
 sqlite3_result_null.argtypes = (c_void_p,)
 sqlite3_result_null.restype = None
+
+
+@extending.intrinsic  # type: ignore[misc]
+def extract_raw_unicode_data(
+    typingctx: Context, src_type: types.RawPointer
+) -> Tuple[
+    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value]], ExtractValue]
+]:
+    """Pull out the data and length from a numba unicode string.
+
+    Parameters
+    ----------
+    typingctx
+        Numba typing context
+    raw_chars
+        A raw pointer to an instance of numba unicode string
+    """
+    if isinstance(src_type, types.UnicodeType):
+        tuple_type = types.Tuple((voidptr, int64))
+        sig = tuple_type(src_type)
+
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value],
+        ) -> ExtractValue:
+            # get the first and only argument
+            (arg,) = args
+
+            # access the data and length fields of the unicode type struct
+            mgr = context.data_model_manager[src_type]
+            data = mgr.get(builder, arg, "data")
+            length = mgr.get(builder, arg, "length")
+
+            return context.make_tuple(builder, tuple_type, [data, length])
+
+        return sig, codegen
+    else:
+        raise TypeError("Unable to extract raw data from unicode type")
+
+
+@cfunc(void(voidptr, types.string))  # type: ignore[misc]
+def sqlite3_result_text64_numba(ctx: c_void_p, chars: str) -> None:
+    """Set the result of a UDF call to a string value.
+
+    Notes
+    -----
+    SQLITE_TRANSIENT is used to ensure program correctness, but it's
+    probably not very efficient as it tells SQLite to make copy of the
+    input string.
+
+    `sqlite3_result_text64` accepts a destructor, but unfortunately it takes
+    only the string/blob data as its argument and not a custom structure. It's
+    not totally clear how to get around this.
+
+    Ideally we could incref the string when extracting the data, and decref it
+    """
+    (data, length) = extract_raw_unicode_data(chars)
+    sqlite3_result_text64(
+        ctx,
+        data,
+        # use the entire string, up to but not including the null byte
+        length,
+        # SQLITE_TRANSIENT, indicating that SQLite should copy
+        # TODO: can we avoid a copy?
+        -1,
+        # encoding
+        SQLITE_UTF8,
+    )
+
+
+@cfunc(void(voidptr, types.float64))  # type: ignore[misc]
+def sqlite3_result_double_numba(ctx: c_void_p, value: float) -> None:
+    sqlite3_result_double(ctx, value)
+
+
+@cfunc(void(voidptr, types.int64))  # type: ignore[misc]
+def sqlite3_result_int64_numba(ctx: c_void_p, value: int) -> None:
+    sqlite3_result_int64(ctx, value)
+
+
+@cfunc(void(voidptr, types.int32))  # type: ignore[misc]
+def sqlite3_result_int_numba(ctx: c_void_p, value: int) -> None:
+    sqlite3_result_int(ctx, value)
+
 
 scalarfunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
 stepfunc = CFUNCTYPE(None, c_void_p, c_int, POINTER(c_void_p))
@@ -121,12 +230,14 @@ else:
 
 
 RESULT_SETTERS = {
-    optional(float64): sqlite3_result_double,
-    optional(int64): sqlite3_result_int64,
-    optional(int32): sqlite3_result_int,
-    float64: sqlite3_result_double,
-    int64: sqlite3_result_int64,
-    int32: sqlite3_result_int,
+    optional(float64): sqlite3_result_double_numba,
+    optional(int64): sqlite3_result_int64_numba,
+    optional(int32): sqlite3_result_int_numba,
+    optional(string): sqlite3_result_text64_numba,
+    float64: sqlite3_result_double_numba,
+    int64: sqlite3_result_int64_numba,
+    int32: sqlite3_result_int_numba,
+    string: sqlite3_result_text64_numba,
 }
 
 

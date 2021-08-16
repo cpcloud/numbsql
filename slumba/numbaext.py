@@ -5,6 +5,7 @@ of varying levels of danger and complexity needed to make this monstrosity
 work correctly.
 """
 import inspect
+import operator
 from typing import Callable, Optional, Tuple, Union
 
 import numba
@@ -478,13 +479,14 @@ def get_sqlite3_result_function(
     Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], CastInstr],
 ]:
     """Return the correct result setting function for the given type."""
-    underlying_type = getattr(value_type, "type", value_type)
-    func_type = types.void(types.voidptr, underlying_type)
+    input_type = getattr(value_type, "type", value_type)
+    func_type = types.void(types.voidptr, input_type)
 
     external_function_pointer = types.ExternalFunctionPointer(
-        func_type, ctypes_utils.get_pointer
+        func_type,
+        operator.attrgetter("address"),
     )
-    sig = external_function_pointer(underlying_type)
+    sig = external_function_pointer(input_type)
 
     def codegen(
         context: BaseContext,
@@ -492,14 +494,9 @@ def get_sqlite3_result_function(
         signature: Signature,
         args: Tuple[Value, ...],
     ) -> CastInstr:
-        # get the appropriate setter function
-        result_setter = RESULT_SETTERS[value_type]
-
-        # create a numba function type for the converter
-        converter = ctypes_utils.make_function_type(result_setter)
-
-        # get the function pointer instruction out
-        return context.get_constant_generic(builder, converter, result_setter)
+        return context.get_constant_generic(
+            builder, external_function_pointer, RESULT_SETTERS[value_type]
+        )
 
     return sig, codegen
 
