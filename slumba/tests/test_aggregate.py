@@ -9,7 +9,7 @@ from _pytest.fixtures import SubRequest
 from numba import float64, int64, optional
 from numba.experimental import jitclass
 from pkg_resources import parse_version
-from pytest_benchmark.fixtures import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from slumba import create_aggregate, sqlite_udaf
 from slumba.sqlite import SQLITE_VERSION
