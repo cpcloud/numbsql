@@ -118,9 +118,9 @@ def test_scalar_with_valid_nulls(
     [pytest.param("add_one_numba(value)", id="scalar_add_one")],
 )
 def test_scalar_with_invalid_nulls(con: sqlite3.Connection, expr: str) -> None:
-    cursor = con.execute(f"SELECT {expr} AS result FROM null_t")
+    query = f"SELECT {expr} AS result FROM null_t"
     with pytest.raises(ValueError):
-        cursor.fetchall()
+        con.execute(query).fetchall()
 
 
 @pytest.fixture(  # type: ignore[misc]
