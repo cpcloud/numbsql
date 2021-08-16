@@ -8,18 +8,11 @@ let
   mkPoetryEnv = python: pkgs.poetry2nix.mkPoetryEnv {
     inherit python;
     projectDir = ./.;
-    overrides = pkgs.poetry2nix.overrides.withDefaults (self: super: {
-      llvmlite = super.llvmlite.overridePythonAttrs (_: {
-        preConfigure = ''
-          export LLVM_CONFIG=${pkgs.llvm.dev}/bin/llvm-config
-        '';
-      });
-      tomli = super.tomli.overridePythonAttrs (old: {
-        propagatedNativeBuildInputs = (old.propagatedNativeBuildInputs or [ ]) ++ [
-          self.flit
-        ];
-      });
-    });
+    overrides = pkgs.poetry2nix.overrides.withDefaults (
+      import ./poetry-overrides.nix {
+        inherit (pkgs) llvm;
+      }
+    );
     editablePackageSources = {
       slumba = ./slumba;
     };
