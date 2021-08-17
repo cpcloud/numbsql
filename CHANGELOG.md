@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.2 (2021-08-17)
+### Fix
+* **numbaext:** Fix error message when encountering NULL values ([`b24ddd8`](https://github.com/cpcloud/slumba/commit/b24ddd863a9d29b7a3737e89c8dbb8df47fd9a5f))
+
 ## v1.2.1 (2021-08-16)
 ### Fix
 * Raise an exception when a null is passed into a function that doesn't accept it ([`2304ef1`](https://github.com/cpcloud/slumba/commit/2304ef1f8b2f1691cd0686d895ef969348f9cc62))
