@@ -80,17 +80,10 @@ jobs:
           conda activate slumba
           poetry install
 
-      - name: Run tests ${{ matrix.os }}
-        if: ${{ matrix.os != 'macos-latest' }}
+      - name: Run tests
         run: |
           conda activate slumba
-          poetry run pytest --benchmark-disable --numprocesses=2
-
-      - name: Run tests macos-latest
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          conda activate slumba
-          poetry run pytest --benchmark-disable --numprocesses=3
+          poetry run pytest --benchmark-disable
   release:
     needs:
       - nix
