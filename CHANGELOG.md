@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.3.0 (2021-08-17)
+### Feature
+* Add limited support for strings ([`13ed405`](https://github.com/cpcloud/slumba/commit/13ed4054a04eb2d3649bb56ada450821f30b6596))
+
 ## v1.2.2 (2021-08-17)
 ### Fix
 * **numbaext:** Fix error message when encountering NULL values ([`b24ddd8`](https://github.com/cpcloud/slumba/commit/b24ddd863a9d29b7a3737e89c8dbb8df47fd9a5f))
