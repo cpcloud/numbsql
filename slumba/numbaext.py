@@ -162,7 +162,7 @@ def make_arg_tuple(
                         pyapi.err_set_string(
                             "PyExc_ValueError",
                             (
-                                "encountered unexpected NULL is call to "
+                                "encountered unexpected NULL in call to "
                                 "user-defined numba function "
                                 f"{func.dispatcher.py_func.__name__!r}"
                             ),
