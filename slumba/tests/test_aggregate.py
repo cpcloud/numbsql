@@ -212,13 +212,17 @@ def test_constructor(con: sqlite3.Connection) -> None:
 
 
 def test_aggregate(con: sqlite3.Connection) -> None:
-    result = list(con.execute("SELECT avg_numba(value) as c FROM t"))
-    assert result == list(con.execute("SELECT avg(value) FROM t"))
+    assert (
+        con.execute("SELECT avg_numba(value) FROM t").fetchall()
+        == con.execute("SELECT avg(value) FROM t").fetchall()
+    )
 
 
 def test_aggregate_with_empty(con: sqlite3.Connection) -> None:
-    result = list(con.execute("SELECT avg_numba(value) as c FROM s"))
-    assert result == [(None,)]
+    assert (
+        con.execute("SELECT avg_numba(value) FROM s").fetchall()
+        == con.execute("SELECT avg(value) FROM s").fetchall()
+    )
 
 
 xfail_missing_python_api = pytest.mark.xfail(
