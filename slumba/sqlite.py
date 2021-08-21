@@ -85,6 +85,20 @@ sqlite3_create_function.argtypes = (
     finalizefunc,
 )
 
+sqlite3_create_function_v2 = libsqlite3.sqlite3_create_function_v2
+sqlite3_create_function_v2.restype = c_int
+sqlite3_create_function_v2.argtypes = (
+    c_void_p,
+    c_char_p,
+    c_int,
+    c_int,
+    c_void_p,
+    scalarfunc,
+    stepfunc,
+    finalizefunc,
+    destroyfunc,
+)
+
 try:
     sqlite3_create_window_function = libsqlite3.sqlite3_create_window_function
 except AttributeError:  # pragma: no cover
