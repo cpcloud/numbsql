@@ -9,6 +9,7 @@ from .numbaext import (
     init,
     is_null_pointer,
     make_arg_tuple,
+    reset_init,
     sizeof,
     unsafe_cast,
 )
@@ -65,6 +66,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                 else:
                     result_setter = get_sqlite3_result_function(result)
                     result_setter(ctx, result)
+
+                reset_init(sqlite3_user_data(ctx))
 
         try:
             value_func = class_type.jit_methods["value"]
