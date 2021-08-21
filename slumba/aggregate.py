@@ -28,6 +28,10 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         class_type = cls.class_type
         instance_type = class_type.instance_type
 
+        init_func = class_type.jit_methods["__init__"]
+        init_signature = void(instance_type)
+        init_func.compile(init_signature)
+
         step_func = class_type.jit_methods["step"]
         step_signature = void(instance_type, *signature.args)
         step_func.compile(step_signature)
