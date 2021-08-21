@@ -7,7 +7,7 @@ from numba.types import CPointer, intc, voidptr
 from .numbaext import (
     get_sqlite3_result_function,
     init,
-    is_not_null_pointer,
+    is_null_pointer,
     make_arg_tuple,
     sizeof,
     unsafe_cast,
@@ -42,8 +42,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             ctx, argc: int, argv
         ) -> None:  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-            agg_ctx = unsafe_cast(raw_pointer, cls)
-            if is_not_null_pointer(agg_ctx):
+            if not is_null_pointer(raw_pointer):
+                agg_ctx = unsafe_cast(raw_pointer, cls)
                 user_data = sqlite3_user_data(ctx)
                 init(agg_ctx, user_data)
                 args = make_arg_tuple(step_func, argv)
@@ -56,9 +56,10 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         @cfunc(void(voidptr))  # type: ignore[misc]
         def finalize(ctx) -> None:  # type: ignore[no-untyped-def]  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-            agg_ctx = unsafe_cast(raw_pointer, cls)
-            if is_not_null_pointer(agg_ctx):
+            if not is_null_pointer(raw_pointer):
+                agg_ctx = unsafe_cast(raw_pointer, cls)
                 result = agg_ctx.finalize()
+
                 if result is None:
                     sqlite3_result_null(ctx)
                 else:
@@ -89,8 +90,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             @cfunc(void(voidptr))  # type: ignore[misc]
             def value(ctx) -> None:  # type: ignore[no-untyped-def]  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-                agg_ctx = unsafe_cast(raw_pointer, cls)
-                if is_not_null_pointer(agg_ctx):
+                if not is_null_pointer(raw_pointer):
+                    agg_ctx = unsafe_cast(raw_pointer, cls)
                     result = agg_ctx.value()
                     if result is None:
                         sqlite3_result_null(ctx)
@@ -106,8 +107,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                 ctx, argc: int, argv
             ) -> None:  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-                agg_ctx = unsafe_cast(raw_pointer, cls)
-                if is_not_null_pointer(agg_ctx):
+                if not is_null_pointer(raw_pointer):
+                    agg_ctx = unsafe_cast(raw_pointer, cls)
                     agg_ctx.inverse(*make_arg_tuple(inverse_func, argv))
 
         cls.step.address = step.address

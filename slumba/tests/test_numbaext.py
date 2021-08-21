@@ -1,7 +1,7 @@
 import pytest
 from numba import TypingError, boolean, int64, njit
 
-from slumba.numbaext import is_not_null_pointer, sizeof, unsafe_cast
+from slumba.numbaext import is_null_pointer, sizeof, unsafe_cast
 
 
 def test_sizeof_invalid() -> None:
@@ -12,12 +12,15 @@ def test_sizeof_invalid() -> None:
             return sizeof(x)
 
 
-def test_not_null_invalid() -> None:
+@pytest.mark.xfail(  # type: ignore[misc]
+    reason="Numba converts c_void_p from ctypes into an integer"
+)
+def test_is_null_invalid() -> None:
     with pytest.raises(TypingError):
 
         @njit(boolean(int64))  # type: ignore[misc]
-        def bad_not_null(x: int) -> bool:  # pragma: no cover
-            return is_not_null_pointer(x)
+        def bad_is_null_pointer(x: int) -> bool:  # pragma: no cover
+            return is_null_pointer(x)
 
 
 def test_unsafe_case_invalid() -> None:
