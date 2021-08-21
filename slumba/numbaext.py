@@ -164,6 +164,43 @@ def init(
 
 
 @extending.intrinsic  # type: ignore[misc]
+def reset_init(
+    typingctx: Context,
+    user_data_type: types.Integer,
+) -> Tuple[
+    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], None]
+]:
+    """Reset the init when finalize is called to ensure the constructor is called again.
+
+    Parameters
+    ----------
+    typingctx
+    user_data_type
+    """
+    if isinstance(user_data_type, types.Integer):
+        sig = types.void(types.voidptr)
+
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value, ...],
+        ) -> None:
+            (user_data,) = args
+            # cast the user defined data structure, (which is current a pointer
+            # to a boolean indicating whether the constructor has been called)
+            # to a pointer to bool
+            #
+            # we pass around voidptrs because that's really the only way to
+            # customize end-user data structures in C
+            raw = builder.bitcast(user_data, cgutils.bool_t.as_pointer())
+            builder.store(context.get_constant(types.boolean, False), raw)
+
+        return sig, codegen
+    raise TypeError(f"Unable to uninitialize type {user_data_type}")
+
+
+@extending.intrinsic  # type: ignore[misc]
 def make_arg_tuple(
     typingctx: Context, func: types.Callable, argv: types.CPointer
 ) -> Tuple[
