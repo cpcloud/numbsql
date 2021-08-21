@@ -17,31 +17,40 @@ let
       slumba = ./slumba;
     };
   };
-  versions = [ "python37" "python38" "python39" ];
+  shellHook = ''
+    ${(import ./pre-commit.nix).pre-commit-check.shellHook}
+  '';
+  commonBuildInputs = with pkgs; [
+    git
+    niv
+    nix-linter
+    nixpkgs-fmt
+    poetry
+    prettier
+    sqlite
+  ];
+  pythonVersions = [ "3.7" "3.8" "3.9" ];
 in
-pkgs.lib.listToAttrs
-  (map
+{
+  dev = pkgs.mkShell {
+    name = "slumba-build";
+    inherit shellHook;
+    buildInputs = commonBuildInputs;
+  };
+} // pkgs.lib.listToAttrs (
+  map
     (name: {
       inherit name;
       value = pkgs.mkShell {
-        name = "slumba-dev-${name}";
+        name = "slumba-${name}";
+        inherit shellHook;
         PYTHONPATH = ".";
-        shellHook = ''
-          ${(import ./pre-commit.nix).pre-commit-check.shellHook}
-        '';
-        buildInputs = (
-          with pkgs; [
-            git
-            niv
-            nix-linter
-            nixpkgs-fmt
-            poetry
-            prettier
-            sqlite
-          ]
-        ) ++ [
+        buildInputs = commonBuildInputs ++ [
           (mkPoetryEnv pkgs.${name})
         ];
       };
     })
-    versions)
+    (map
+      (version: "python${builtins.replaceStrings [ "." ] [ "" ] version}")
+      pythonVersions)
+)
