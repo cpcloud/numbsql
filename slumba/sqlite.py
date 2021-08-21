@@ -44,6 +44,10 @@ sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
 sqlite3_aggregate_context.argtypes = c_void_p, c_int
 sqlite3_aggregate_context.restype = c_void_p
 
+sqlite3_user_data = libsqlite3.sqlite3_user_data
+sqlite3_user_data.argtypes = (c_void_p,)
+sqlite3_user_data.restype = c_void_p
+
 sqlite3_result_double = libsqlite3.sqlite3_result_double
 sqlite3_result_int64 = libsqlite3.sqlite3_result_int64
 sqlite3_result_int = libsqlite3.sqlite3_result_int

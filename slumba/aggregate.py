@@ -6,12 +6,13 @@ from numba.types import CPointer, intc, voidptr
 
 from .numbaext import (
     get_sqlite3_result_function,
+    init,
     is_not_null_pointer,
     make_arg_tuple,
     sizeof,
     unsafe_cast,
 )
-from .sqlite import sqlite3_aggregate_context, sqlite3_result_null
+from .sqlite import sqlite3_aggregate_context, sqlite3_result_null, sqlite3_user_data
 
 
 def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
@@ -43,6 +44,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
             agg_ctx = unsafe_cast(raw_pointer, cls)
             if is_not_null_pointer(agg_ctx):
+                user_data = sqlite3_user_data(ctx)
+                init(agg_ctx, user_data)
                 args = make_arg_tuple(step_func, argv)
                 agg_ctx.step(*args)
 
