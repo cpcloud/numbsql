@@ -54,6 +54,7 @@ in
       mypy = {
         enable = true;
         entry = "mypy";
+        excludes = [ "slumba/tests/test_.*\.py" ];
         types_or = [ "python" ];
       };
     };
