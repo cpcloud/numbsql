@@ -38,6 +38,7 @@ jobs:
         run: nix build -L --argstr python python${{ matrix.python-version }}
   conda:
     strategy:
+      fail-fast: false
       matrix:
         python-version:
           - "3.7"
