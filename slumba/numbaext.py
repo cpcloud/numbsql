@@ -408,42 +408,25 @@ def sizeof(
         raise TypeError("Cannot get sizeof non jitclass")
 
 
-def generate_null_checker(
-    func: Callable[[Builder, Value], Value]
-) -> Callable[
-    [Context, types.ClassInstanceType],
-    Tuple[
-        Signature,
-        Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], ICMPInstr],
-    ],
+@extending.intrinsic  # type: ignore[misc]
+def is_null_pointer(
+    typingctx: Context, raw_pointer_type: types.Integer
+) -> Tuple[
+    Signature,
+    Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], ICMPInstr],
 ]:
-    def null_pointer_checker(
-        typingctx: Context, src: types.ClassInstanceType
-    ) -> Tuple[
-        Signature,
-        Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], ICMPInstr],
-    ]:
-        if isinstance(src, types.ClassInstanceType):
-            sig = types.boolean(src)
+    if isinstance(raw_pointer_type, types.Integer):
+        sig = types.boolean(raw_pointer_type)
 
-            def codegen(
-                context: BaseContext,
-                builder: Builder,
-                signature: Signature,
-                args: Tuple[Value, ...],
-            ) -> ICMPInstr:
-                (instance,) = args
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value, ...],
+        ) -> ICMPInstr:
+            (instance,) = args
+            return cgutils.is_null(builder, instance)
 
-                # TODO: probably a more general way to do this
-                second_element = builder.extract_value(instance, [1])
-                return func(builder, second_element)
+        return sig, codegen
 
-            return sig, codegen
-        else:
-            raise TypeError("Cannot check null pointer status of a non-jitclass type")
-
-    return null_pointer_checker
-
-
-is_null_pointer = extending.intrinsic(generate_null_checker(cgutils.is_null))
-is_not_null_pointer = extending.intrinsic(generate_null_checker(cgutils.is_not_null))
+    raise TypeError(f"Cannot check whether a {raw_pointer_type} is a null pointer")
