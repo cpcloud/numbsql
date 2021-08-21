@@ -9,8 +9,4 @@
       self.flit
     ];
   });
-
-  mypy = super.mypy.overridePythonAttrs (_: {
-    MYPY_USE_MYPYC = false;
-  });
 }
