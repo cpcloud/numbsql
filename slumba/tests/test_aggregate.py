@@ -148,8 +148,12 @@ def con() -> sqlite3.Connection:
 
 def test_constructor(con: sqlite3.Connection) -> None:
     ((count,),) = con.execute("SELECT count(1) FROM t").fetchall()
-    result = con.execute("SELECT bogus_count() FROM t").fetchall()
-    assert result == [(count + 1,)]
+    ((bogus_count,),) = con.execute("SELECT bogus_count() FROM t").fetchall()
+    assert bogus_count == count + 1
+
+    ((count,),) = con.execute("SELECT count(1) FROM t").fetchall()
+    ((bogus_count,),) = con.execute("SELECT bogus_count() FROM t").fetchall()
+    assert bogus_count == count + 1
 
 
 def test_aggregate(con: sqlite3.Connection) -> None:
