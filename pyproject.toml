@@ -31,7 +31,7 @@ debugpy = "^1"
 flake8 = "^3"
 importlib-metadata = { version = "^4", python = "<3.8" }
 isort = "^5"
-mypy = "^0.910"
+mypy = "^0.812"
 pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
