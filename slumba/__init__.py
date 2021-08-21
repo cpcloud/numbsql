@@ -1,10 +1,13 @@
 import sqlite3
-from ctypes import byref, c_bool
+from ctypes import byref, c_bool, py_object, pythonapi
+from typing import Any
 
+from numba import cfunc
 from numba.core.ccallback import CFunc
-from numba.types import ClassType
+from numba.types import ClassType, void, voidptr
 
 from .aggregate import sqlite_udaf
+from .numbaext import safe_decref
 from .scalar import sqlite_udf
 from .sqlite import (
     SQLITE_DETERMINISTIC,
@@ -16,11 +19,22 @@ from .sqlite import (
     inversefunc,
     scalarfunc,
     sqlite3_create_function,
+    sqlite3_create_function_v2,
     sqlite3_create_window_function,
     sqlite3_errmsg,
     stepfunc,
     valuefunc,
 )
+
+_incref = pythonapi.Py_IncRef
+_incref.argtypes = (py_object,)
+_incref.restype = None
+
+
+@cfunc(void(voidptr))  # type: ignore[misc]
+def _safe_decref(obj: Any) -> None:
+    safe_decref(obj)
+
 
 __all__ = (
     "create_function",
@@ -106,12 +120,26 @@ def create_aggregate(
        standard aggregate functions.
     deterministic : bool
         True if this function returns the same output given the same input.
-        Most functions are deterministic.
+        Most functions are deterministic. `RANDOM()` is a notable exception.
 
     """
     namebytes = name.encode("utf8")
     sqlite_db = get_sqlite_db(con)
     flags = SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0)
+
+    # XXX: this is really really gross, maybe there's a better way
+    # we use a boolean to track whether a constructor has been called, because
+    # we only want to call it once for every invocation of the UDAF, on the first call
+    #
+    # unfortunately, python cannot magically know _not_ to decref this value,
+    # and then subsequently call (likely, but not guaranteed) the object's
+    # destructor and cause a segmentation fault
+    #
+    # We work around this by increasing the lifetime of the value by incref-ing
+    # it, and then decref-ing it when the program exits
+    init = byref(c_bool(False))
+    _incref(init)
+
     if hasattr(aggregate_class, "value") and hasattr(aggregate_class, "inverse"):
         rc = sqlite3_create_window_function(
             sqlite_db,
@@ -121,23 +149,24 @@ def create_aggregate(
             # XXX: byref is necessary here because byref returns a new reference
             # whereas ctypes.pointer doesn't, and is likely to be destroyed when
             # this function returns
-            byref(c_bool(False)),
+            init,
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),
             valuefunc(aggregate_class.value.address),
             inversefunc(aggregate_class.inverse.address),
-            destroyfunc(0),
+            destroyfunc(_safe_decref.address),
         )
     else:
-        rc = sqlite3_create_function(
+        rc = sqlite3_create_function_v2(
             sqlite_db,
             namebytes,
             num_params,
             flags,
-            byref(c_bool(False)),
+            init,
             scalarfunc(0),
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),
+            destroyfunc(_safe_decref.address),
         )
     if rc != SQLITE_OK:
         raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
