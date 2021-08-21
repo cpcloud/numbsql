@@ -118,8 +118,9 @@ def create_aggregate(
             namebytes,
             num_params,
             flags,
-            # XXX: byref is necessary here because apparently it will not
-            # be garbage collected after the function returns
+            # XXX: byref is necessary here because byref returns a new reference
+            # whereas ctypes.pointer doesn't, and is likely to be destroyed when
+            # this function returns
             byref(c_bool(False)),
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),
