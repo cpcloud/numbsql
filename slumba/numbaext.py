@@ -201,6 +201,41 @@ def reset_init(
 
 
 @extending.intrinsic  # type: ignore[misc]
+def safe_decref(
+    typingctx: Context, pyobject: types.RawPointer
+) -> Tuple[
+    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], None]
+]:
+    """Safely decrement the reference count of a PyObject*.
+
+    Parameters
+    ----------
+    typingctx
+    user_data_type
+    """
+    if isinstance(pyobject, types.RawPointer):
+        sig = types.void(types.voidptr)
+
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value, ...],
+        ) -> None:
+            (user_data,) = args
+            pyapi = context.get_python_api(builder)
+            # check whether the pyobject is null, (likely not)
+            with builder.if_then(cgutils.is_not_null(builder, user_data), likely=True):
+                # we can't call decref safely without holding the GIL
+                gil = pyapi.gil_ensure()
+                pyapi.decref(user_data)
+                pyapi.gil_release(gil)
+
+        return sig, codegen
+    raise TypeError(f"Unable to decref type {pyobject}")
+
+
+@extending.intrinsic  # type: ignore[misc]
 def make_arg_tuple(
     typingctx: Context, func: types.Callable, argv: types.CPointer
 ) -> Tuple[
