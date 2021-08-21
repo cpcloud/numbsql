@@ -1,3 +1,9 @@
+"""Welcome to hell, or heaven, depending.
+
+This module is a collection of numba extensions that perform operations
+of varying levels of danger and complexity needed to make this monstrosity
+work correctly.
+"""
 from typing import Callable, Tuple, Union
 
 import numba
@@ -74,8 +80,11 @@ def unsafe_cast(
             args: Tuple[Value, ...],
         ) -> LoadInstr:
             ptr, _ = args
+
+            # get the llvm type of the thing that would be allocated
             alloc_type = context.get_data_type(inst_typ.get_data_type())
 
+            # TODO: understand what this does exactly
             inst_struct = context.make_helper(builder, inst_typ)
 
             # Set meminfo to correctly typed NULL value
@@ -85,10 +94,12 @@ def unsafe_cast(
             inst_struct.meminfo = cgutils.get_null_value(inst_struct.meminfo.type)
 
             # Set data from the given pointer
+            #
+            # This is effectively a reinterpret cast, fun.
             inst_struct.data = builder.bitcast(ptr, alloc_type.as_pointer())
 
-            # don't track this structure with NRT because the data
-            # are owned by SQLite
+            # don't track this structure with NRT because the memory is owned
+            # by SQLite
             return imputils.impl_ret_untracked(
                 context, builder, inst_typ, inst_struct._getvalue()
             )
@@ -104,7 +115,7 @@ def init(
     inst_typ: types.ClassInstanceType,
     user_data: types.Integer,
 ) -> Tuple[
-    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], LoadInstr]
+    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], None]
 ]:
     """Initialize a jitclass by calling its constructor.
 
@@ -122,17 +133,19 @@ def init(
             builder: Builder,
             signature: Signature,
             args: Tuple[Value, ...],
-        ) -> LoadInstr:
+        ) -> None:
             instance, user_data = args
 
             # cast the user-defined void* payload to bool*
             raw = builder.bitcast(user_data, cgutils.bool_t.as_pointer())
 
-            # generate a block to check if the constructor has been called
+            # generate a basic block to check if the constructor has been
+            # called
             #
-            # it's only ever called once, so set likely to False
+            # it's only ever called once, so set likely=False for better cache
+            # locality
             with builder.if_then(builder.not_(builder.load(raw)), likely=False):
-                # if the constructor hasn't been called, call it
+                # pull out the function pointer
                 dist_typ = types.Dispatcher(inst_typ.jit_methods["__init__"])
                 fnty = types.void(inst_typ)
                 fn = context.get_function(dist_typ, fnty)
@@ -157,6 +170,7 @@ def make_arg_tuple(
     Signature,
     Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], InsertValue],
 ]:
+    """Construct a typed argument tuple to pass to a UD(A)F."""
     (func_type,), _ = func.get_call_signatures()
     first_arg, *_ = args = func_type.args
 
@@ -304,6 +318,8 @@ def map_sqlite_string_to_numba_uni_str(
 ) -> LoadInstr:
     """Construct a Numba string from a raw C string coming from SQLite.
 
+    There's no way this implementation is correct.
+
     Notes
     -----
     This implementation is probably FULL of undefined behavior
@@ -357,6 +373,7 @@ def get_sqlite3_result_function(
     Signature,
     Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], CastInstr],
 ]:
+    """Return the correct result setting function for the given type."""
     underlying_type = getattr(value_type, "type", value_type)
     func_type = types.void(types.voidptr, underlying_type)
 
@@ -390,6 +407,7 @@ def sizeof(
     Signature,
     Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], Constant],
 ]:
+    """Return the size in bytes of a type."""
     if isinstance(src, types.ClassType):
         sig = types.int64(src)
 
