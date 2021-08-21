@@ -25,6 +25,7 @@ pkgs.lib.listToAttrs
       inherit name;
       value = pkgs.mkShell {
         name = "slumba-dev-${name}";
+        PYTHONPATH = ".";
         shellHook = ''
           ${(import ./pre-commit.nix).pre-commit-check.shellHook}
         '';
