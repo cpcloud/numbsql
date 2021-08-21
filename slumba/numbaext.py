@@ -2,6 +2,7 @@ from typing import Callable, Tuple, Union
 
 import numba
 from llvmlite.ir.instructions import (
+    CallInstr,
     CastInstr,
     Constant,
     ICMPInstr,
@@ -24,6 +25,16 @@ from .sqlite import (
     sqlite3_value_type,
     strlen,
 )
+
+
+def _add_linking_libs(context: BaseContext, call: CallInstr) -> None:
+    """Add the required libs for the callable to allow inlining."""
+    try:
+        libs = call.libs
+    except AttributeError:
+        pass
+    else:
+        context.add_linking_libs(libs)
 
 
 @extending.intrinsic  # type: ignore[misc]
@@ -75,11 +86,68 @@ def unsafe_cast(
 
             # Set data from the given pointer
             inst_struct.data = builder.bitcast(ptr, alloc_type.as_pointer())
-            return inst_struct._getvalue()
+
+            # don't track this structure with NRT because the data
+            # are owned by SQLite
+            return imputils.impl_ret_untracked(
+                context, builder, inst_typ, inst_struct._getvalue()
+            )
 
         return sig, codegen
-    else:
-        raise TypeError(f"Unable to cast pointer type {src} to class type {dst}")
+
+    raise TypeError(f"Unable to cast pointer type {src} to class type {dst}")
+
+
+@extending.intrinsic  # type: ignore[misc]
+def init(
+    typingctx: Context,
+    inst_typ: types.ClassInstanceType,
+    user_data: types.Integer,
+) -> Tuple[
+    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], LoadInstr]
+]:
+    """Initialize a jitclass by calling its constructor.
+
+    Parameters
+    ----------
+    typingctx
+    """
+    if isinstance(inst_typ, types.ClassInstanceType) and isinstance(
+        user_data, types.Integer
+    ):
+        sig = types.void(inst_typ, types.voidptr)
+
+        def codegen(
+            context: BaseContext,
+            builder: Builder,
+            signature: Signature,
+            args: Tuple[Value, ...],
+        ) -> LoadInstr:
+            instance, user_data = args
+
+            # cast the user-defined void* payload to bool*
+            raw = builder.bitcast(user_data, cgutils.bool_t.as_pointer())
+
+            # generate a block to check if the constructor has been called
+            #
+            # it's only ever called once, so set likely to False
+            with builder.if_then(builder.not_(builder.load(raw)), likely=False):
+                # if the constructor hasn't been called, call it
+                dist_typ = types.Dispatcher(inst_typ.jit_methods["__init__"])
+                fnty = types.void(inst_typ)
+                fn = context.get_function(dist_typ, fnty)
+
+                _add_linking_libs(context, fn)
+
+                # set the blob to True to indicate that the constructor has
+                # been called
+                builder.store(context.get_constant(types.boolean, True), raw)
+
+                # call the constructor on the instance
+                fn(builder, [instance])
+
+        return sig, codegen
+    raise TypeError(f"Unable to initialize type {inst_typ}")
 
 
 @extending.intrinsic  # type: ignore[misc]

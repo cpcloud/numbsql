@@ -1,4 +1,5 @@
 import sqlite3
+from ctypes import byref, c_bool
 
 from numba.core.ccallback import CFunc
 from numba.types import ClassType
@@ -117,7 +118,9 @@ def create_aggregate(
             namebytes,
             num_params,
             flags,
-            None,
+            # XXX: byref is necessary here because apparently it will not
+            # be garbage collected after the function returns
+            byref(c_bool(False)),
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),
             valuefunc(aggregate_class.value.address),
@@ -130,7 +133,7 @@ def create_aggregate(
             namebytes,
             num_params,
             flags,
-            None,
+            byref(c_bool(False)),
             scalarfunc(0),
             stepfunc(aggregate_class.step.address),
             finalizefunc(aggregate_class.finalize.address),

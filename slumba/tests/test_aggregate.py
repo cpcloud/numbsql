@@ -32,6 +32,19 @@ class Avg:  # pragma: no cover
         return self.total / count if count else None
 
 
+@sqlite_udaf(int64())
+@jitclass(dict(count=int64))
+class BogusCount:  # pragma: no cover
+    def __init__(self) -> None:
+        self.count = 1
+
+    def step(self) -> None:
+        self.count += 1
+
+    def finalize(self) -> int:
+        return self.count
+
+
 class AvgPython:
     def __init__(self) -> None:
         self.total = 0.0
@@ -127,9 +140,16 @@ def con() -> sqlite3.Connection:
     ]
     con.executemany("INSERT INTO t (key, value) VALUES (?, ?)", rows)
     create_aggregate(con, "avg_numba", 1, Avg)
+    create_aggregate(con, "bogus_count", 0, BogusCount)
     create_aggregate(con, "winavg_numba", 1, WinAvg)
     con.create_aggregate("winavg_python", 1, WinAvgPython)
     return con
+
+
+def test_constructor(con: sqlite3.Connection) -> None:
+    ((count,),) = con.execute("SELECT count(1) FROM t").fetchall()
+    result = con.execute("SELECT bogus_count() FROM t").fetchall()
+    assert result == [(count + 1,)]
 
 
 def test_aggregate(con: sqlite3.Connection) -> None:
