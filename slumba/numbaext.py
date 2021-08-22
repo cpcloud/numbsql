@@ -380,7 +380,7 @@ def make_arg_tuple(
 
         # construct a tuple of arguments (fixed length and known types)
         res = context.make_tuple(builder, tuple_type, converted_args)
-        return imputils.impl_ret_borrowed(context, builder, tuple_type, res)
+        return imputils.impl_ret_new_ref(context, builder, tuple_type, res)
 
     return sig, codegen
 
