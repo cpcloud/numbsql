@@ -426,7 +426,9 @@ def map_sqlite_string_to_numba_uni_str(
 
     # SQLite strings are never guaranteed to be anything really, and most
     # certainly not ASCII.
-    uni_str.is_ascii = uni_str.is_ascii.type(0)
+    uni_str.is_ascii = builder.zext(
+        context.get_constant(types.boolean, False), uni_str.is_ascii.type
+    )
 
     # Tell numba to forget about owning the data, because SQLite owns it.
     uni_str.meminfo = cgutils.get_null_value(uni_str.meminfo.type)
