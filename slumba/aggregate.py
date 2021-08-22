@@ -89,7 +89,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
 
         if is_window_function:
             # aggregates can always return a NULL value
-            value_signature = signature.return_type(instance_type)
+            value_signature = finalize_signature
             value_func.compile(value_signature)
 
             @cfunc(void(voidptr))  # type: ignore[misc]
@@ -104,7 +104,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                         result_setter = get_sqlite3_result_function(result)
                         result_setter(ctx, result)
 
-            inverse_signature: Signature = step_signature
+            inverse_signature = step_signature
             inverse_func.compile(inverse_signature)
 
             @cfunc(void(voidptr, intc, CPointer(voidptr)))  # type: ignore[misc,]
