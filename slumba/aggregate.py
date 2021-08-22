@@ -46,8 +46,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
 
             if is_not_null_pointer(raw_pointer):
                 agg_ctx = unsafe_cast(raw_pointer, cls)
-                user_data = sqlite3_user_data(ctx)
-                init(agg_ctx, user_data)
+                is_initialized = sqlite3_user_data(ctx)
+                init(agg_ctx, is_initialized)
                 args = make_arg_tuple(step_func, argv)
                 agg_ctx.step(*args)
 
@@ -68,7 +68,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                     result_setter = get_sqlite3_result_function(result)
                     result_setter(ctx, result)
 
-                reset_init(sqlite3_user_data(ctx))
+                is_initialized = sqlite3_user_data(ctx)
+                reset_init(is_initialized)
 
         try:
             value_func = class_type.jit_methods["value"]
