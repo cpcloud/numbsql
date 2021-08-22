@@ -465,14 +465,14 @@ def get_sqlite3_result_function(
         signature: Signature,
         args: Tuple[Value, ...],
     ) -> CastInstr:
-        # get the appropriate ctypes extraction routine
-        ctypes_function = RESULT_SETTERS[value_type]
+        # get the appropriate setter function
+        result_setter = RESULT_SETTERS[value_type]
 
         # create a numba function type for the converter
-        converter = ctypes_utils.make_function_type(ctypes_function)
+        converter = ctypes_utils.make_function_type(result_setter)
 
         # get the function pointer instruction out
-        return context.get_constant_generic(builder, converter, ctypes_function)
+        return context.get_constant_generic(builder, converter, result_setter)
 
     return sig, codegen
 
