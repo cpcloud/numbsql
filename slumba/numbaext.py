@@ -263,14 +263,10 @@ def make_arg_tuple(
         converted_args = []
         pyapi = context.get_python_api(builder)
 
+        # make the SQLITE_NULL value type constant available
+        sqlite_null = context.get_constant(types.int32, SQLITE_NULL)
+
         for i, argtype in enumerate(argtypes):
-            # get a pointer to the ith argument
-            element_pointer = cgutils.gep(builder, argv, i, inbounds=True)
-
-            # deref that pointer
-            element = builder.load(element_pointer)
-
-            # check for null values #
             # get a pointer to the sqlite3_value_type C function
             sqlite3_value_type_numba = context.get_constant_generic(
                 builder,
@@ -278,14 +274,17 @@ def make_arg_tuple(
                 sqlite3_value_type,
             )
 
+            # get a pointer to the ith argument
+            element_pointer = cgutils.gep(builder, argv, i, inbounds=True)
+
+            # deref that pointer
+            element = builder.load(element_pointer)
+
             # get the value type
             value_type = builder.call(sqlite3_value_type_numba, [element])
 
-            # make the SQLITE_NULL value type constant available
-            sqlite_null = context.get_constant(types.int32, SQLITE_NULL)
-
             # check whether the value is equal to SQLITE_NULL
-            is_not_null = cgutils.is_true(
+            is_not_sqlite_null = cgutils.is_true(
                 builder, builder.icmp_signed("!=", value_type, sqlite_null)
             )
 
@@ -309,7 +308,8 @@ def make_arg_tuple(
             underlying_type = getattr(argtype, "type", argtype)
 
             if isinstance(argtype, types.Optional):
-                with builder.if_else(is_not_null) as (then, otherwise):
+
+                with builder.if_else(is_not_sqlite_null) as (then, otherwise):
                     with then:
                         # you _must_ put code that only executes in this block,
                         # in the part of the context manager that will execute
@@ -343,7 +343,10 @@ def make_arg_tuple(
                 #
                 # favor the branch where the value isn't null, since it's
                 # an error condition to accept null values without an option type
-                with builder.if_else(is_not_null, likely=True) as (then, otherwise):
+                with builder.if_else(is_not_sqlite_null, likely=True) as (
+                    then,
+                    otherwise,
+                ):
                     with then:
                         value = (
                             raw
