@@ -167,13 +167,21 @@ strlen.argtypes = (c_ubyte_p,)
 strlen.restype = c_size_t
 
 
-def sqlite3_errmsg(db: c_void_p) -> str:
-    """Get the most recent error message from the SQLite database."""
-    return _sqlite3_errmsg(db).decode("utf8")
-
-
 class _RawConnection(ctypes.Structure):
+    """Model a sqlite3.Connection object's first few fields.
+
+    The purpose of this class is to expose a minimal interface
+    for accessing the `db` field of `sqlite3.Connection` structures.
+
+    These structures are technically private in the CPython API.
+    """
+
     _fields_ = [
+        # ob_refcnt and ob_type are what current make up PyObject_HEAD, the
+        # structure that every Python object shares
+        #
+        # we list them here because they are necessary to inform ctypes of the
+        # offset to the `db` field
         ("ob_refcnt", c_ssize_t),
         ("ob_type", c_void_p),
         ("db", c_void_p),
@@ -183,3 +191,8 @@ class _RawConnection(ctypes.Structure):
 def get_sqlite_db(connection: sqlite3.Connection) -> c_void_p:
     """Get the address of the sqlite3* db instance in `connection`."""
     return _RawConnection.from_address(id(connection)).db
+
+
+def sqlite3_errmsg(db: c_void_p) -> str:
+    """Get the most recent error message from the SQLite database."""
+    return _sqlite3_errmsg(db).decode("utf8")
