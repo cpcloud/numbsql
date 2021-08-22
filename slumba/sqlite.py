@@ -1,8 +1,8 @@
 import ctypes
+import ctypes.util
 import sqlite3
 import sys
 from ctypes import (
-    CDLL,
     CFUNCTYPE,
     POINTER,
     c_char_p,
@@ -14,11 +14,12 @@ from ctypes import (
     c_ubyte,
     c_void_p,
 )
-from ctypes.util import find_library
 from typing import Any, Optional
 
 from numba import float64, int32, int64, optional
 from numba.types import string
+
+from .exceptions import MissingLibrary
 
 SQLITE_OK = sqlite3.SQLITE_OK
 SQLITE_VERSION = sqlite3.sqlite_version
@@ -26,17 +27,17 @@ SQLITE_UTF8 = 1
 SQLITE_NULL = 5
 SQLITE_DETERMINISTIC = 0x000000800
 
-sqlite3_path: Optional[str] = find_library("sqlite3")
+sqlite3_path: Optional[str] = ctypes.util.find_library("sqlite3")
 if sqlite3_path is None:  # pragma: no cover
-    raise RuntimeError("Unable to find sqlite3 library")
+    raise MissingLibrary("libsqlite3")
 
-libsqlite3 = CDLL(sqlite3_path)
+libsqlite3 = ctypes.cdll[sqlite3_path]
 
 if sys.platform != "win32":
-    libc_path: Optional[str] = find_library("c")
+    libc_path: Optional[str] = ctypes.util.find_library("c")
     if libc_path is None:  # pragma: no cover
-        raise RuntimeError("Unable to find libc library")
-    libc = CDLL(libc_path)
+        raise MissingLibrary("libc")
+    libc = ctypes.cdll[libc_path]
 else:
     libc = ctypes.cdll.msvcrt
 

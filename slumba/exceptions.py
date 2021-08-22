@@ -13,3 +13,12 @@ class MissingAggregateMethod(Exception):
         return (
             f"Missing aggregate method `{self.method}` on UDAF class `{self.clsname}`"
         )
+
+
+class MissingLibrary(Exception):
+    def __init__(self, library: str) -> None:
+        self.library = library
+        super().__init__(self.library)
+
+    def __str__(self) -> str:
+        return f"Library `{self.library}` not found"
