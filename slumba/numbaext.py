@@ -499,11 +499,11 @@ def sizeof(
 
 
 @extending.intrinsic  # type: ignore[misc]
-def is_null_pointer(
+def is_not_null_pointer(
     typingctx: Context, raw_pointer_type: types.Integer
 ) -> Tuple[
     Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value, ...]], ICMPInstr],
+    Callable[[BaseContext, Builder, Signature, Tuple[Value]], ICMPInstr],
 ]:
     if isinstance(raw_pointer_type, types.Integer):
         sig = types.boolean(raw_pointer_type)
@@ -512,11 +512,10 @@ def is_null_pointer(
             context: BaseContext,
             builder: Builder,
             signature: Signature,
-            args: Tuple[Value, ...],
+            args: Tuple[Value],
         ) -> ICMPInstr:
-            (instance,) = args
-            return cgutils.is_null(builder, instance)
+            return cgutils.is_not_null(builder, *args)
 
         return sig, codegen
 
-    raise TypeError(f"Cannot check whether a {raw_pointer_type} is a null pointer")
+    raise TypeError(f"Cannot check whether a {raw_pointer_type} is not a null pointer")
