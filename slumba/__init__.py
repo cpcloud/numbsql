@@ -7,6 +7,7 @@ from numba.core.ccallback import CFunc
 from numba.types import ClassType, void, voidptr
 
 from .aggregate import sqlite_udaf
+from .exceptions import MissingAggregateMethod
 from .numbaext import safe_decref
 from .scalar import sqlite_udf
 from .sqlite import (
@@ -99,7 +100,7 @@ def create_aggregate(
     con: sqlite3.Connection,
     name: str,
     num_params: int,
-    aggregate_class: ClassType,
+    agg_class: ClassType,
     deterministic: bool = False,
 ) -> None:
     """Register an aggregate named `name` with the SQLite connection `con`.
@@ -123,50 +124,87 @@ def create_aggregate(
         Most functions are deterministic. `RANDOM()` is a notable exception.
 
     """
+    try:
+        step_method = agg_class.step
+    except AttributeError as e:
+        raise MissingAggregateMethod(agg_class, "step") from e
+    else:
+        step_address = step_method.address
+
+    try:
+        finalize_method = agg_class.finalize
+    except AttributeError as e:
+        raise MissingAggregateMethod(agg_class, "finalize") from e
+    else:
+        finalize_address = finalize_method.address
+
+    value_address = getattr(getattr(agg_class, "value", None), "address", None)
+    inverse_address = getattr(getattr(agg_class, "inverse", None), "address", None)
+
+    safe_decref_address = _safe_decref.address
+
     namebytes = name.encode("utf8")
     sqlite_db = get_sqlite_db(con)
     flags = SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0)
 
-    # XXX: this is really really gross, maybe there's a better way
-    # we use a boolean to track whether a constructor has been called, because
-    # we only want to call it once for every invocation of the UDAF, on the first call
+    # XXX: is_initialized is how we track whether an aggregate's constructor
+    # has been called
     #
-    # unfortunately, python cannot magically know _not_ to decref this value,
-    # and then subsequently call (likely, but not guaranteed) the object's
-    # destructor and cause a segmentation fault
+    # we only want to call the constructor once for every invocation of the
+    # UDAF, on the first call to step
     #
-    # We work around this by increasing the lifetime of the value by incref-ing
-    # it, and then decref-ing it when the program exits
-    init = byref(c_bool(False))
-    _incref(init)
+    # when finalize is called, we set `is_initialized` to false
+    #
+    # a lifetime problem arises: we creating `is_initialized` in this function
+    # which _registers_ the UDAF, but the variable itself needs to live for the
+    # lifetime of the database connection
+    #
+    # unfortunately, python cannot magically know _not_ to decref this value
+    # when the function exits, which will (likely, but guaranteed to) cause the
+    # destructor for `is_initialized` to called.
+    #
+    # This leeds to a segmentation fault.
+    #
+    # We solve this problem by increasing the lifetime of the value by incrementing
+    # the reference count of `is_initialized` here, and then using SQLite UDAFs'
+    # destructor-callback-on-database-close mechanism to decrement the
+    # reference count
+    #
+    # That way, there's no memory leak _and_ the lifetime of the value lives as
+    # long as the database connection is valid
+    is_initialized = byref(c_bool(False))
+    _incref(is_initialized)
 
-    if hasattr(aggregate_class, "value") and hasattr(aggregate_class, "inverse"):
-        rc = sqlite3_create_window_function(
-            sqlite_db,
-            namebytes,
-            num_params,
-            flags,
-            # XXX: byref is necessary here because byref returns a new reference
-            # whereas ctypes.pointer doesn't, and is likely to be destroyed when
-            # this function returns
-            init,
-            stepfunc(aggregate_class.step.address),
-            finalizefunc(aggregate_class.finalize.address),
-            valuefunc(aggregate_class.value.address),
-            inversefunc(aggregate_class.inverse.address),
-            destroyfunc(_safe_decref.address),
-        )
-    else:
-        rc = sqlite3_create_function_v2(
-            sqlite_db,
-            namebytes,
-            num_params,
-            flags,
-            init,
-            scalarfunc(0),
-            stepfunc(aggregate_class.step.address),
-            finalizefunc(aggregate_class.finalize.address),
-            destroyfunc(_safe_decref.address),
-        )
-    if rc != SQLITE_OK:
-        raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
+    try:
+        if value_address is not None and inverse_address is not None:
+            rc = sqlite3_create_window_function(
+                sqlite_db,
+                namebytes,
+                num_params,
+                flags,
+                is_initialized,
+                stepfunc(step_address),
+                finalizefunc(finalize_address),
+                valuefunc(value_address),
+                inversefunc(inverse_address),
+                destroyfunc(safe_decref_address),
+            )
+        else:
+            rc = sqlite3_create_function_v2(
+                sqlite_db,
+                namebytes,
+                num_params,
+                flags,
+                is_initialized,
+                scalarfunc(0),
+                stepfunc(step_address),
+                finalizefunc(finalize_address),
+                destroyfunc(safe_decref_address),
+            )
+        if rc != SQLITE_OK:
+            raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
+    except Exception:
+        # catch every exception so that we can decrement the reference count
+        # of `is_initialized`, and prevent a memory leak
+        _safe_decref(is_initialized)
+        raise
