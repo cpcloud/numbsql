@@ -114,7 +114,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
                 if is_not_null_pointer(raw_pointer):
                     agg_ctx = unsafe_cast(raw_pointer, cls)
-                    agg_ctx.inverse(*make_arg_tuple(inverse_func, argv))
+                    args = make_arg_tuple(inverse_func, argv)
+                    agg_ctx.inverse(*args)
 
         cls.step.address = step.address
         cls.finalize.address = finalize.address
