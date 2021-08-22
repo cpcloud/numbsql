@@ -7,7 +7,7 @@ from numba.types import CPointer, intc, voidptr
 from .numbaext import (
     get_sqlite3_result_function,
     init,
-    is_null_pointer,
+    is_not_null_pointer,
     make_arg_tuple,
     reset_init,
     sizeof,
@@ -43,7 +43,8 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             ctx, argc: int, argv
         ) -> None:  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-            if not is_null_pointer(raw_pointer):
+
+            if is_not_null_pointer(raw_pointer):
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 user_data = sqlite3_user_data(ctx)
                 init(agg_ctx, user_data)
@@ -57,7 +58,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
         @cfunc(void(voidptr))  # type: ignore[misc]
         def finalize(ctx) -> None:  # type: ignore[no-untyped-def]  # pragma: no cover
             raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-            if not is_null_pointer(raw_pointer):
+            if is_not_null_pointer(raw_pointer):
                 agg_ctx = unsafe_cast(raw_pointer, cls)
                 result = agg_ctx.finalize()
 
@@ -93,7 +94,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
             @cfunc(void(voidptr))  # type: ignore[misc]
             def value(ctx) -> None:  # type: ignore[no-untyped-def]  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-                if not is_null_pointer(raw_pointer):
+                if is_not_null_pointer(raw_pointer):
                     agg_ctx = unsafe_cast(raw_pointer, cls)
                     result = agg_ctx.value()
                     if result is None:
@@ -110,7 +111,7 @@ def sqlite_udaf(signature: Signature) -> Callable[[Type], Type]:
                 ctx, argc: int, argv
             ) -> None:  # pragma: no cover
                 raw_pointer = sqlite3_aggregate_context(ctx, sizeof(cls))
-                if not is_null_pointer(raw_pointer):
+                if is_not_null_pointer(raw_pointer):
                     agg_ctx = unsafe_cast(raw_pointer, cls)
                     agg_ctx.inverse(*make_arg_tuple(inverse_func, argv))
 
