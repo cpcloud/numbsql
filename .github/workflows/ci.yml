@@ -35,7 +35,7 @@ jobs:
           extraPullNames: nix-community,stupidb
 
       - name: Build package and run tests
-        run: nix build -L --argstr python python${{ matrix.python-version }}
+        run: cachix watch-exec slumba nix -- build -L --argstr python python${{ matrix.python-version }} --keep-going
   conda:
     strategy:
       fail-fast: false
