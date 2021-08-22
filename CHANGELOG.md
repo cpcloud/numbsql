@@ -2,6 +2,26 @@
 
 <!--next-version-placeholder-->
 
+## v2.0.0 (2021-08-22)
+### Fix
+* Return a new ref instead of a borrowed one ([`b9b3730`](https://github.com/cpcloud/slumba/commit/b9b37304555189f6fcbab5ebe1c0cdc658f13c86))
+* Add missing exceptions.py module ([`5a1bfe0`](https://github.com/cpcloud/slumba/commit/5a1bfe0890a01f28658c8960ff5c8b9056760de5))
+* Revert mypy ([`2ee28ca`](https://github.com/cpcloud/slumba/commit/2ee28cacfa5874f6b86a1457cb8a6d875c036aa5))
+* Safely decref the pyobject that we use to store the state of agg initialization ([`fc70f1d`](https://github.com/cpcloud/slumba/commit/fc70f1d0038ef7eb2f529f5c7c5aeb57eb54e9da))
+* Use reset_init in finalize to indicate that the next step call should reinit ([`3dc3d54`](https://github.com/cpcloud/slumba/commit/3dc3d5420e7cf6acd301170444d5a4746de54f97))
+* Actually run constructors ([`8f02a99`](https://github.com/cpcloud/slumba/commit/8f02a99b42bb4cccfeae7c2851d70f8f4160b205))
+* **udaf:** Compile __init__ functions ([`95fae29`](https://github.com/cpcloud/slumba/commit/95fae2952ee64b306c85246fe9b1aa21635d575e))
+
+### Breaking
+* run constructors, which previously were not being called  ([`8f02a99`](https://github.com/cpcloud/slumba/commit/8f02a99b42bb4cccfeae7c2851d70f8f4160b205))
+
+### Documentation
+* Add some docs, comments and fix types ([`3f476bf`](https://github.com/cpcloud/slumba/commit/3f476bfcdf4415df3600a27f53a70f4c99262826))
+* Comment more on how byref works ([`4ed4cf0`](https://github.com/cpcloud/slumba/commit/4ed4cf0bc71cc34908bb0117f8a8ca213962f50c))
+
+### Performance
+* Tell mypy to ignore tests because it's way too slow ([`86a8b62`](https://github.com/cpcloud/slumba/commit/86a8b626f73794248f5e245ac57f9669734600a2))
+
 ## v1.3.0 (2021-08-17)
 ### Feature
 * Add limited support for strings ([`13ed405`](https://github.com/cpcloud/slumba/commit/13ed4054a04eb2d3649bb56ada450821f30b6596))
