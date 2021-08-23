@@ -30,13 +30,16 @@ cython = ">=0.29.24,<1"
 debugpy = "^1"
 flake8 = "^3"
 importlib-metadata = { version = "^4", python = "<3.8" }
+ipykernel = "^6.2.0"
 isort = "^5"
+jupyter = { version = "^1.0.0", extras = ["notebook"] }
 mypy = "^0.812"
 pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
 pytest-randomly = "^3"
 pytest-xdist = "^2"
+testbook = "^0.4.2"
 
 [tool.pytest.ini_options]
 xfail_strict = true
@@ -45,6 +48,9 @@ addopts = [
   "--ignore=dist-packages",
   "--strict-markers",
   "--doctest-modules",
+  # this is here because pytest doesn't accept duplicate imports
+  # and nix installs the package before running tests
+  "--doctest-ignore-import-errors",
 ]
 norecursedirs = ["site-packages", "dist-packages"]
 

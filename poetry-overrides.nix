@@ -16,4 +16,10 @@
       self.importlib-metadata
     ];
   });
+
+  jupyterlab-widgets = super.jupyterlab-widgets.overridePythonAttrs (old: {
+    propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ [
+      self.jupyter-packaging
+    ];
+  });
 }

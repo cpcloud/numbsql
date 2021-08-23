@@ -1,25 +1,23 @@
+import random
 import sqlite3
 import string
 import time
 from operator import attrgetter
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
-from numba import float64, int64, optional
 from numba.experimental import jitclass
 from numba.types import ClassType
 
 from slumba import create_aggregate, sqlite_udaf
 
 
-@sqlite_udaf(float64(float64))
-@jitclass(
-    [
-        ("mean", float64),
-        ("sum_of_squares_of_differences", float64),
-        ("count", int64),
-    ]
-)
+@sqlite_udaf
+@jitclass
 class Var:
+    mean: float
+    sum_of_squares_of_differences: float
+    count: int
+
     def __init__(self) -> None:
         self.mean = 0.0
         self.sum_of_squares_of_differences = 0.0
@@ -35,11 +33,14 @@ class Var:
         return self.sum_of_squares_of_differences / (self.count - 1)
 
 
-@sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
-@jitclass(
-    [("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)]
-)
+@sqlite_udaf
+@jitclass
 class Cov:
+    mean1: float
+    mean2: float
+    mean12: float
+    count: int
+
     def __init__(self) -> None:
         self.mean1 = 0.0
         self.mean2 = 0.0
@@ -63,9 +64,12 @@ class Cov:
         return n / (n - 1) * self.mean12
 
 
-@sqlite_udaf(optional(float64)(optional(float64)))
-@jitclass([("total", float64), ("count", int64)])
+@sqlite_udaf
+@jitclass
 class Avg:
+    total: float
+    count: int
+
     def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
@@ -81,9 +85,12 @@ class Avg:
         return self.total / self.count
 
 
-@sqlite_udaf(optional(float64)(float64))
-@jitclass([("total", float64), ("count", int64)])
+@sqlite_udaf
+@jitclass
 class Sum:
+    total: float
+    count: int
+
     def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
@@ -98,8 +105,6 @@ class Sum:
 
 
 def main() -> None:
-    import random
-
     con = sqlite3.connect(":memory:")
     con.execute(
         """

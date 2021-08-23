@@ -1,9 +1,8 @@
 import sqlite3
 from ctypes import byref, c_bool, py_object, pythonapi
-from typing import Any
+from typing import Any, Callable
 
 from numba import cfunc
-from numba.core.ccallback import CFunc
 from numba.types import ClassType, void, voidptr
 
 from .aggregate import sqlite_udaf
@@ -58,7 +57,7 @@ def create_function(
     con: sqlite3.Connection,
     name: str,
     num_params: int,
-    func: CFunc,
+    func: Callable[..., Any],
     deterministic: bool = False,
 ) -> None:
     """Register a UDF with name `name` with the SQLite connection `con`.
@@ -78,6 +77,23 @@ def create_function(
         True if this function returns the same output given the same input.
         Most functions are deterministic.
 
+    Examples
+    --------
+    >>> import sqlite3
+    >>> from slumba import sqlite_udf
+    >>> from typing import Optional
+    >>> @sqlite_udf
+    ... def add_one(value: Optional[int]) -> Optional[int]:
+    ...     return value + 1 if value is not None else None
+    ...
+    >>> from slumba import create_aggregate, create_function
+    >>> con = sqlite3.connect(":memory:")
+    >>> create_function(con, "add_one", 1, add_one)
+    >>> con.execute("SELECT add_one(1)").fetchall()
+    [(2,)]
+    >>> con.execute("SELECT add_one(NULL)").fetchall()
+    [(None,)]
+
     """
     sqlite_db = get_sqlite_db(con)
     if (
@@ -87,7 +103,7 @@ def create_function(
             num_params,
             SQLITE_UTF8 | (SQLITE_DETERMINISTIC if deterministic else 0),
             None,
-            scalarfunc(func.address),
+            scalarfunc(func.scalar.address),  # type: ignore[attr-defined]
             stepfunc(0),
             finalizefunc(0),
         )
