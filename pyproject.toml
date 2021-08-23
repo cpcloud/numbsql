@@ -43,7 +43,8 @@ xfail_strict = true
 addopts = [
   "--ignore=site-packages",
   "--ignore=dist-packages",
-  "--strict-markers"
+  "--strict-markers",
+  "--doctest-modules",
 ]
 norecursedirs = ["site-packages", "dist-packages"]
 
