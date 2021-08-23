@@ -2,6 +2,7 @@ import itertools
 import pathlib
 import random
 import sqlite3
+import sys
 from typing import Generator, List, Optional, Tuple
 
 import pytest
@@ -408,6 +409,10 @@ def test_window_bench(
     assert benchmark(run_agg_partition_by, large_con, func)
 
 
+@pytest.mark.skipif(  # type: ignore[misc]
+    sys.platform == "win32",
+    reason="Installation of dependencies is problematic on windows",
+)
 @testbook(  # type: ignore[misc]
     pathlib.Path(__file__).parent.parent.parent / "notebooks" / "sqlite-window.ipynb",
     execute=True,
