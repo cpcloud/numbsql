@@ -32,7 +32,6 @@ flake8 = "^3"
 importlib-metadata = { version = "^4", python = "<3.8" }
 ipykernel = { version = "^6.2.0", platform = "!=win32" }
 isort = "^5"
-jupyter = { version = "^1.0.0", extras = ["notebook"], platform = "!=win32" }
 mypy = "^0.812"
 pydocstyle = "^6"
 pytest = "^6"
