@@ -44,7 +44,7 @@ in
       value = pkgs.mkShell {
         name = "slumba-${name}";
         inherit shellHook;
-        PYTHONPATH = ".";
+        PYTHONPATH = builtins.toPath ./.;
         buildInputs = commonBuildInputs ++ [
           (mkPoetryEnv pkgs.${name})
         ];
