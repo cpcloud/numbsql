@@ -4,7 +4,8 @@ This module is a collection of numba extensions that perform operations
 of varying levels of danger and complexity needed to make this monstrosity
 work correctly.
 """
-from typing import Callable, Tuple, Union
+import inspect
+from typing import Callable, Optional, Tuple, Union
 
 import numba
 from llvmlite.ir.instructions import (
@@ -161,6 +162,32 @@ def init(
 
         return sig, codegen
     raise TypeError(f"Unable to initialize type {inst_typ}")
+
+
+def python_signature_to_numba_signature(
+    signature: inspect.Signature,
+    *,
+    self_type: Optional[types.ClassInstanceType] = None,
+) -> Signature:
+    """Convert a Python `inspect.Signature` object into a numba `Signature`."""
+    input_types = []
+    parameters = iter(signature.parameters.items())
+
+    try:
+        first_name, first_type = next(parameters)
+    except StopIteration:
+        pass
+    else:
+        input_types.append(
+            extending.as_numba_type(self_type if first_name == "self" else first_type)
+        )
+
+    return_type = extending.as_numba_type(signature.return_annotation or types.void)
+
+    input_types.extend(
+        extending.as_numba_type(param.annotation) for _, param in parameters
+    )
+    return return_type(*input_types)
 
 
 @extending.intrinsic  # type: ignore[misc]

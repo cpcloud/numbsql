@@ -1,4 +1,5 @@
 import itertools
+import pathlib
 import random
 import sqlite3
 from typing import Generator, List, Optional, Tuple
@@ -6,18 +7,22 @@ from typing import Generator, List, Optional, Tuple
 import pytest
 from _pytest.fixtures import SubRequest
 from _pytest.tmpdir import TempPathFactory
-from numba import float64, int64, optional
 from numba.experimental import jitclass
 from pkg_resources import parse_version
 from pytest_benchmark.fixture import BenchmarkFixture
+from testbook import testbook
+from testbook.client import TestbookNotebookClient
 
 from slumba import create_aggregate, sqlite_udaf
 from slumba.sqlite import SQLITE_VERSION
 
 
-@sqlite_udaf(optional(float64)(optional(float64)))
-@jitclass(dict(total=float64, count=int64))
+@sqlite_udaf
+@jitclass
 class Avg:  # pragma: no cover
+    total: float
+    count: int
+
     def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
@@ -32,9 +37,11 @@ class Avg:  # pragma: no cover
         return self.total / count if count else None
 
 
-@sqlite_udaf(int64())
-@jitclass(dict(count=int64))
+@sqlite_udaf
+@jitclass
 class BogusCount:  # pragma: no cover
+    count: int
+
     def __init__(self) -> None:
         self.count = 1
 
@@ -46,6 +53,9 @@ class BogusCount:  # pragma: no cover
 
 
 class AvgPython:
+    total: float
+    count: int
+
     def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
@@ -60,9 +70,12 @@ class AvgPython:
         return self.total / count if count else None
 
 
-@sqlite_udaf(optional(float64)(optional(float64)))
-@jitclass(dict(total=float64, count=int64))
+@sqlite_udaf
+@jitclass
 class WinAvg:  # pragma: no cover
+    total: float
+    count: int
+
     def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
@@ -86,6 +99,9 @@ class WinAvg:  # pragma: no cover
 
 
 class WinAvgPython:  # pragma: no cover
+    total: float
+    count: int
+
     def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
@@ -106,6 +122,77 @@ class WinAvgPython:  # pragma: no cover
         if value is not None:
             self.total -= value
             self.count -= 1
+
+
+@sqlite_udaf
+@jitclass
+class Var:  # pragma: no cover
+    mean: float
+    sum_of_squares_of_differences: float
+    count: int
+
+    def __init__(self) -> None:
+        self.mean = 0.0
+        self.sum_of_squares_of_differences = 0.0
+        self.count = 0
+
+    def step(self, value: float) -> None:
+        self.count += 1
+        delta = value - self.mean
+        self.mean += delta
+        self.sum_of_squares_of_differences += delta * (value - self.mean)
+
+    def finalize(self) -> float:
+        return self.sum_of_squares_of_differences / (self.count - 1)
+
+
+@sqlite_udaf
+@jitclass
+class Cov:  # pragma: no cover
+    mean1: float
+    mean2: float
+    mean12: float
+    count: int
+
+    def __init__(self) -> None:
+        self.mean1 = 0.0
+        self.mean2 = 0.0
+        self.mean12 = 0.0
+        self.count = 0
+
+    def step(self, x: Optional[float], y: Optional[float]) -> None:
+        if x is not None and y is not None:
+            self.count += 1
+            n = self.count
+            delta1 = (x - self.mean1) / n
+            self.mean1 += delta1
+            delta2 = (y - self.mean2) / n
+            self.mean2 += delta2
+            self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
+
+    def finalize(self) -> Optional[float]:
+        n = self.count
+        if not n:
+            return None
+        return n / (n - 1) * self.mean12
+
+
+@sqlite_udaf
+@jitclass
+class Sum:  # pragma: no cover
+    total: float
+    count: int
+
+    def __init__(self) -> None:
+        self.total = 0.0
+        self.count = 0
+
+    def step(self, value: float) -> None:
+        self.total += value
+        self.count += 1
+
+    def finalize(self) -> Optional[float]:
+        return self.total if self.count > 0 else None
 
 
 @pytest.fixture(scope="module")  # type: ignore[misc]
@@ -210,6 +297,7 @@ def large_con(
         """
         CREATE TABLE large_t (
             key INTEGER,
+            dense_key INTEGER,
             value DOUBLE PRECISION
         )
         """
@@ -217,13 +305,17 @@ def large_con(
     n = int(1e5)
     rows = zip(
         (random.randrange(0, int(0.01 * n)) for _ in range(n)),
+        (random.randrange(0, int(0.70 * n)) for _ in range(n)),
         (random.normalvariate(0.0, 1.0) for _ in range(n)),
     )
 
     if index:
         con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
+        con.execute('CREATE INDEX "large_t_dense_key_index" ON large_t (dense_key)')
 
-    con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
+    con.executemany(
+        "INSERT INTO large_t (key, dense_key, value) VALUES (?, ?, ?)", rows
+    )
     create_aggregate(con, "avg_numba", 1, Avg)
     create_aggregate(con, "winavg_numba", 1, WinAvg)
     con.create_aggregate("avg_python", 1, AvgPython)
@@ -232,29 +324,47 @@ def large_con(
         yield con
     finally:
         if index:
+            con.execute("DROP INDEX large_t_dense_key_index")
             con.execute("DROP INDEX large_t_key_index")
         con.execute("DROP TABLE large_t")
 
 
-def run_agg_group_by(
+def run_agg_low_card_group_by(
     con: sqlite3.Connection, func: str
 ) -> List[Tuple[str, Optional[float]]]:
     return con.execute(
-        f"SELECT key, {func}(value) AS result FROM large_t GROUP BY key"
+        f"SELECT key, {func}(value) FROM large_t GROUP BY key"
     ).fetchall()
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
     "func", ["avg", "avg_numba", "avg_python"]
 )
-def test_aggregate_group_by_bench(
+def test_aggregate_low_card_group_by_bench(
     large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
 ) -> None:
-    assert benchmark(run_agg_group_by, large_con, func)
+    assert benchmark(run_agg_low_card_group_by, large_con, func)
+
+
+def run_agg_high_card_group_by(
+    con: sqlite3.Connection, func: str
+) -> List[Tuple[str, Optional[float]]]:
+    return con.execute(
+        f"SELECT dense_key, {func}(value) FROM large_t GROUP BY dense_key"
+    ).fetchall()
+
+
+@pytest.mark.parametrize(  # type: ignore[misc]
+    "func", ["avg", "avg_numba", "avg_python"]
+)
+def test_aggregate_high_card_group_by_bench(
+    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
+) -> None:
+    assert benchmark(run_agg_high_card_group_by, large_con, func)
 
 
 def run_agg(con: sqlite3.Connection, func: str) -> List[Tuple[str, Optional[float]]]:
-    return con.execute(f"SELECT key, {func}(value) AS result FROM large_t").fetchall()
+    return con.execute(f"SELECT {func}(value) FROM large_t").fetchall()
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
@@ -270,7 +380,7 @@ def run_agg_partition_by(
     con: sqlite3.Connection, func: str
 ) -> List[Tuple[str, Optional[float]]]:
     return con.execute(
-        f"SELECT key, {func}(value) OVER (PARTITION BY key) AS result FROM large_t"
+        f"SELECT key, {func}(value) OVER (PARTITION BY key) FROM large_t"
     ).fetchall()
 
 
@@ -298,68 +408,9 @@ def test_window_bench(
     assert benchmark(run_agg_partition_by, large_con, func)
 
 
-@sqlite_udaf(float64(float64))
-@jitclass(
-    [
-        ("mean", float64),
-        ("sum_of_squares_of_differences", float64),
-        ("count", int64),
-    ]
+@testbook(  # type: ignore[misc]
+    pathlib.Path(__file__).parent.parent.parent / "notebooks" / "sqlite-window.ipynb",
+    execute=True,
 )
-class Var:  # pragma: no cover
-    def __init__(self) -> None:
-        self.mean = 0.0
-        self.sum_of_squares_of_differences = 0.0
-        self.count = 0
-
-    def step(self, value: float) -> None:
-        self.count += 1
-        delta = value - self.mean
-        self.mean += delta
-        self.sum_of_squares_of_differences += delta * (value - self.mean)
-
-    def finalize(self) -> float:
-        return self.sum_of_squares_of_differences / (self.count - 1)
-
-
-@sqlite_udaf(optional(float64)(optional(float64), optional(float64)))
-@jitclass(
-    [("mean1", float64), ("mean2", float64), ("mean12", float64), ("count", int64)]
-)
-class Cov:  # pragma: no cover
-    def __init__(self) -> None:
-        self.mean1 = 0.0
-        self.mean2 = 0.0
-        self.mean12 = 0.0
-        self.count = 0
-
-    def step(self, x: Optional[float], y: Optional[float]) -> None:
-        if x is not None and y is not None:
-            self.count += 1
-            n = self.count
-            delta1 = (x - self.mean1) / n
-            self.mean1 += delta1
-            delta2 = (y - self.mean2) / n
-            self.mean2 += delta2
-            self.mean12 += (n - 1) * delta1 * delta2 - self.mean12 / n
-
-    def finalize(self) -> Optional[float]:
-        n = self.count
-        if not n:
-            return None
-        return n / (n - 1) * self.mean12
-
-
-@sqlite_udaf(optional(float64)(float64))
-@jitclass([("total", float64), ("count", int64)])
-class Sum:  # pragma: no cover
-    def __init__(self) -> None:
-        self.total = 0.0
-        self.count = 0
-
-    def step(self, value: float) -> None:
-        self.total += value
-        self.count += 1
-
-    def finalize(self) -> Optional[float]:
-        return self.total if self.count > 0 else None
+def test_sqlite_window_notebook(tb: TestbookNotebookClient) -> None:
+    pass

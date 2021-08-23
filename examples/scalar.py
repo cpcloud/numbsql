@@ -1,26 +1,24 @@
+import random
 import sqlite3
 import time
-from typing import List, Tuple
-
-from numba import float64
+from math import exp, pi, sqrt
+from typing import List, Optional, Tuple
 
 from slumba import create_function, sqlite_udf
 
+
+@sqlite_udf  # type: ignore[misc]
+def normal(x: float, mu: float, sigma: float) -> Optional[float]:
+    c = 1.0 / (sigma * sqrt(2.0 * pi))
+    return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
+
+
+def oldnormal(x: float, mu: float, sigma: float) -> float:
+    c = 1.0 / (sigma * sqrt(2.0 * pi))
+    return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
+
+
 if __name__ == "__main__":
-    import random
-    from math import exp, pi, sqrt
-
-    from numba import optional
-
-    @sqlite_udf(optional(float64)(float64, float64, float64))
-    def normal(x: float, mu: float, sigma: float) -> float:
-        c = 1.0 / (sigma * sqrt(2.0 * pi))
-        return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
-
-    def oldnormal(x: float, mu: float, sigma: float) -> float:
-        c = 1.0 / (sigma * sqrt(2.0 * pi))
-        return c * exp(-0.5 * ((x - mu) / sigma) ** 2.0)
-
     con = sqlite3.connect(":memory:")
     con.execute("CREATE TABLE t (random_numbers DOUBLE PRECISION)")
 

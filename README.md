@@ -10,28 +10,29 @@ integers might be unsafe, then you shouldn't use this library.
 
 ## Requirements
 
-* Python >=3.7
+* Python `>=3.7`
 * `numba`
 
 Use `nix-shell` from the repository to avoid dependency hell.
 
 ## Installation
+
 * `poetry install`
 
 ## Examples
 
 ### Scalar Functions
 
-These are almost the same as decorating a Python function with
-`numba.jit`. In the case of `sqlite_udf` a signature is required.
+These are almost the same as decorating a Python function with `numba.jit`.
 
 ```python
+from typing import Optional
+
 from slumba import sqlite_udf
-from numba import int64
 
 
-@sqlite_udf(optional(int64)(optional(int64)))
-def add_one(x):
+@sqlite_udf
+def add_one(x: Optional[int]) -> Optional[int]:
     """Add one to `x` if `x` is not NULL."""
 
     if x is not None:
@@ -49,12 +50,14 @@ aggregates is that they require two decorators: `numba.experimental.jit_class` a
 64-bit floating point numbers.
 
 ```python
-from numba import int64, float64
+from typing import Optional
+
 from numba.experimental import jitclass
+
 from slumba import sqlite_udaf
 
 
-@sqlite_udaf(optional(float64)(optional(float64)))
+@sqlite_udaf
 @jitclass
 class Avg:
     total: float
@@ -64,7 +67,7 @@ class Avg:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value: Optional) -> None:
+    def step(self, value: Optional[float]) -> None:
         if value is not None:
             self.total += value
             self.count += 1
@@ -80,7 +83,14 @@ class Avg:
 You can also define window functions for use with SQLite's `OVER` construct:
 
 ```python
-@sqlite_udaf(optional(float64)(optional(float64)))
+from typing import Optional
+
+from numba.experimental import jitclass
+
+from slumba import sqlite_udaf
+
+
+@sqlite_udaf
 @jitclass
 class WinAvg:  # pragma: no cover
     total: float

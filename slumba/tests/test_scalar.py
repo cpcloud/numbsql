@@ -7,14 +7,13 @@ from typing import Any, Callable, Generator, List, Optional, Tuple
 import pytest
 from _pytest.fixtures import SubRequest
 from _pytest.tmpdir import TempPathFactory
-from numba import float64, int64, optional
 from numba.types import string
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from slumba import create_function, sqlite_udf
 
 
-@sqlite_udf(float64(float64))  # type: ignore[misc]
+@sqlite_udf  # type: ignore[misc]
 def add_one_numba(x: float) -> float:  # pragma: no cover
     return x + 1.0
 
@@ -23,7 +22,7 @@ def add_one_python(x: float) -> float:
     return x + 1.0
 
 
-@sqlite_udf(optional(float64)(optional(float64)))  # type: ignore[misc]
+@sqlite_udf  # type: ignore[misc]
 def add_one_optional_numba(x: Optional[float]) -> Optional[float]:  # pragma: no cover
     return x + 1.0 if x is not None else None
 
@@ -32,7 +31,7 @@ def add_one_optional_python(x: Optional[float]) -> Optional[float]:
     return x + 1.0 if x is not None else None
 
 
-@sqlite_udf(optional(int64)(optional(int64), optional(float64)))  # type: ignore[misc]
+@sqlite_udf  # type: ignore[misc]
 def binary_add_optional(
     x: Optional[int], y: Optional[int]
 ) -> Optional[float]:  # pragma: no cover
@@ -41,12 +40,12 @@ def binary_add_optional(
     return x if x is not None else y
 
 
-@sqlite_udf(optional(int64)(optional(string)))  # type: ignore[misc]
+@sqlite_udf  # type: ignore[misc]
 def string_len_numba(s: Optional[str]) -> Optional[int]:
     return len(s) if s is not None else None
 
 
-@sqlite_udf(int64(string))  # type: ignore[misc]
+@sqlite_udf  # type: ignore[misc]
 def string_len_numba_no_opt(s: str) -> int:
     return len(s)
 
