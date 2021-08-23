@@ -49,7 +49,7 @@ jobs:
           - macos-latest
           - windows-latest
     env:
-      SLUMBA_ENV: slumba-python${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+      SLUMBA_ENV: slumba-python${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
