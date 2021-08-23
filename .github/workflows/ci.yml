@@ -80,6 +80,8 @@ jobs:
       - name: Install dependencies
         run: |
           conda activate slumba
+          poetry config virtualenvs.create false
+          poetry config virtualenvs.in-project false
           poetry install
 
       - name: Run tests
