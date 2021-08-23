@@ -109,7 +109,6 @@ def con() -> sqlite3.Connection:
     create_function(con, "add_one_optional_numba", 1, add_one_optional_numba)
     con.create_function("add_one_optional_python", 1, add_one_optional_python)
 
-    create_function(con, "string_len_numba", 1, string_len_numba)
     return con
 
 
