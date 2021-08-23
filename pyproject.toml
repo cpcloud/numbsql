@@ -30,16 +30,16 @@ cython = ">=0.29.24,<1"
 debugpy = "^1"
 flake8 = "^3"
 importlib-metadata = { version = "^4", python = "<3.8" }
-ipykernel = "^6.2.0"
+ipykernel = { version = "^6.2.0", platform = "!=win32" }
 isort = "^5"
-jupyter = { version = "^1.0.0", extras = ["notebook"] }
+jupyter = { version = "^1.0.0", extras = ["notebook"], platform = "!=win32" }
 mypy = "^0.812"
 pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
 pytest-randomly = "^3"
 pytest-xdist = "^2"
-testbook = "^0.4.2"
+testbook = { version = "^0.4.2", platform = "!=win32" }
 
 [tool.pytest.ini_options]
 xfail_strict = true
