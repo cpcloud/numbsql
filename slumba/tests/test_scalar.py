@@ -2,7 +2,7 @@ import itertools
 import random
 import sqlite3
 import string as strings
-from typing import Generator, List, Optional, Tuple
+from typing import Any, Callable, Generator, List, Optional, Tuple
 
 import pytest
 from _pytest.fixtures import SubRequest
@@ -111,6 +111,22 @@ def con() -> sqlite3.Connection:
 
     create_function(con, "string_len_numba", 1, string_len_numba)
     return con
+
+
+@pytest.mark.parametrize(  # type: ignore[misc]
+    ("func", "args", "expected"),
+    [
+        pytest.param(string_len_numba, ("abcd",), 4, id="string_len_numba"),
+        pytest.param(add_one_numba, (1,), 2, id="add_one_numba"),
+        pytest.param(
+            add_one_optional_numba, (None,), None, id="add_one_optional_numba"
+        ),
+    ],
+)
+def test_function_can_be_called_from_python(
+    func: Callable[..., Any], args: Tuple[Any, ...], expected: Any
+) -> None:
+    assert func(*args) == expected
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
