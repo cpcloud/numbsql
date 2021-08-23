@@ -50,23 +50,26 @@ aggregates is that they require two decorators: `numba.experimental.jit_class` a
 
 ```python
 from numba import int64, float64
-from numba.experimental import jit_class
+from numba.experimental import jitclass
 from slumba import sqlite_udaf
 
 
 @sqlite_udaf(optional(float64)(optional(float64)))
-@jit_class(dict(total=float64, count=int64))
+@jitclass
 class Avg:
+    total: float
+    count: int
+
     def __init__(self):
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: Optional) -> None:
         if value is not None:
             self.total += value
             self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         if not self.count:
             return None
         return self.total / self.count
@@ -78,28 +81,44 @@ You can also define window functions for use with SQLite's `OVER` construct:
 
 ```python
 @sqlite_udaf(optional(float64)(optional(float64)))
-@jitclass(dict(total=float64, count=int64))
+@jitclass
 class WinAvg:  # pragma: no cover
-    def __init__(self):
+    total: float
+    count: int
+
+    def __init__(self) -> None:
         self.total = 0.0
         self.count = 0
 
-    def step(self, value):
+    def step(self, value: Optional[float]) -> None:
         if value is not None:
             self.total += value
             self.count += 1
 
-    def finalize(self):
+    def finalize(self) -> Optional[float]:
         count = self.count
         if count:
             return self.total / count
         return None
 
-    def value(self):
+    def value(self) -> Optional[float]:
         return self.finalize()
 
-    def inverse(self, value):
+    def inverse(self, value: Optional[float]) -> None:
         if value is not None:
             self.total -= value
             self.count -= 1
+```
+
+#### Calling your aggregate function
+
+Similar to scalar functions, we register the function with a `sqlite3.Connection` object:
+
+```python
+>>> import sqlite3
+>>> from slumba import create_aggregate, create_function
+>>> con = sqlite3.connect(":memory:")
+>>> create_function(con, "add_one", 1, add_one)
+>>> con.execute("SELECT add_one(1)").fetchall()
+[(2,)]
 ```
