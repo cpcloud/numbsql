@@ -49,7 +49,7 @@ jobs:
           - macos-latest
           - windows-latest
         env:
-          - slumba-${{ hashFiles('poetry.lock') }}
+          - slumba-python${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
