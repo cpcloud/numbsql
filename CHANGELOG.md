@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v3.0.0 (2021-08-24)
+### Feature
+* **api:** Refactor api to use type annotations entirely ([`164a01a`](https://github.com/cpcloud/slumba/commit/164a01ac0232a956b70a7a387805cf38d811d3ac))
+
+### Breaking
+* Type annotations must now be used to define both scalar and aggregate functions  ([`164a01a`](https://github.com/cpcloud/slumba/commit/164a01ac0232a956b70a7a387805cf38d811d3ac))
+
+### Documentation
+* More readme docs ([`48784b4`](https://github.com/cpcloud/slumba/commit/48784b499f214179124372ba83e5cba4afc36b5d))
+
 ## v2.0.0 (2021-08-22)
 ### Fix
 * Return a new ref instead of a borrowed one ([`b9b3730`](https://github.com/cpcloud/slumba/commit/b9b37304555189f6fcbab5ebe1c0cdc658f13c86))
