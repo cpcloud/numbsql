@@ -40,6 +40,13 @@ pytest-randomly = "^3"
 pytest-xdist = "^2"
 testbook = "^0.4.2"
 
+[tool.conda-lock]
+channels = ["conda-forge"]
+
+[tool.conda-lock.dependencies]
+sqlite = ">=3.25,<4"
+poetry = ">=1,<2"
+
 [tool.pytest.ini_options]
 xfail_strict = true
 addopts = [
