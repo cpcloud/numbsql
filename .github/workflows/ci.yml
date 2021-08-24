@@ -75,6 +75,9 @@ jobs:
       - name: Create environment from lock file
         run: conda create -n slumba --file conda-${{ matrix.os.platform }}-64.lock
 
+      - name: Install pip
+        run: conda install -n slumba pip
+
       - name: Run tests
         run: |
           conda activate slumba
