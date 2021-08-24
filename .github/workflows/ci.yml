@@ -72,11 +72,11 @@ jobs:
       - name: Create lock file
         run: conda-lock -f pyproject.toml -p ${{ matrix.os.platform }}-64
 
-      - name: Install pip
-        run: conda install -n slumba pip
-
       - name: Create environment from lock file
         run: conda create -n slumba --file conda-${{ matrix.os.platform }}-64.lock
+
+      - name: Install pip
+        run: conda install -n slumba pip
 
       - name: Install the package locally
         run: |
