@@ -36,7 +36,7 @@ jobs:
 
       - name: Build package and run tests
         run: cachix watch-exec slumba nix-build -- --argstr python python${{ matrix.python-version }} --keep-going
-  pip:
+  conda:
     strategy:
       fail-fast: false
       matrix:
@@ -45,10 +45,13 @@ jobs:
           - "3.8"
           - "3.9"
         os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-    runs-on: ${{ matrix.os }}
+          - platform: linux
+            image: ubuntu-latest
+          - platform: osx
+            name: macos-latest
+          - platform: win
+            name: windows-latest
+    runs-on: ${{ matrix.os.image }}
     defaults:
       run:
         shell: pwsh
@@ -56,28 +59,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Show default SQLite version
-        if: ${{ matrix.os != 'windows-latest' }} # windows doesn't have sqlite3 installed by default
-        run: sqlite3 --version
-
-      - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          architecture: x64
+          channels: conda-forge
+          show-channel-urls: true
 
-      - name: Install poetry
-        run: pip install poetry
+      - name: Install conda-lock
+        run: conda install -y conda-lock
 
-      - name: Install dependencies
-        run: poetry install
+      - name: Create lock file
+        run: conda-lock -f pyproject.toml -p ${{ matrix.os.platform }}-64
+
+      - name: Create environment from lock file
+        run: conda create -n slumba -y --file conda-${{ matrix.os.platform }}-64.lock
 
       - name: Run tests
-        run: poetry run pytest --benchmark-disable
+        run: |
+          conda activate slumba
+          pytest --benchmark-disable
   release:
     needs:
       - nix
-      - pip
+      - conda
     runs-on: ubuntu-latest
     concurrency: release
     steps:
