@@ -41,7 +41,7 @@ pytest-xdist = "^2"
 testbook = "^0.4.2"
 
 [tool.conda-lock]
-channels = ["conda-forge"]
+channels = ["conda-forge", "defaults"]
 
 [tool.conda-lock.dependencies]
 sqlite = ">=3.25,<4"
