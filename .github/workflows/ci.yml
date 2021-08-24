@@ -61,7 +61,7 @@ jobs:
         run: sqlite3 --version
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.2.2
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
