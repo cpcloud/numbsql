@@ -36,7 +36,6 @@ mypy = "^0.812"
 pydocstyle = "^6"
 pytest = "^6"
 pytest-benchmark = "^3"
-pytest-randomly = "^3"
 pytest-xdist = "^2"
 testbook = "^0.4.2"
 
