@@ -64,8 +64,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          channels: conda-forge,defaults
-          show-channel-urls: true
+          channels: conda-forge
 
       - name: Install conda-lock
         run: conda install conda-lock
