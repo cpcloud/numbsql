@@ -48,9 +48,9 @@ jobs:
           - platform: linux
             image: ubuntu-latest
           - platform: osx
-            name: macos-latest
+            image: macos-latest
           - platform: win
-            name: windows-latest
+            image: windows-latest
     runs-on: ${{ matrix.os.image }}
     defaults:
       run:
