@@ -78,7 +78,7 @@ jobs:
       - name: Run tests
         run: |
           conda activate slumba
-          pytest --benchmark-disable
+          PYTHONPATH="." pytest --benchmark-disable
   release:
     needs:
       - nix
