@@ -68,13 +68,13 @@ jobs:
           show-channel-urls: true
 
       - name: Install conda-lock
-        run: conda install -y conda-lock
+        run: conda install conda-lock
 
       - name: Create lock file
         run: conda-lock -f pyproject.toml -p ${{ matrix.os.platform }}-64
 
       - name: Create environment from lock file
-        run: conda create -n slumba -y --file conda-${{ matrix.os.platform }}-64.lock
+        run: conda create -n slumba --file conda-${{ matrix.os.platform }}-64.lock
 
       - name: Run tests
         run: |
