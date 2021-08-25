@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v3.1.0 (2021-08-25)
+### Feature
+* Support strings in scalar udfs but not in udafs ([`fe03e2f`](https://github.com/cpcloud/slumba/commit/fe03e2f97cdf0c383e9a09f529ef6425cdd95c0f))
+* **strings:** Add support for reading strings ([`b6d74cb`](https://github.com/cpcloud/slumba/commit/b6d74cb13bdbec956d6d300166fddcaa70ff8687))
+
 ## v3.0.0 (2021-08-24)
 ### Feature
 * **api:** Refactor api to use type annotations entirely ([`164a01a`](https://github.com/cpcloud/slumba/commit/164a01ac0232a956b70a7a387805cf38d811d3ac))
