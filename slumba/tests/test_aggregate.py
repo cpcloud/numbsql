@@ -1,13 +1,9 @@
-import itertools
 import pathlib
-import random
 import sqlite3
 import sys
-from typing import Generator, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
-from _pytest.fixtures import SubRequest
-from _pytest.tmpdir import TempPathFactory
 from numba.experimental import jitclass
 from pkg_resources import parse_version
 from pytest_benchmark.fixture import BenchmarkFixture
@@ -196,37 +192,8 @@ class Sum:  # pragma: no cover
         return self.total if self.count > 0 else None
 
 
-@pytest.fixture(scope="module")  # type: ignore[misc]
-def con() -> sqlite3.Connection:
-    con = sqlite3.connect(":memory:")
-    con.execute(
-        """
-        CREATE TABLE t (
-            id INTEGER PRIMARY KEY,
-            key VARCHAR(1),
-            value DOUBLE PRECISION
-        )
-        """
-    )
-    con.execute(
-        """
-        CREATE TABLE s (
-            id INTEGER PRIMARY KEY,
-            key VARCHAR(1),
-            value DOUBLE PRECISION
-        )
-        """
-    )
-
-    rows = [
-        ("a", 1.0),
-        ("a", 2.0),
-        ("b", 3.0),
-        ("c", 4.0),
-        ("c", 5.0),
-        ("c", None),
-    ]
-    con.executemany("INSERT INTO t (key, value) VALUES (?, ?)", rows)
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def con(con: sqlite3.Connection) -> sqlite3.Connection:
     create_aggregate(con, "avg_numba", 1, Avg)
     create_aggregate(con, "bogus_count", 0, BogusCount)
     create_aggregate(con, "winavg_numba", 1, WinAvg)
@@ -278,56 +245,13 @@ def test_aggregate_window_numba(con: sqlite3.Connection, func: str) -> None:
     )
 
 
-@pytest.fixture(  # type: ignore[misc]
-    params=[
-        pytest.param((in_memory, index), id=f"{in_memory_name}-{index_name}")
-        for (in_memory, in_memory_name), (index, index_name) in itertools.product(
-            [(True, "in_memory"), (False, "on_disk")],
-            [(True, "with_index"), (False, "no_index")],
-        )
-    ],
-    scope="module",
-)
-def large_con(
-    request: SubRequest, tmp_path_factory: TempPathFactory
-) -> Generator[sqlite3.Connection, None, None]:
-    in_memory, index = request.param
-    path = ":memory:" if in_memory else str(tmp_path_factory.mktemp("test") / "test.db")
-    con = sqlite3.connect(path)
-    con.execute(
-        """
-        CREATE TABLE large_t (
-            key INTEGER,
-            dense_key INTEGER,
-            value DOUBLE PRECISION
-        )
-        """
-    )
-    n = int(1e5)
-    rows = zip(
-        (random.randrange(0, int(0.01 * n)) for _ in range(n)),
-        (random.randrange(0, int(0.70 * n)) for _ in range(n)),
-        (random.normalvariate(0.0, 1.0) for _ in range(n)),
-    )
-
-    if index:
-        con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
-        con.execute('CREATE INDEX "large_t_dense_key_index" ON large_t (dense_key)')
-
-    con.executemany(
-        "INSERT INTO large_t (key, dense_key, value) VALUES (?, ?, ?)", rows
-    )
-    create_aggregate(con, "avg_numba", 1, Avg)
-    create_aggregate(con, "winavg_numba", 1, WinAvg)
-    con.create_aggregate("avg_python", 1, AvgPython)
-    con.create_aggregate("winavg_python", 1, WinAvgPython)
-    try:
-        yield con
-    finally:
-        if index:
-            con.execute("DROP INDEX large_t_dense_key_index")
-            con.execute("DROP INDEX large_t_key_index")
-        con.execute("DROP TABLE large_t")
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def large_con(large_con: sqlite3.Connection) -> sqlite3.Connection:
+    create_aggregate(large_con, "avg_numba", 1, Avg)
+    create_aggregate(large_con, "winavg_numba", 1, WinAvg)
+    large_con.create_aggregate("avg_python", 1, AvgPython)
+    large_con.create_aggregate("winavg_python", 1, WinAvgPython)
+    return large_con
 
 
 def run_agg_low_card_group_by(

@@ -1,13 +1,7 @@
-import itertools
-import random
 import sqlite3
-import string as strings
-from typing import Any, Callable, Generator, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import pytest
-from _pytest.fixtures import SubRequest
-from _pytest.tmpdir import TempPathFactory
-from numba.types import string
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from slumba import create_function, sqlite_udf
@@ -54,50 +48,7 @@ def string_len_python(s: Optional[str]) -> Optional[int]:
     return len(s) if s is not None else None
 
 
-@pytest.fixture(scope="module")  # type: ignore[misc]
-def con() -> sqlite3.Connection:
-    con = sqlite3.connect(":memory:")
-    con.execute(
-        """
-        CREATE TABLE t (
-            id INTEGER PRIMARY KEY,
-            key VARCHAR(1),
-            value DOUBLE PRECISION
-        )
-        """
-    )
-
-    con.execute(
-        """
-        CREATE TABLE null_t (
-            id INTEGER PRIMARY KEY,
-            key VARCHAR(1),
-            value DOUBLE PRECISION
-        )
-        """
-    )
-
-    rows = [
-        ("a", 1.0),
-        ("a", 2.0),
-        ("b", 3.0),
-        ("c", 4.0),
-        ("c", 5.0),
-    ]
-    con.executemany("INSERT INTO t (key, value) VALUES (?, ?)", rows)
-
-    null_rows = list(
-        itertools.chain(
-            rows,
-            [
-                ("b", None),
-                ("c", None),
-            ],
-        )
-    )
-    random.shuffle(null_rows)
-    con.executemany("INSERT INTO null_t (key, value) VALUES (?, ?)", null_rows)
-
+def register_udfs(con: sqlite3.Connection) -> None:
     create_function(con, "string_len_numba", 1, string_len_numba)
     create_function(con, "string_len_numba_no_opt", 1, string_len_numba_no_opt)
     con.create_function("string_len_python", 1, string_len_python)
@@ -108,7 +59,17 @@ def con() -> sqlite3.Connection:
     create_function(con, "add_one_optional_numba", 1, add_one_optional_numba)
     con.create_function("add_one_optional_python", 1, add_one_optional_python)
 
+
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def con(con: sqlite3.Connection) -> sqlite3.Connection:
+    register_udfs(con)
     return con
+
+
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def large_con(large_con: sqlite3.Connection) -> sqlite3.Connection:
+    register_udfs(large_con)
+    return large_con
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
@@ -191,79 +152,6 @@ def test_string_null_scalar_no_opt_value(con: sqlite3.Connection) -> None:
     assert result == [(4,)]
 
 
-@pytest.fixture(  # type: ignore[misc]
-    params=[
-        pytest.param(
-            (in_memory, index, null_perc),
-            id=f"{in_memory_name}-{index_name}-{null_perc_name}",
-        )
-        for (in_memory, in_memory_name), (index, index_name), (
-            null_perc,
-            null_perc_name,
-        ) in itertools.product(
-            [(True, "in_memory"), (False, "on_disk")],
-            [(True, "with_index"), (False, "no_index")],
-            [(0.0, "no_nulls"), (0.5, "50_perc_nulls"), (1.0, "all_nulls")],
-        )
-    ],
-    scope="module",
-)
-def large_con(
-    request: SubRequest, tmp_path_factory: TempPathFactory
-) -> Generator[sqlite3.Connection, None, None]:
-    key_n = 10
-    in_memory, index, null_perc = request.param
-    path = ":memory:" if in_memory else str(tmp_path_factory.mktemp("test") / "test.db")
-    con = sqlite3.connect(path)
-
-    create_function(con, "add_one_numba", 1, add_one_numba)
-    con.create_function("add_one_python", 1, add_one_python)
-
-    create_function(con, "add_one_optional_numba", 1, add_one_optional_numba)
-    con.create_function("add_one_optional_python", 1, add_one_optional_python)
-
-    create_function(con, "string_len_numba", 1, string_len_numba)
-    con.create_function("string_len_python", 1, string_len_python)
-
-    con.execute(
-        f"""
-        CREATE TABLE large_t (
-            id INTEGER PRIMARY KEY,
-            key VARCHAR({key_n:d}),
-            value DOUBLE PRECISION
-        )
-        """
-    )
-    n = int(1e5)
-    rows = [
-        (
-            (
-                "".join(
-                    random.choices(
-                        strings.ascii_letters, k=random.randrange(0, key_n + 1)
-                    )
-                )
-                if random.random() < (1.0 - null_perc)
-                else None
-            ),
-            random.normalvariate(0.0, 1.0) if random.random() < null_perc else None,
-        )
-        for _ in range(n)
-    ]
-
-    if index:
-        con.execute('CREATE INDEX "large_t_key_index" ON large_t (key)')
-
-    con.executemany("INSERT INTO large_t (key, value) VALUES (?, ?)", rows)
-
-    try:
-        yield con
-    finally:
-        if index:
-            con.execute("DROP INDEX large_t_key_index")
-        con.execute("DROP TABLE large_t")
-
-
 def test_string_len_same_as_builtin(large_con: sqlite3.Connection) -> None:
     test = large_con.execute("SELECT string_len_numba(key) FROM large_t").fetchall()
     expected = large_con.execute("SELECT length(key) FROM large_t").fetchall()
@@ -289,7 +177,12 @@ def test_add_one_bench(
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
-    "func", ["string_len_numba(key)", "string_len_python(key)", "length(key)"]
+    "func",
+    [
+        "string_len_numba(string_key)",
+        "string_len_python(string_key)",
+        "length(string_key)",
+    ],
 )
 def test_string_len_scalar_bench(
     large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
