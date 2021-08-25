@@ -11,6 +11,7 @@ from testbook import testbook
 from testbook.client import TestbookNotebookClient
 
 from slumba import create_aggregate, sqlite_udaf
+from slumba.exceptions import UnsupportedAggregateTypeError
 from slumba.sqlite import SQLITE_VERSION
 
 
@@ -199,6 +200,34 @@ def con(con: sqlite3.Connection) -> sqlite3.Connection:
     create_aggregate(con, "winavg_numba", 1, WinAvg)
     con.create_aggregate("winavg_python", 1, WinAvgPython)
     return con
+
+
+def test_aggregates_with_string_fields_fail() -> None:
+    with pytest.raises(
+        UnsupportedAggregateTypeError,
+        match=r"Aggregates with field type `unicode_type` are not yet implemented",
+    ):
+
+        @sqlite_udaf
+        @jitclass
+        class StringJoin:
+            joined: str
+            count: int
+
+            def __init__(self) -> None:
+                self.joined = ""
+                self.count = 0
+
+            def step(self, value: Optional[str], sep: Optional[str]) -> None:
+                if value is not None and sep is not None:
+                    if not self.count:
+                        self.joined = value
+                    else:
+                        self.joined += sep + value
+                    self.count += 1
+
+            def finalize(self) -> Optional[str]:
+                return self.joined if self.count else None
 
 
 def test_constructor(con: sqlite3.Connection) -> None:

@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
@@ -66,6 +66,23 @@ def string_upper_python(s: Optional[str]) -> Optional[str]:
     return s.upper() if s is not None else None
 
 
+def string_single_upper_python(s: str) -> str:
+    result = []
+    for c in s:
+        result.append(c.upper())
+    return "".join(result)
+
+
+@sqlite_udf
+def string_single_upper_numba(s: str) -> str:
+    s += ""
+    result = []
+    for c in s:
+        result.append(c.upper())
+    s = "".join(result)
+    return s
+
+
 def register_udfs(con: sqlite3.Connection) -> None:
     create_function(con, "string_len_numba", 1, string_len_numba)
     create_function(con, "string_len_numba_no_opt", 1, string_len_numba_no_opt)
@@ -83,12 +100,31 @@ def register_udfs(con: sqlite3.Connection) -> None:
     create_function(con, "string_upper_numba", 1, string_upper_numba)
     con.create_function("string_upper_python", 1, string_upper_python)
 
+    create_function(con, "string_single_upper_numba", 1, string_single_upper_numba)
+    con.create_function("string_single_upper_python", 1, string_single_upper_python)
 
-def test_string_len_same_as_builtin(large_con: sqlite3.Connection) -> None:
-    test = large_con.execute(
-        "SELECT string_len_numba(string_key) FROM large_t"
-    ).fetchall()
-    expected = large_con.execute("SELECT length(string_key) FROM large_t").fetchall()
+
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def con(con: sqlite3.Connection) -> sqlite3.Connection:
+    register_udfs(con)
+    return con
+
+
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def large_con(large_con: sqlite3.Connection) -> sqlite3.Connection:
+    register_udfs(large_con)
+    return large_con
+
+
+def test_string_len_same_as_builtin(con: sqlite3.Connection) -> None:
+    test = con.execute("SELECT string_len_numba(key) FROM t").fetchall()
+    expected = con.execute("SELECT length(key) FROM t").fetchall()
+    assert test == expected
+
+
+def test_string_single_upper(con: sqlite3.Connection) -> None:
+    test = con.execute("SELECT string_single_upper_numba(key) FROM t").fetchall()
+    expected = con.execute("SELECT string_single_upper_python(key) FROM t").fetchall()
     assert test == expected
 
 
@@ -111,27 +147,27 @@ def test_add_one_bench(
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
-    "func",
+    "expr",
     [
-        "string_len_numba(string_key)",
-        "string_len_python(string_key)",
-        "length(string_key)",
+        pytest.param("string_len_numba(string_key)", id="string_len_numba"),
+        pytest.param("string_len_python(string_key)", id="string_len_python"),
+        pytest.param("length(string_key)", id="string_len_builtin"),
     ],
 )
 def test_string_len_scalar_bench(
-    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
+    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, expr: str
 ) -> None:
-    assert benchmark(run_scalar, large_con, func)
+    assert benchmark(run_scalar, large_con, expr)
 
 
 @pytest.mark.parametrize(  # type: ignore[misc]
-    "func",
+    "expr",
     [
-        "string_upper_numba(key)",
-        "string_upper_python(key)",
+        pytest.param("string_upper_numba(string_key)", id="string_upper_numba"),
+        pytest.param("string_upper_python(string_key)", id="string_upper_python"),
     ],
 )
 def test_string_upper_scalar_bench(
-    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
+    large_con: sqlite3.Connection, benchmark: BenchmarkFixture, expr: str
 ) -> None:
-    assert benchmark(run_scalar, large_con, func)
+    assert benchmark(run_scalar, large_con, expr)

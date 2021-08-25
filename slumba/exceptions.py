@@ -1,5 +1,7 @@
 from typing import Type, TypeVar
 
+from numba import types
+
 T = TypeVar("T")
 
 
@@ -22,3 +24,12 @@ class MissingLibrary(Exception):
 
     def __str__(self) -> str:
         return f"Library `{self.library}` not found"
+
+
+class UnsupportedAggregateTypeError(NotImplementedError):
+    def __init__(self, typ: types.Type) -> None:
+        self.typ = typ
+        super().__init__(self.typ)
+
+    def __str__(self) -> str:
+        return f"Aggregates with field type `{self.typ}` are not yet implemented"
