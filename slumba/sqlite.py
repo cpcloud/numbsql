@@ -58,56 +58,53 @@ sqlite3_user_data.argtypes = (c_void_p,)
 sqlite3_user_data.restype = c_void_p
 
 sqlite3_result_double = libsqlite3.sqlite3_result_double
-sqlite3_result_int64 = libsqlite3.sqlite3_result_int64
-sqlite3_result_int = libsqlite3.sqlite3_result_int
-sqlite3_result_text64 = libsqlite3.sqlite3_result_text64
-sqlite3_result_null = libsqlite3.sqlite3_result_null
-
 sqlite3_result_double.argtypes = c_void_p, c_double
 sqlite3_result_double.restype = None
 
+sqlite3_result_int64 = libsqlite3.sqlite3_result_int64
 sqlite3_result_int64.argtypes = c_void_p, c_int64
 sqlite3_result_int64.restype = None
 
+sqlite3_result_int = libsqlite3.sqlite3_result_int
 sqlite3_result_int.argtypes = c_void_p, c_int
 sqlite3_result_int.restype = None
 
+sqlite3_result_text64 = libsqlite3.sqlite3_result_text64
 sqlite3_result_text64.argtypes = (
-    # context
+    # sqlite3_context
     c_void_p,
     # result string
     c_void_p,
-    # -1 for all chars in second param, otherwise a byte offset into the second param
+    # the number of characters to consume from the result string, not including
+    # the null byte
     c_size_t,
-    # destructor for the string, always -1 for now, to tell SQLite to make a copy
+    # function pointer destructor for the string, always -1 for now, to tell
+    # SQLite to make a copy
+    #
+    # this is c_ssize_t for now because numba cannot handle typing function
+    # pointers as arguments
     c_ssize_t,
     # encoding
     c_ubyte,
 )
 sqlite3_result_text64.restype = None
 
+sqlite3_result_null = libsqlite3.sqlite3_result_null
 sqlite3_result_null.argtypes = (c_void_p,)
 sqlite3_result_null.restype = None
 
 
 @extending.intrinsic  # type: ignore[misc]
 def extract_raw_unicode_data(
-    typingctx: Context, src_type: types.RawPointer
+    typingctx: Context,
+    raw_chars_type: types.UnicodeType,
 ) -> Tuple[
-    Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value]], ExtractValue]
+    Signature,
+    Callable[[BaseContext, Builder, Signature, Tuple[Value]], ExtractValue],
 ]:
-    """Pull out the data and length from a numba unicode string.
-
-    Parameters
-    ----------
-    typingctx
-        Numba typing context
-    raw_chars
-        A raw pointer to an instance of numba unicode string
-    """
-    if isinstance(src_type, types.UnicodeType):
-        tuple_type = types.Tuple((voidptr, int64))
-        sig = tuple_type(src_type)
+    """Pull out the data and length from a Numba unicode string."""
+    if isinstance(raw_chars_type, types.UnicodeType):
+        sig = types.Tuple((voidptr, int64))(raw_chars_type)
 
         def codegen(
             context: BaseContext,
@@ -119,15 +116,15 @@ def extract_raw_unicode_data(
             (arg,) = args
 
             # access the data and length fields of the unicode type struct
-            mgr = context.data_model_manager[src_type]
+            mgr = context.data_model_manager[raw_chars_type]
             data = mgr.get(builder, arg, "data")
             length = mgr.get(builder, arg, "length")
 
-            return context.make_tuple(builder, tuple_type, [data, length])
+            return context.make_tuple(builder, signature.return_type, [data, length])
 
         return sig, codegen
-    else:
-        raise TypeError("Unable to extract raw data from unicode type")
+
+    raise TypeError(f"Unable to extract raw data from type `{raw_chars_type}`")
 
 
 @cfunc(void(voidptr, types.string))  # type: ignore[misc]
@@ -229,7 +226,7 @@ else:
     )
 
 
-RESULT_SETTERS = {
+SQLITE3_RESULT_SETTERS = {
     optional(float64): sqlite3_result_double_numba,
     optional(int64): sqlite3_result_int64_numba,
     optional(int32): sqlite3_result_int_numba,
@@ -254,7 +251,7 @@ def _get_value_method(
     return method
 
 
-VALUE_EXTRACTORS = {
+SQLITE3_VALUE_EXTRACTORS = {
     optional(float64): _get_value_method("double", c_double),
     optional(int64): _get_value_method("int64", c_int64),
     optional(int32): _get_value_method("int", c_int),
