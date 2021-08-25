@@ -32,28 +32,23 @@ in
       nix-linter = {
         enable = true;
         entry = lib.mkForce "nix-linter";
-        excludes = [
-          "nix/sources.nix"
-        ];
+        excludes = [ "nix/sources.nix" ];
       };
 
       nixpkgs-fmt = {
         enable = true;
         entry = lib.mkForce "nixpkgs-fmt --check";
-        excludes = [
-          "nix/sources.nix"
-        ];
       };
 
       prettier = {
         enable = true;
         entry = lib.mkForce "prettier --check";
-        types_or = lib.mkForce [ "toml" "yaml" ];
+        types_or = [ "json" "toml" "yaml" ];
       };
 
       mypy = {
         enable = true;
-        entry = lib.mkForce "mypy";
+        entry = "mypy";
         types = [ "python" ];
       };
     };
