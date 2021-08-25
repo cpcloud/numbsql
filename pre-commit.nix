@@ -50,6 +50,12 @@ in
         entry = lib.mkForce "prettier --check";
         types_or = lib.mkForce [ "toml" "yaml" ];
       };
+
+      mypy = {
+        enable = true;
+        entry = lib.mkForce "mypy";
+        types = [ "python" ];
+      };
     };
   };
 }

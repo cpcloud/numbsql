@@ -1,9 +1,10 @@
 import inspect
-from typing import Type
+from typing import Tuple, Type
 
-from numba import cfunc, void
+from numba import cfunc, types, void
 from numba.types import CPointer, intc, voidptr
 
+from .exceptions import UnsupportedAggregateTypeError
 from .numbaext import (
     get_sqlite3_result_function,
     init,
@@ -16,11 +17,29 @@ from .numbaext import (
 )
 from .sqlite import sqlite3_aggregate_context, sqlite3_result_null, sqlite3_user_data
 
+_SUPPORTED_AGGREGATE_TYPES: Tuple[types.Type, ...] = (
+    types.uint8,
+    types.uint16,
+    types.uint32,
+    types.uint64,
+    types.int8,
+    types.int16,
+    types.int32,
+    types.int64,
+    types.float32,
+    types.float64,
+)
+_SUPPORTED_AGGREGATE_TYPES += tuple(map(types.optional, _SUPPORTED_AGGREGATE_TYPES))
+
 
 def sqlite_udaf(cls: Type) -> Type:
     """Define a custom aggregate function."""
 
     class_type = cls.class_type
+    for field, typ in class_type.struct.items():
+        if typ not in _SUPPORTED_AGGREGATE_TYPES:
+            raise UnsupportedAggregateTypeError(typ)
+
     instance_type = class_type.instance_type
 
     init_func = class_type.jit_methods["__init__"]
