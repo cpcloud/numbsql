@@ -25,7 +25,7 @@ llvmlite = "0.36.0"
 numba = "0.53.1"
 
 [tool.poetry.dev-dependencies]
-black = "21.7b0"
+black = "21.8b0"
 cython = ">=0.29.24,<1"
 debugpy = "^1"
 flake8 = "^3"
