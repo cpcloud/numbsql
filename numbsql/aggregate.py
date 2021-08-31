@@ -6,13 +6,13 @@ from numba.types import CPointer, intc, voidptr
 
 from .exceptions import UnsupportedAggregateTypeError
 from .numbaext import (
-    get_sqlite3_result_function,
     init,
     is_not_null_pointer,
     make_arg_tuple,
     python_signature_to_numba_signature,
     reset_init,
     sizeof,
+    sqlite3_result,
     unsafe_cast,
 )
 from .sqlite import sqlite3_aggregate_context, sqlite3_result_null, sqlite3_user_data
@@ -84,8 +84,7 @@ def sqlite_udaf(cls: Type) -> Type:
             if result is None:
                 sqlite3_result_null(ctx)
             else:
-                result_setter = get_sqlite3_result_function(result)
-                result_setter(ctx, result)
+                sqlite3_result(ctx, result)
 
             is_initialized = sqlite3_user_data(ctx)
             reset_init(is_initialized)
@@ -120,8 +119,7 @@ def sqlite_udaf(cls: Type) -> Type:
                 if result is None:
                     sqlite3_result_null(ctx)
                 else:
-                    result_setter = get_sqlite3_result_function(result)
-                    result_setter(ctx, result)
+                    sqlite3_result(ctx, result)
 
         inverse_signature = step_signature
         inverse_func.compile(inverse_signature)
