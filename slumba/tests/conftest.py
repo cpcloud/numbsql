@@ -67,26 +67,20 @@ def con() -> sqlite3.Connection:
 
 @pytest.fixture(  # type: ignore[misc]
     params=[
-        pytest.param(
-            (in_memory, index, null_perc),
-            id=f"{in_memory_name}-{index_name}-{null_perc_name}",
-        )
-        for (in_memory, in_memory_name), (index, index_name), (
-            null_perc,
-            null_perc_name,
-        ) in itertools.product(
-            [(True, "in_memory"), (False, "on_disk")],
-            [(True, "with_index"), (False, "no_index")],
-            [(0.0, "no_nulls"), (0.5, "50_perc_nulls"), (1.0, "all_nulls")],
-        )
+        pytest.param(null_perc, id=null_perc_name)
+        for null_perc, null_perc_name in [
+            (0.0, "__0_perc_nulls"),
+            (0.5, "_50_perc_nulls"),
+            (1.0, "100_perc_nulls"),
+        ]
     ],
     scope="session",
 )
 def large_con(
     request: SubRequest, tmp_path_factory: TempPathFactory
 ) -> Generator[sqlite3.Connection, None, None]:
-    in_memory, index, null_perc = request.param
-    path = ":memory:" if in_memory else str(tmp_path_factory.mktemp("test") / "test.db")
+    null_perc = request.param
+    path = str(tmp_path_factory.mktemp("test") / "test.db")
     con = sqlite3.connect(path)
     key_n = 10
     con.execute(
@@ -100,7 +94,6 @@ def large_con(
         )
         """
     )
-    INDICES = "key", "dense_key", "string_key"
 
     n = int(1e5)
     rows = zip(
@@ -117,10 +110,6 @@ def large_con(
         (random.normalvariate(0.0, 1.0) for _ in range(n)),
     )
 
-    if index:
-        for index in INDICES:
-            con.execute(f'CREATE INDEX "large_t_{index}_index" ON large_t ({index})')
-
     con.executemany(
         "INSERT INTO large_t (key, dense_key, string_key, value) VALUES (?, ?, ?, ?)",
         rows,
@@ -128,7 +117,4 @@ def large_con(
     try:
         yield con
     finally:
-        if index:
-            for index in reversed(INDICES):
-                con.execute(f"DROP INDEX large_t_{index}_index")
         con.execute("DROP TABLE large_t")
