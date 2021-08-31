@@ -54,7 +54,7 @@ norecursedirs = ["site-packages", "dist-packages"]
 [tool.poetry2conda]
 name = "slumba"
 
-[too.poetry2conda.dependencies]
+[tool.poetry2conda.dependencies]
 pytest-randomly = { channel = "pip" }
 
 [tool.semantic_release]
