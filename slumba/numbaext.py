@@ -133,12 +133,7 @@ def init(
     Signature,
     Callable[[BaseContext, Builder, Signature, Tuple[Value, Value]], None],
 ]:
-    """Initialize a `jitclass` by calling its constructor.
-
-    Parameters
-    ----------
-    typingctx
-    """
+    """Initialize a `jitclass` by calling its constructor."""
     if isinstance(inst_typ, types.ClassInstanceType) and isinstance(
         user_data, types.Integer
     ):
@@ -247,7 +242,18 @@ def safe_decref(
     typingctx: Context,
     pyobject_type: types.RawPointer,
 ) -> Tuple[Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value]], None]]:
-    """Safely decrement the reference count of a Python object."""
+    """Safely decrement the reference count of a Python object.
+
+    Notes
+    -----
+    This function holds the GIL.
+
+    There is no cause for concerns about performance here: this function is
+    only called when the SQLite user data blob is destroyed, which happens when
+    a database connection is closed.
+
+    Additionally the GIL is only held if the user data is not a null pointer.
+    """
     if isinstance(pyobject_type, types.RawPointer):
         sig = types.void(types.voidptr)
 
@@ -282,7 +288,7 @@ def make_arg_tuple(
         InsertValue,
     ],
 ]:
-    """Construct a typed argument tuple to pass to a UD(A)F."""
+    """Construct a typed argument tuple to pass to a user-defined function."""
     (func_type,), _ = func.get_call_signatures()
     first_arg, *_ = args = func_type.args
 
@@ -468,6 +474,7 @@ def map_sqlite_string_to_numba_uni_str(
     # algorithms.
     #
     # TODO: figure out how this maps to the different SQLite text types.
+    # XXX: Is this actually alway valid?
     uni_str.kind = uni_str.kind.type(numba.cpython.unicode.PY_UNICODE_1BYTE_KIND)
 
     # SQLite strings are never guaranteed to be anything really, and most
@@ -496,7 +503,7 @@ def get_sqlite3_result_function(
     Signature,
     Callable[[BaseContext, Builder, Signature, Tuple[Value]], CastInstr],
 ]:
-    """Return the correct result setting function (pointer) for the given type."""
+    """Return the correct result setting function pointer for the given type."""
     input_type = getattr(value_type, "type", value_type)
     func_type = types.void(types.voidptr, input_type)
 
