@@ -5,20 +5,20 @@
     '';
   });
 
-  tomli = super.tomli.overridePythonAttrs (old: {
-    propagatedNativeBuildInputs = (old.propagatedNativeBuildInputs or [ ]) ++ [
+  tomli = super.tomli.overridePythonAttrs (attrs: {
+    propagatedNativeBuildInputs = (attrs.propagatedNativeBuildInputs or [ ]) ++ [
       self.flit
     ];
   });
 
-  pytest-randomly = super.pytest-randomly.overridePythonAttrs (old: {
-    propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ [
+  pytest-randomly = super.pytest-randomly.overridePythonAttrs (attrs: {
+    propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
       self.importlib-metadata
     ];
   });
 
-  jupyterlab-widgets = super.jupyterlab-widgets.overridePythonAttrs (old: {
-    propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ [
+  jupyterlab-widgets = super.jupyterlab-widgets.overridePythonAttrs (attrs: {
+    propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
       self.jupyter-packaging
     ];
   });
