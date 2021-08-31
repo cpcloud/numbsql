@@ -7,14 +7,12 @@ work correctly.
 
 import contextlib
 import inspect
-import operator
-from typing import Callable, Generator, Optional, Tuple
+from typing import Any, Callable, Generator, Optional, Tuple
 
 import numba
 from llvmlite import ir
 from llvmlite.ir.instructions import (
     CallInstr,
-    CastInstr,
     Constant,
     ICMPInstr,
     InsertValue,
@@ -496,34 +494,10 @@ def map_sqlite_string_to_numba_uni_str(
     return uni_str._getvalue()
 
 
-@extending.intrinsic  # type: ignore[misc]
-def get_sqlite3_result_function(
-    typingctx: Context, value_type: types.Type
-) -> Tuple[
-    Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value]], CastInstr],
-]:
-    """Return the correct result setting function pointer for the given type."""
-    input_type = getattr(value_type, "type", value_type)
-    func_type = types.void(types.voidptr, input_type)
-
-    external_function_pointer = types.ExternalFunctionPointer(
-        func_type,
-        operator.attrgetter("address"),
-    )
-    sig = external_function_pointer(input_type)
-
-    def codegen(
-        context: BaseContext,
-        builder: Builder,
-        signature: Signature,
-        args: Tuple[Value],
-    ) -> CastInstr:
-        return context.get_constant_generic(
-            builder, external_function_pointer, SQLITE3_RESULT_SETTERS[value_type]
-        )
-
-    return sig, codegen
+@numba.generated_jit(nopython=True, nogil=True)  # type: ignore[misc]
+def sqlite3_result(ctx: types.Integer, value: Any) -> Callable[[Any, Any], Any]:
+    func = SQLITE3_RESULT_SETTERS[value]
+    return lambda ctx, value: func(ctx, value)
 
 
 @extending.intrinsic  # type: ignore[misc]

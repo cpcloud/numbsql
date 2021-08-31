@@ -7,7 +7,7 @@ from numba.core.ccallback import CFunc
 from numba.extending import as_numba_type
 from numba.types import CPointer, intc, void, voidptr
 
-from .numbaext import get_sqlite3_result_function, make_arg_tuple
+from .numbaext import make_arg_tuple, sqlite3_result
 from .sqlite import sqlite3_result_null
 
 
@@ -63,8 +63,7 @@ def sqlite_udf(
         if result is None:
             sqlite3_result_null(ctx)
         else:
-            result_setter = get_sqlite3_result_function(result)
-            result_setter(ctx, result)
+            sqlite3_result(ctx, result)
 
     setattr(func, "scalar", scalar)
 
