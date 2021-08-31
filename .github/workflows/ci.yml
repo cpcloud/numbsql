@@ -83,7 +83,7 @@ jobs:
         run: pip install .
 
       - name: Run tests
-        run: pytest --benchmark-disable
+        run: pytest --verbose --benchmark-disable --numprocesses=2 --durations=10
   release:
     needs:
       - nix
