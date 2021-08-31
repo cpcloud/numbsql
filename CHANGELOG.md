@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v4.0.0 (2021-08-31)
+### Breaking
+* The library was renamed from slumba to numbsql  ([`b7a852f`](https://github.com/cpcloud/numbsql/commit/b7a852f4c7a9c103583e01a6275d0ad0dc8929bd))
+
+### Documentation
+* Add some numbaext docs ([`b6bfec0`](https://github.com/cpcloud/numbsql/commit/b6bfec0c6b1926dc08bfde478a45a07a19f3b9a0))
+* Remove invalid comment ([`3db321d`](https://github.com/cpcloud/numbsql/commit/3db321d696f4383b39ad012bf34442bef58d2bd0))
+
 ## v3.1.0 (2021-08-25)
 ### Feature
 * Support strings in scalar udfs but not in udafs ([`fe03e2f`](https://github.com/cpcloud/slumba/commit/fe03e2f97cdf0c383e9a09f529ef6425cdd95c0f))
