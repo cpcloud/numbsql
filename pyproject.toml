@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "slumba"
-packages = [{ include = "slumba" }]
-homepage = "https://github.com/cpcloud/slumba"
-repository = "https://github.com/cpcloud/slumba"
+name = "numbsql"
+packages = [{ include = "numbsql" }]
+homepage = "https://github.com/cpcloud/numbsql"
+repository = "https://github.com/cpcloud/numbsql"
 version = "3.1.0"
 description = "JITted SQLite user-defined functions and aggregates"
 readme = "README.md"
@@ -51,14 +51,14 @@ addopts = [
 norecursedirs = ["site-packages", "dist-packages"]
 
 [tool.poetry2conda]
-name = "slumba"
+name = "numbsql"
 
 [tool.poetry2conda.dependencies]
 pytest-randomly = { channel = "pip" }
 
 [tool.semantic_release]
 version_toml = "pyproject.toml:tool.poetry.version"
-version_variable = "slumba/__init__.py:__version__"
+version_variable = "numbsql/__init__.py:__version__"
 branch = "master"
 upload_to_pypi = true
 upload_to_release = true
@@ -76,7 +76,7 @@ profile = "black"
 [tool.pydocstyle]
 convention = "numpy"
 add_ignore = ["D105", "D213", "D203"]
-match-dir = "slumba"
+match-dir = "numbsql"
 
 [build-system]
 requires = ["poetry>=0.12"]

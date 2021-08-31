@@ -30,7 +30,7 @@ def sqlite_udf(
     Examples
     --------
     >>> import sqlite3
-    >>> from slumba import sqlite_udf
+    >>> from numbsql import sqlite_udf
     >>> from typing import Optional
     >>> @sqlite_udf
     ... def add_one(value: Optional[int]) -> Optional[int]:

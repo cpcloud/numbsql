@@ -30,12 +30,12 @@ jobs:
       - name: Setup Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: slumba
+          name: numbsql
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           extraPullNames: nix-community
 
       - name: Build package and run tests
-        run: cachix watch-exec slumba nix-build -- --argstr python python${{ matrix.python-version }} --keep-going
+        run: cachix watch-exec numbsql nix-build -- --argstr python python${{ matrix.python-version }} --keep-going
   conda:
     strategy:
       fail-fast: false
@@ -75,7 +75,7 @@ jobs:
           miniforge-variant: Mambaforge
           miniforge-version: latest
           channel-priority: strict
-          activate-environment: slumba
+          activate-environment: numbsql
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yaml
 

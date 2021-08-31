@@ -73,13 +73,13 @@ def create_function(
     Examples
     --------
     >>> import sqlite3
-    >>> from slumba import sqlite_udf
+    >>> from numbsql import sqlite_udf
     >>> from typing import Optional
     >>> @sqlite_udf
     ... def add_one(value: Optional[int]) -> Optional[int]:
     ...     return value + 1 if value is not None else None
     ...
-    >>> from slumba import create_aggregate, create_function
+    >>> from numbsql import create_aggregate, create_function
     >>> con = sqlite3.connect(":memory:")
     >>> create_function(con, "add_one", 1, add_one)
     >>> con.execute("SELECT add_one(1)").fetchall()

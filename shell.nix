@@ -14,7 +14,7 @@ let
       }
     );
     editablePackageSources = {
-      slumba = ./slumba;
+      numbsql = ./numbsql;
     };
   };
   shellHook = ''
@@ -28,12 +28,14 @@ let
     poetry
     prettier
     sqlite
+    cachix
+    commitizen
   ];
   pythonVersions = [ "3.7" "3.8" "3.9" ];
 in
 {
   dev = pkgs.mkShell {
-    name = "slumba-build";
+    name = "numbsql-build";
     inherit shellHook;
     buildInputs = commonBuildInputs;
   };
@@ -42,7 +44,7 @@ in
     (name: {
       inherit name;
       value = pkgs.mkShell {
-        name = "slumba-${name}";
+        name = "numbsql-${name}";
         inherit shellHook;
         PYTHONPATH = builtins.toPath ./.;
         buildInputs = commonBuildInputs ++ [

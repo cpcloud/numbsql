@@ -28,7 +28,7 @@ These are almost the same as decorating a Python function with `numba.jit`.
 ```python
 from typing import Optional
 
-from slumba import sqlite_udf
+from numbsql import sqlite_udf
 
 
 @sqlite_udf
@@ -44,9 +44,9 @@ def add_one(x: Optional[int]) -> Optional[int]:
 ### Aggregate Functions
 
 These follow the API of the Python standard library's
-`sqlite3.Connection.create_aggregate` method. The difference with slumba
+`sqlite3.Connection.create_aggregate` method. The difference with numbsql
 aggregates is that they require two decorators: `numba.experimental.jit_class` and
-`slumba.sqlite_udaf`. Let's define the `avg` (arithmetic mean) function for
+`numbsql.sqlite_udaf`. Let's define the `avg` (arithmetic mean) function for
 64-bit floating point numbers.
 
 ```python
@@ -54,7 +54,7 @@ from typing import Optional
 
 from numba.experimental import jitclass
 
-from slumba import sqlite_udaf
+from numbsql import sqlite_udaf
 
 
 @sqlite_udaf
@@ -87,7 +87,7 @@ from typing import Optional
 
 from numba.experimental import jitclass
 
-from slumba import sqlite_udaf
+from numbsql import sqlite_udaf
 
 
 @sqlite_udaf
@@ -126,7 +126,7 @@ Similar to scalar functions, we register the function with a `sqlite3.Connection
 
 ```python
 >>> import sqlite3
->>> from slumba import create_aggregate, create_function
+>>> from numbsql import create_aggregate, create_function
 >>> con = sqlite3.connect(":memory:")
 >>> create_function(con, "add_one", 1, add_one)
 >>> con.execute("SELECT add_one(1)").fetchall()

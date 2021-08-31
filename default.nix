@@ -32,11 +32,8 @@ let
         pytest --benchmark-disable --numprocesses=$(min $(nproc) 8)
         runHook postCheck
       '';
-      # pytestCheckHook fails due to colliding versions of pytest and its
-      # transitive dependencies
-      pytestFlags = [ "--benchmark-disable" ];
 
-      pythonImportsCheck = [ "slumba" ];
+      pythonImportsCheck = [ "numbsql" ];
     };
 in
 pkgs.callPackage drv {

@@ -4,7 +4,7 @@ import time
 from math import exp, pi, sqrt
 from typing import List, Optional, Tuple
 
-from slumba import create_function, sqlite_udf
+from numbsql import create_function, sqlite_udf
 
 
 @sqlite_udf  # type: ignore[misc]

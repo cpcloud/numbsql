@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Tuple, TypeVar
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
-from slumba import create_function, sqlite_udf
+from numbsql import create_function, sqlite_udf
 
 
 def add_one_python(x: float) -> float:

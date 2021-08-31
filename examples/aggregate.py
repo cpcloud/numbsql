@@ -8,7 +8,7 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 from numba.experimental import jitclass
 from numba.types import ClassType
 
-from slumba import create_aggregate, sqlite_udaf
+from numbsql import create_aggregate, sqlite_udaf
 
 
 @sqlite_udaf

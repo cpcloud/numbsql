@@ -10,9 +10,9 @@ from pytest_benchmark.fixture import BenchmarkFixture
 from testbook import testbook
 from testbook.client import TestbookNotebookClient
 
-from slumba import create_aggregate, sqlite_udaf
-from slumba.exceptions import UnsupportedAggregateTypeError
-from slumba.sqlite import SQLITE_VERSION
+from numbsql import create_aggregate, sqlite_udaf
+from numbsql.exceptions import UnsupportedAggregateTypeError
+from numbsql.sqlite import SQLITE_VERSION
 
 
 @sqlite_udaf
