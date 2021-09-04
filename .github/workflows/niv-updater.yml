@@ -20,6 +20,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          niv_version: v0.2.19
           branch_prefix: "update/${{ matrix.dep }}"
           whitelist: ${{ matrix.dep }}
           title_prefix: "chore(deps/${{ matrix.dep }}):"
