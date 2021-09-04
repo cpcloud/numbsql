@@ -35,7 +35,7 @@ jobs:
           extraPullNames: nix-community
 
       - name: Build package and run tests
-        run: cachix watch-exec numbsql nix-build -- --argstr python python${{ matrix.python-version }} --keep-going
+        run: nix-build --argstr python python${{ matrix.python-version }} --keep-going
   conda:
     strategy:
       fail-fast: false
