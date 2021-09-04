@@ -61,5 +61,5 @@ jobs:
           delete-branch: true
           author: "Phillip Cloud <417981+cpcloud@users.noreply.github.com>"
           title: "chore(deps): update ${{ matrix.dep }}"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           body: ${{ steps.compare_commits.outputs.differences }}
