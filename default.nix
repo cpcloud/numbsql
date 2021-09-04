@@ -24,9 +24,7 @@ let
       );
 
       checkPhase = ''
-        function min() {
-          [ "$1" -le "$2" ] && echo "$1" || echo "$2"
-        }
+        function min() { [ "$1" -le "$2" ] && echo "$1" || echo "$2"; }
 
         runHook preCheck
         pytest --benchmark-disable --numprocesses=$(min $(nproc) 8)
