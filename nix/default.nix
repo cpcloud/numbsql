@@ -3,8 +3,8 @@ let
 in
 import sources.nixpkgs {
   overlays = [
-    (self: super: {
-      llvm = super.llvm_10;
+    (self: _: {
+      llvm = self.llvm_11;
     })
   ];
 }
