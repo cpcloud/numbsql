@@ -11,6 +11,18 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/46ff1961227eb9ff16875b48f4e3562497d0f0e7.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "poetry2nix": {
+        "branch": "master",
+        "description": "Convert poetry projects to nix automagically [maintainer=@adisbladis] ",
+        "homepage": "",
+        "owner": "nix-community",
+        "repo": "poetry2nix",
+        "rev": "341cad381cc2e074132f2e12bb86de72d81286ea",
+        "sha256": "0rdw8cvaxbhai9c66kprnjwq9rxidizsanpwlqwrmhr6sbicm85x",
+        "type": "tarball",
+        "url": "https://github.com/nix-community/poetry2nix/archive/341cad381cc2e074132f2e12bb86de72d81286ea.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "pre-commit-hooks": {
         "branch": "master",
         "description": "Seamless integration of https://pre-commit.com git hooks with Nix.",

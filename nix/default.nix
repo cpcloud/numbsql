@@ -3,8 +3,11 @@ let
 in
 import sources.nixpkgs {
   overlays = [
-    (self: _: {
-      llvm = self.llvm_11;
+    (pkgs: _: {
+      poetry2nix = import sources.poetry2nix {
+        inherit pkgs;
+        inherit (pkgs) poetry;
+      };
     })
   ];
 }
