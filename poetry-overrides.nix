@@ -1,20 +1,9 @@
-{ llvm }: self: super: {
-  llvmlite = super.llvmlite.overridePythonAttrs (_: {
-    preConfigure = ''
-      export LLVM_CONFIG=${llvm.dev}/bin/llvm-config
-    '';
-  });
-
-  tomli = super.tomli.overridePythonAttrs (attrs: {
-    propagatedNativeBuildInputs = (attrs.propagatedNativeBuildInputs or [ ]) ++ [
-      self.flit
-    ];
-  });
-
-  pytest-randomly = super.pytest-randomly.overridePythonAttrs (attrs: {
+{ ... }: self: super: {
+  pytest-randomly = super.pytest-randomly.overrideAttrs (attrs: {
     propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
       self.importlib-metadata
     ];
+    postPatch = "";
   });
 
   jupyterlab-widgets = super.jupyterlab-widgets.overridePythonAttrs (attrs: {
