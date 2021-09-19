@@ -19,4 +19,8 @@
       "test_close_should_terminate_thread"
     ];
   });
+
+  black = super.black.overridePythonAttrs (_: {
+    dontPreferSetupPy = true;
+  });
 }
