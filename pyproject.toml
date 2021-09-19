@@ -4,12 +4,11 @@ packages = [{ include = "numbsql" }]
 homepage = "https://github.com/cpcloud/numbsql"
 repository = "https://github.com/cpcloud/numbsql"
 version = "4.0.0"
-description = "JITted SQLite user-defined functions and aggregates"
+description = "JITted SQLite user-defined scalar and aggregate functions"
 readme = "README.md"
 authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 maintainers = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Programming Language :: Python :: 3.7",
@@ -24,17 +23,16 @@ numba = "0.54"
 
 [tool.poetry.dev-dependencies]
 black = "21.9b0"
-flake8 = "^3"
-ipykernel = "^6"
-isort = "^5"
+flake8 = "^3.9.2"
+ipykernel = "^6.4.1"
+isort = "^5.9.3"
 mypy = "^0.812"
-pluggy = "^0.13"
-pydocstyle = "^6"
-pytest = "^6"
-pytest-benchmark = "^3"
-pytest-randomly = "^3"
-pytest-xdist = "^2"
-testbook = "^0.4"
+pydocstyle = "^6.1.1"
+pytest = "^6.2.5"
+pytest-benchmark = "^3.4.1"
+pytest-randomly = "^3.10.1"
+pytest-xdist = "^2.3.0"
+testbook = "^0.4.2"
 
 [tool.pytest.ini_options]
 xfail_strict = true
