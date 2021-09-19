@@ -1,3 +1,4 @@
+{ python ? "3.9" }:
 let
   pkgs = import ./nix;
   prettier = pkgs.writeShellScriptBin "prettier" ''
@@ -9,7 +10,7 @@ let
     inherit python;
     projectDir = ./.;
     overrides = pkgs.poetry2nix.overrides.withDefaults (
-      import ./poetry-overrides.nix { }
+      import ./poetry-overrides.nix { inherit pkgs; }
     );
     editablePackageSources = {
       numbsql = ./numbsql;
@@ -29,28 +30,13 @@ let
     cachix
     commitizen
   ];
-  pythonVersions = [ "3.7" "3.8" "3.9" ];
+  name = "python${builtins.replaceStrings [ "." ] [ "" ] python}";
 in
-{
-  dev = pkgs.mkShell {
-    name = "numbsql-build";
-    inherit shellHook;
-    buildInputs = commonBuildInputs;
-  };
-} // pkgs.lib.listToAttrs (
-  map
-    (name: {
-      inherit name;
-      value = pkgs.mkShell {
-        name = "numbsql-${name}";
-        inherit shellHook;
-        PYTHONPATH = builtins.toPath ./.;
-        buildInputs = commonBuildInputs ++ [
-          (mkPoetryEnv pkgs.${name})
-        ];
-      };
-    })
-    (map
-      (version: "python${builtins.replaceStrings [ "." ] [ "" ] version}")
-      pythonVersions)
-)
+pkgs.mkShell {
+  name = "numbsql-${name}";
+  inherit shellHook;
+  PYTHONPATH = builtins.toPath ./.;
+  buildInputs = commonBuildInputs ++ [
+    (mkPoetryEnv pkgs.${name})
+  ];
+}

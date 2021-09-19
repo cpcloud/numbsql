@@ -57,6 +57,10 @@ sqlite3_user_data = libsqlite3.sqlite3_user_data
 sqlite3_user_data.argtypes = (c_void_p,)
 sqlite3_user_data.restype = c_void_p
 
+sqlite3_libversion = libsqlite3.sqlite3_libversion
+sqlite3_libversion.argtypes = ()
+sqlite3_libversion.restype = c_char_p
+
 sqlite3_result_double = libsqlite3.sqlite3_result_double
 sqlite3_result_double.argtypes = c_void_p, c_double
 sqlite3_result_double.restype = None
