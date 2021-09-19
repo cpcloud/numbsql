@@ -63,10 +63,7 @@ jobs:
           architecture: x64
 
       - name: Install poetry2conda
-        run: pip3 install poetry2conda poetry
-
-      - name: Pin Python version
-        run: poetry add --lock python@$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+        run: pip3 install poetry2conda
 
       - name: Generate conda environment file
         run: poetry2conda --dev pyproject.toml - | tee environment.yml
@@ -75,6 +72,9 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-name: numbsql
+
+      - name: Install python
+        run: mamba install python=${{ matrix.python-version }}
 
       - name: Install the package locally
         run: pip install .
