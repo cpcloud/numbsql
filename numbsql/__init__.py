@@ -168,11 +168,11 @@ def create_aggregate(
     # which _registers_ the UDAF, but the variable itself needs to live for the
     # lifetime of the database connection
     #
-    # unfortunately, python cannot magically know _not_ to decref this value
-    # when the function exits, which will (likely, but guaranteed to) cause the
-    # destructor for `is_initialized` to called.
+    # unfortunately, Python cannot magically know _not_ to decref this value
+    # when the function exits, which will likely--but not guaranteed to--cause
+    # the destructor for `is_initialized` to be called.
     #
-    # This leeds to a segmentation fault.
+    # This leads to a segmentation fault.
     #
     # We solve this problem by increasing the lifetime of the value by incrementing
     # the reference count of `is_initialized` here, and then using SQLite UDAFs'

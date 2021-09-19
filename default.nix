@@ -1,4 +1,4 @@
-{ python ? "python3.9" }:
+{ python ? "3.9" }:
 let
   pkgs = import ./nix;
   drv =
@@ -6,6 +6,7 @@ let
     , python
     , lib
     , sqlite
+    , stdenv
     }:
 
     poetry2nix.mkPoetryApplication {
@@ -18,10 +19,12 @@ let
       buildInputs = [ sqlite ];
 
       overrides = pkgs.poetry2nix.overrides.withDefaults (
-        import ./poetry-overrides.nix {
-          inherit (pkgs) llvm;
-        }
+        import ./poetry-overrides.nix { inherit pkgs; }
       );
+
+      preCheck = lib.optionalString stdenv.isDarwin ''
+        export DYLD_LIBRARY_PATH=${sqlite.out}/lib
+      '';
 
       checkPhase = ''
         runHook preCheck
@@ -33,5 +36,5 @@ let
     };
 in
 pkgs.callPackage drv {
-  python = pkgs.${builtins.replaceStrings [ "." ] [ "" ] python};
+  python = pkgs."python${builtins.replaceStrings [ "." ] [ "" ] python}";
 }

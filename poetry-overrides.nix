@@ -1,4 +1,4 @@
-{ ... }: self: super: {
+{ pkgs, ... }: self: super: {
   pytest-randomly = super.pytest-randomly.overrideAttrs (attrs: {
     propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
       self.importlib-metadata
@@ -22,5 +22,11 @@
 
   black = super.black.overridePythonAttrs (_: {
     dontPreferSetupPy = true;
+  });
+
+  numba = super.numba.overridePythonAttrs (_: {
+    NIX_CFLAGS_COMPILE = pkgs.lib.optionalString
+      pkgs.stdenv.isDarwin
+      "-I${pkgs.lib.getDev pkgs.libcxx}/include/c++/v1";
   });
 }
