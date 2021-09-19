@@ -23,7 +23,6 @@ llvmlite = "0.37"
 numba = "0.54"
 
 [tool.poetry.dev-dependencies]
-cython = "^0.29.24"
 black = "21.9b0"
 flake8 = "^3"
 ipykernel = "^6"
