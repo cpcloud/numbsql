@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v4.0.1 (2021-09-19)
+### Fix
+* **deps:** Llvmlite: 0.36 -> 0.37, numba: 0.53 -> 0.54 ([`3612ce8`](https://github.com/cpcloud/numbsql/commit/3612ce8bb1ed26c006dd8adcf9324a466c8c3bd7))
+* **deps:** Bump llvm to 11 ([`bcbd77d`](https://github.com/cpcloud/numbsql/commit/bcbd77deb717ee6ac90ffcc4b956e2c6d259d78a))
+
 ## v4.0.0 (2021-08-31)
 ### Breaking
 * The library was renamed from slumba to numbsql  ([`b7a852f`](https://github.com/cpcloud/numbsql/commit/b7a852f4c7a9c103583e01a6275d0ad0dc8929bd))
