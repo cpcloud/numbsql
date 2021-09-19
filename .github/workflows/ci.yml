@@ -66,7 +66,7 @@ jobs:
         run: pip3 install poetry2conda poetry
 
       - name: Pin Python version
-        run: poetry add --lock python@$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))"')
+        run: poetry add --lock python@$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
 
       - name: Generate conda environment file
         run: poetry2conda --dev pyproject.toml - | tee environment.yml
