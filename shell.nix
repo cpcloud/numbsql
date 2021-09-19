@@ -9,9 +9,7 @@ let
     inherit python;
     projectDir = ./.;
     overrides = pkgs.poetry2nix.overrides.withDefaults (
-      import ./poetry-overrides.nix {
-        inherit (pkgs) llvm;
-      }
+      import ./poetry-overrides.nix { }
     );
     editablePackageSources = {
       numbsql = ./numbsql;
