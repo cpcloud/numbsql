@@ -1,0 +1,53 @@
+on:
+  push:
+    branches:
+      - master
+  workflow_run:
+    workflows: ["CI"]
+    branches:
+      - staging
+    types:
+      - completed
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    concurrency: release-${{ github.event_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'push' }}
+        with:
+          fetch-depth: 0
+          branch: master
+          token: ${{ secrets.PAT }}
+
+      - name: Checkout PR
+        uses: actions/checkout@v2
+        if: ${{ github.event_name != 'push' }}
+        with:
+          fetch-depth: 0
+          branch: master
+
+      - name: Configure git for semantic release
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install poetry and semantic-release
+        run: pip install poetry python-semantic-release
+
+      - name: Semantic release
+        if: ${{ github.event_name == 'push' }}
+        run: semantic-release publish --verbosity=DEBUG
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Semantic release
+        if: ${{ github.event_name != 'push' }}
+        run: semantic-release publish --noop --verbosity=DEBUG
