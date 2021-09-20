@@ -2,9 +2,9 @@ on:
   push:
     branches:
       - master
+      - staging
+      - trying
   pull_request:
-    branches:
-      - master
 
 name: CI
 
@@ -85,16 +85,17 @@ jobs:
 
       - name: Run tests
         run: pytest --verbose --benchmark-disable --numprocesses auto --durations 10
+
   release:
+    runs-on: ubuntu-latest
+    concurrency: release
     needs:
       - nix
       - conda
-    runs-on: ubuntu-latest
-    concurrency: release
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        if: ${{ github.event_name != 'pull_request' }}
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
@@ -119,7 +120,7 @@ jobs:
         run: pip install poetry python-semantic-release
 
       - name: Semantic release
-        if: ${{ github.event_name != 'pull_request' }}
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
         run: semantic-release publish --verbosity=DEBUG
         env:
           GH_TOKEN: ${{ secrets.PAT }}
@@ -128,3 +129,13 @@ jobs:
       - name: Semantic release
         if: ${{ github.event_name == 'pull_request' }}
         run: semantic-release publish --noop --verbosity=DEBUG
+
+  ci-success:
+    name: ci
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    needs:
+      - release
+    steps:
+      - name: CI succeeded
+        run: exit 0
