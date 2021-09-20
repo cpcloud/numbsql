@@ -3,21 +3,21 @@
 ## Fair Warning
 
 This library does unsafe things like pass around function pointer addresses
-as integers.  **Use at your own risk**.
+as integers. **Use at your own risk**.
 
 If you're unfamiliar with why passing function pointers' addresses around as
 integers might be unsafe, then you shouldn't use this library.
 
 ## Requirements
 
-* Python `>=3.7`
-* `numba`
+- Python `>=3.7`
+- `numba`
 
 Use `nix-shell` from the repository to avoid dependency hell.
 
 ## Installation
 
-* `poetry install`
+- `poetry install`
 
 ## Examples
 
@@ -39,7 +39,6 @@ def add_one(x: Optional[int]) -> Optional[int]:
         return x + 1
     return None
 ```
-
 
 ### Aggregate Functions
 
