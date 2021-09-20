@@ -1,1 +1,3 @@
 nix/sources.json
+.pre-commit-config.yaml
+CHANGELOG.md
