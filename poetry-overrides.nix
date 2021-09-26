@@ -13,10 +13,6 @@
     ];
   });
 
-  black = super.black.overridePythonAttrs (_: {
-    dontPreferSetupPy = true;
-  });
-
   numba = super.numba.overridePythonAttrs (_: {
     NIX_CFLAGS_COMPILE = pkgs.lib.optionalString
       pkgs.stdenv.isDarwin
