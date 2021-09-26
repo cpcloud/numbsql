@@ -1,11 +1,4 @@
 { pkgs, ... }: self: super: {
-  pytest-randomly = super.pytest-randomly.overrideAttrs (attrs: {
-    propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
-      self.importlib-metadata
-    ];
-    postPatch = "";
-  });
-
   jupyterlab-widgets = super.jupyterlab-widgets.overridePythonAttrs (attrs: {
     propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
       self.jupyter-packaging
