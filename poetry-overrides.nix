@@ -1,10 +1,4 @@
-{ pkgs, ... }: self: super: {
-  jupyterlab-widgets = super.jupyterlab-widgets.overridePythonAttrs (attrs: {
-    propagatedBuildInputs = (attrs.propagatedBuildInputs or [ ]) ++ [
-      self.jupyter-packaging
-    ];
-  });
-
+{ pkgs, ... }: _: super: {
   watchdog = super.watchdog.overrideAttrs (attrs: {
     disabledTests = (attrs.disabledTests or [ ]) ++ [
       "test_move_to"
