@@ -17,9 +17,9 @@ jobs:
           - ubuntu-latest
           - macos-latest
         python-version:
-          - "3.7"
-          - "3.8"
-          - "3.9"
+          - "37"
+          - "38"
+          - "39"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -40,7 +40,7 @@ jobs:
           extraPullNames: nix-community,poetry2nix
 
       - name: Build package and run tests
-        run: nix build --print-build-logs --keep-going --file . --argstr python ${{ matrix.python-version }}
+        run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
   conda:
     strategy:
       matrix:
