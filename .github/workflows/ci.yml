@@ -49,8 +49,7 @@ jobs:
           extraPullNames: nix-community,poetry2nix
 
       - name: Show python call
-        run: |
-          nix develop -c python -c 'from ctypes.util import find_library; print({lib: find_library(lib) for lib in ["c", "System", "System.B", "pthread"]})'
+        run: nix develop -c python -c 'import numbsql'
 
       - name: Build package and run tests
         run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
