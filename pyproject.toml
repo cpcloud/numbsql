@@ -75,6 +75,27 @@ convention = "numpy"
 add_ignore = ["D105", "D213", "D203"]
 match-dir = "numbsql"
 
+[tool.mypy]
+ignore_missing_imports = true
+# untyped things
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+# Any handling
+disallow_any_unimported = false
+disallow_any_expr = false
+disallow_any_decorated = false
+disallow_any_explicit = false
+disallow_any_generics = false
+disallow_subclassing_any = false
+# None/Optional handling
+no_implicit_optional = true
+# show more context on failure
+show_error_context = true
+# show codes in case we end up needing to ignore
+show_error_codes = true
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
