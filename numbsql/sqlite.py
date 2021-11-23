@@ -45,8 +45,8 @@ if sys.platform != "win32":
     libc_path: Optional[str] = ctypes.util.find_library(
         "c"
     ) or ctypes.util.find_library(
-        "System"
-    )  # libSystem is a thing on macos
+        "System.B"
+    )  # libSystem.B is a thing on macos
     if libc_path is None:  # pragma: no cover
         raise MissingLibrary("libc")
     libc = ctypes.cdll[libc_path]
