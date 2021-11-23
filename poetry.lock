@@ -725,6 +725,17 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 six = ">=1.5"
 
 [[package]]
+name = "pyupgrade"
+version = "2.29.1"
+description = "A tool to automatically upgrade syntax for newer versions."
+category = "dev"
+optional = false
+python-versions = ">=3.6.1"
+
+[package.dependencies]
+tokenize-rt = ">=3.2.0"
+
+[[package]]
 name = "pywin32"
 version = "302"
 description = "Python for Window Extensions"
@@ -784,6 +795,14 @@ nbformat = ">=5.0.4"
 dev = ["codecov", "coverage", "ipython", "ipykernel", "ipywidgets", "pandas", "pytest (>=4.1)", "pytest-cov (>=2.6.1)", "check-manifest", "flake8", "tox", "bumpversion", "xmltodict", "pip (>=18.1)", "wheel (>=0.31.0)", "setuptools (>=38.6.0)", "twine (>=1.11.0)", "black"]
 sphinx = ["Sphinx (>=1.7,<3.0)", "sphinx-book-theme (==0.0.35)", "myst-parser (==0.9.1)"]
 test = ["codecov", "coverage", "ipython", "ipykernel", "ipywidgets", "pandas", "pytest (>=4.1)", "pytest-cov (>=2.6.1)", "check-manifest", "flake8", "tox", "bumpversion", "xmltodict", "pip (>=18.1)", "wheel (>=0.31.0)", "setuptools (>=38.6.0)", "twine (>=1.11.0)", "black"]
+
+[[package]]
+name = "tokenize-rt"
+version = "4.2.1"
+description = "A wrapper around the stdlib `tokenize` which roundtrips."
+category = "dev"
+optional = false
+python-versions = ">=3.6.1"
 
 [[package]]
 name = "toml"
@@ -859,7 +878,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.8,<3.10"
-content-hash = "feecab331431c65e80c151d1782bd0f6e3429cc5cbd9d7acf02f27046f9f6045"
+content-hash = "de52c0e5ce3ebf28e16f7e0fa274fd587e2169bcf5f378916ec9a73f9ae93f62"
 
 [metadata.files]
 appnope = [
@@ -1263,6 +1282,10 @@ python-dateutil = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
     {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
 ]
+pyupgrade = [
+    {file = "pyupgrade-2.29.1-py2.py3-none-any.whl", hash = "sha256:1d3f03d14652caacd6f3d464696e103ef33578531a5c1b995be3821b14b811b7"},
+    {file = "pyupgrade-2.29.1.tar.gz", hash = "sha256:737e02bed0de70247df5d2a0c3edba6b4529adf44f5ef588ecda4a69f14bf694"},
+]
 pywin32 = [
     {file = "pywin32-302-cp310-cp310-win32.whl", hash = "sha256:251b7a9367355ccd1a4cd69cd8dd24bd57b29ad83edb2957cfa30f7ed9941efa"},
     {file = "pywin32-302-cp310-cp310-win_amd64.whl", hash = "sha256:79cf7e6ddaaf1cd47a9e50cc74b5d770801a9db6594464137b1b86aa91edafcc"},
@@ -1385,6 +1408,10 @@ snowballstemmer = [
 ]
 testbook = [
     {file = "testbook-0.4.2-py3-none-any.whl", hash = "sha256:21e03818017d1315607e117c101cf4b5f5b6dcd5ead77eab65ac9508a281f644"},
+]
+tokenize-rt = [
+    {file = "tokenize_rt-4.2.1-py2.py3-none-any.whl", hash = "sha256:08a27fa032a81cf45e8858d0ac706004fcd523e8463415ddf1442be38e204ea8"},
+    {file = "tokenize_rt-4.2.1.tar.gz", hash = "sha256:0d4f69026fed520f8a1e0103aa36c406ef4661417f20ca643f913e33531b3b94"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
