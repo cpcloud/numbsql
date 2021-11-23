@@ -15,6 +15,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - macos-10.15
           - macos-11
         python-version:
           - "37"
@@ -22,9 +23,6 @@ jobs:
           - "39"
         exclude:
           - os: macos-11
-            python-version: "37"
-        include:
-          - os: macos-10.15
             python-version: "37"
     runs-on: ${{ matrix.os }}
     steps:
@@ -53,6 +51,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - macos-10.15
           - macos-11
           - windows-latest
         python-version:
@@ -61,9 +60,6 @@ jobs:
           - "3.9"
         exclude:
           - os: macos-11
-            python-version: "3.7"
-        include:
-          - os: macos-10.15
             python-version: "3.7"
     runs-on: ${{ matrix.os }}
     defaults:
