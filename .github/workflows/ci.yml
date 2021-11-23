@@ -43,6 +43,7 @@ jobs:
         run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
   conda:
     strategy:
+      fail-fast: false
       matrix:
         python-version:
           - "3.7"
