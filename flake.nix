@@ -164,14 +164,17 @@
             };
           };
 
-          devShell = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [
-              commitizen
-              numbsqlDevEnv39
-              poetry
-              prettierTOML
-            ];
-            shellHook = self.checks.${system}.pre-commit-check.shellHook;
+          devShell = pkgs.mkShell
+            {
+              nativeBuildInputs = with pkgs; [
+                commitizen
+                numbsqlDevEnv39
+                poetry
+                prettierTOML
+              ];
+              shellHook = self.checks.${system}.pre-commit-check.shellHook;
+            } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+            DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
           };
         }
       )
