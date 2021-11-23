@@ -21,11 +21,11 @@ jobs:
           - "38"
           - "39"
         exclude:
-          - python-version: "37"
-            os: macos-11
+          - os: macos-11
+            python-version: "37"
         include:
-          - python-version: "37"
-            os: macos-10.15
+          - os: macos-10.15
+            python-version: "37"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -60,11 +60,11 @@ jobs:
           - macos-11
           - windows-latest
         exclude:
-          - python-version: "3.7"
-            os: macos-11
+          - os: macos-11
+            python-version: "3.7"
         include:
-          - python-version: "3.7"
-            os: macos-10.15
+          - os: macos-10.15
+            python-version: "3.7"
     runs-on: ${{ matrix.os }}
     defaults:
       run:
