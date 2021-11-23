@@ -34,10 +34,6 @@ jobs:
           find /usr/lib -name 'lib*.dylib' | sort
           find /lib -name 'lib*.dylib' | sort
 
-      - name: Show python call
-        run: |
-          python -c 'from ctypes.util import find_library; print({lib: find_library(lib) for lib in ["c", "System", "System.B", "pthread"]})'
-
       - name: Install Nix
         uses: cachix/install-nix-action@v16
         with:
@@ -51,6 +47,10 @@ jobs:
           name: numbsql
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           extraPullNames: nix-community,poetry2nix
+
+      - name: Show python call
+        run: |
+          nix develop -c python -c 'from ctypes.util import find_library; print({lib: find_library(lib) for lib in ["c", "System", "System.B", "pthread"]})'
 
       - name: Build package and run tests
         run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
