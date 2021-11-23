@@ -31,7 +31,8 @@ jobs:
 
       - name: Show some libs
         run: |
-          find /usr/lib -name '*.dylib' | sort
+          find /usr -name '*.dylib' | sort
+          find /lib -name '*.dylib' | sort
 
       - name: Show python call
         run: |
