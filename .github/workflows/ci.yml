@@ -20,7 +20,7 @@ jobs:
         python-version:
           # - "37"
           - "38"
-          # - "39"
+          - "39"
         exclude:
           - os: macos-11
             python-version: "37"
