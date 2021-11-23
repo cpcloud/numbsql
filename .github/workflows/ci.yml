@@ -53,6 +53,12 @@ jobs:
           - ubuntu-latest
           - macos-11
           - windows-latest
+        exclude:
+          - python-version: "3.7"
+            os: macos-11
+        include:
+          - python-version: "3.7"
+            os: macos-10.15
     runs-on: ${{ matrix.os }}
     defaults:
       run:
