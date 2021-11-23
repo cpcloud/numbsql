@@ -20,6 +20,12 @@ jobs:
           - "37"
           - "38"
           - "39"
+        exclude:
+          - python-version: "37"
+            os: macos-11
+        include:
+          - python-version: "37"
+            os: macos-10.15
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
