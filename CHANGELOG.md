@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v4.0.4 (2021-12-09)
+### Fix
+* **deps:** Bump to numba 0.54.1 ([`672c896`](https://github.com/cpcloud/numbsql/commit/672c8966fedfc354a0e20c9f7cd92fb96f6b3827))
+
 ## v4.0.3 (2021-12-09)
 ### Fix
 * Try using System.B ([`aa89b32`](https://github.com/cpcloud/numbsql/commit/aa89b3202b2a621a77f30b56618076391d30ee1e))
