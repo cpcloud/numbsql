@@ -33,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          find / -name '*sqlite*' | sort
+          find / -name '*sqlite*' 2> /dev/null | sort
 
       - name: Install Nix
         uses: cachix/install-nix-action@v16
