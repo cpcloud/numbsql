@@ -42,11 +42,7 @@ if sqlite3_path is None:  # pragma: no cover
 libsqlite3 = ctypes.cdll[sqlite3_path]
 
 if sys.platform != "win32":
-    libc_path: Optional[str] = ctypes.util.find_library(
-        "c"
-    ) or ctypes.util.find_library(
-        "System.B"
-    )  # libSystem.B is a thing on macos
+    libc_path: Optional[str] = ctypes.util.find_library("c")
     if libc_path is None:  # pragma: no cover
         raise MissingLibrary("libc")
     libc = ctypes.cdll[libc_path]
