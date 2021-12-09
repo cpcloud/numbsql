@@ -31,8 +31,9 @@ jobs:
 
       - name: Show some libs
         run: |
-          find /usr/lib -name 'lib*.dylib' | sort
-          find /lib -name 'lib*.dylib' | sort
+          set -euo pipefail
+
+          find / -name '*sqlite*' | sort
 
       - name: Install Nix
         uses: cachix/install-nix-action@v16
