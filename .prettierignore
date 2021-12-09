@@ -1,0 +1,7 @@
+.direnv
+.mypy_cache
+.pre-commit-config.yaml
+CHANGELOG.md
+.pytest_cache
+result
+result-*

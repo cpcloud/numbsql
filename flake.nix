@@ -33,6 +33,12 @@
             (py:
               let
                 noDotPy = super.lib.replaceStrings [ "." ] [ "" ] py;
+                overrides = pkgs.poetry2nix.overrides.withDefaults (
+                  import ./poetry-overrides.nix {
+                    inherit pkgs;
+                    inherit (pkgs) lib stdenv;
+                  }
+                );
               in
               [
                 {
@@ -46,9 +52,7 @@
 
                     buildInputs = [ pkgs.sqlite ];
 
-                    overrides = pkgs.poetry2nix.overrides.withDefaults (
-                      import ./poetry-overrides.nix { inherit pkgs; }
-                    );
+                    inherit overrides;
 
                     preCheck = pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
                       export DYLD_LIBRARY_PATH=${pkgs.sqlite.out}/lib
@@ -68,9 +72,7 @@
                   value = pkgs.poetry2nix.mkPoetryEnv {
                     python = pkgs."python${noDotPy}";
                     projectDir = ./.;
-                    overrides = pkgs.poetry2nix.overrides.withDefaults (
-                      import ./poetry-overrides.nix { inherit pkgs; }
-                    );
+                    inherit overrides;
                     editablePackageSources = {
                       numbsql = ./numbsql;
                     };
@@ -171,6 +173,7 @@
                 numbsqlDevEnv39
                 poetry
                 prettierTOML
+                sqlite
               ];
               shellHook = self.checks.${system}.pre-commit-check.shellHook;
             } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
