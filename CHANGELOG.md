@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v4.0.3 (2021-12-09)
+### Fix
+* Try using System.B ([`aa89b32`](https://github.com/cpcloud/numbsql/commit/aa89b3202b2a621a77f30b56618076391d30ee1e))
+* **sqlite:** Try to load libSystem.dylib on macos, in place of libc ([`f48bb2b`](https://github.com/cpcloud/numbsql/commit/f48bb2b55dec12a4ca4eda9c6a3b91b120f2350e))
+
 ## v4.0.2 (2021-09-23)
 ### Fix
 * **deps:** Enable poetry2nix ([`c3c9bfc`](https://github.com/cpcloud/numbsql/commit/c3c9bfc0155448f8eac24ddfddb48e4068cf893f))
