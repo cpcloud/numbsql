@@ -14,11 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - ubuntu-latest
-          # - macos-10.15
+          - ubuntu-latest
+          - macos-10.15
           - macos-11
         python-version:
-          # - "37"
+          - "37"
           - "38"
           - "39"
         exclude:
@@ -28,12 +28,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Show some libs
-        run: |
-          set -euo pipefail
-
-          find / -name '*sqlite*' 2> /dev/null | sort
 
       - name: Install Nix
         uses: cachix/install-nix-action@v16
@@ -49,102 +43,99 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           extraPullNames: nix-community,poetry2nix
 
-      - name: Show python call
-        run: nix-shell --pure --run 'python -c "import numbsql"'
-
       - name: Build package and run tests
         run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
-  # conda:
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os:
-  #         - ubuntu-latest
-  #         - macos-10.15
-  #         - macos-11
-  #         - windows-latest
-  #       python-version:
-  #         - "3.7"
-  #         - "3.8"
-  #         - "3.9"
-  #       exclude:
-  #         - os: macos-11
-  #           python-version: "3.7"
-  #   runs-on: ${{ matrix.os }}
-  #   defaults:
-  #     run:
-  #       shell: bash -l {0}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #
-  #     - name: Install poetry2conda
-  #       run: pip3 install poetry2conda
-  #
-  #     - name: Generate conda environment file
-  #       run: poetry2conda --dev pyproject.toml - | tee environment.yaml
-  #
-  #     - name: Setup conda
-  #       uses: conda-incubator/setup-miniconda@v2
-  #       with:
-  #         mamba-version: "*"
-  #         miniforge-variant: Mambaforge
-  #         miniforge-version: latest
-  #         channel-priority: strict
-  #         activate-environment: numbsql
-  #         python-version: ${{ matrix.python-version }}
-  #         environment-file: environment.yaml
-  #
-  #     - name: Install the package locally
-  #       run: pip3 install .
-  #
-  #     - name: Run tests
-  #       run: pytest --verbose --benchmark-disable --numprocesses auto --durations 10
-  # release:
-  #   needs:
-  #     - nix
-  #     - conda
-  #   runs-on: ubuntu-latest
-  #   concurrency: release
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       if: ${{ github.event_name != 'pull_request' }}
-  #       with:
-  #         fetch-depth: 0
-  #         token: ${{ secrets.PAT }}
-  #
-  #     - name: Checkout PR
-  #       uses: actions/checkout@v2
-  #       if: ${{ github.event_name == 'pull_request' }}
-  #       with:
-  #         fetch-depth: 0
-  #
-  #     - name: Configure git for semantic release
-  #       run: |
-  #         git config --global user.name "github-actions"
-  #         git config --global user.email "github-actions@github.com"
-  #
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         python-version: "3.x"
-  #
-  #     - name: Install poetry and semantic-release
-  #       run: pip install poetry python-semantic-release
-  #
-  #     - name: Semantic release
-  #       if: ${{ github.event_name != 'pull_request' }}
-  #       run: semantic-release publish --verbosity=DEBUG
-  #       env:
-  #         GH_TOKEN: ${{ secrets.PAT }}
-  #         PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-  #
-  #     - name: Semantic release
-  #       if: ${{ github.event_name == 'pull_request' }}
-  #       run: semantic-release publish --noop --verbosity=DEBUG
+  conda:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-10.15
+          - macos-11
+          - windows-latest
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+        exclude:
+          - os: macos-11
+            python-version: "3.7"
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install poetry2conda
+        run: pip3 install poetry2conda
+
+      - name: Generate conda environment file
+        run: poetry2conda --dev pyproject.toml - | tee environment.yaml
+
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          mamba-version: "*"
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          channel-priority: strict
+          activate-environment: numbsql
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yaml
+
+      - name: Install the package locally
+        run: pip3 install .
+
+      - name: Run tests
+        run: pytest --verbose --benchmark-disable --numprocesses auto --durations 10
+  release:
+    needs:
+      - nix
+      - conda
+    runs-on: ubuntu-latest
+    concurrency: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Checkout PR
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          fetch-depth: 0
+
+      - name: Configure git for semantic release
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install poetry and semantic-release
+        run: pip install poetry python-semantic-release
+
+      - name: Semantic release
+        if: ${{ github.event_name != 'pull_request' }}
+        run: semantic-release publish --verbosity=DEBUG
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Semantic release
+        if: ${{ github.event_name == 'pull_request' }}
+        run: semantic-release publish --noop --verbosity=DEBUG
