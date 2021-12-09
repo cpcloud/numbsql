@@ -53,10 +53,6 @@ if sys.platform != "win32":
 else:
     libc = ctypes.cdll.msvcrt
 
-print("#####################")
-print(libc)
-print("#####################")
-
 sqlite3_aggregate_context = libsqlite3.sqlite3_aggregate_context
 sqlite3_aggregate_context.argtypes = c_void_p, c_int
 sqlite3_aggregate_context.restype = c_void_p
