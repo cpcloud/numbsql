@@ -18,7 +18,13 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, pre-commit-hooks, poetry2nix }:
+  outputs =
+    { self
+    , nixpkgs
+    , flake-utils
+    , pre-commit-hooks
+    , poetry2nix
+    }:
     {
       overlay = nixpkgs.lib.composeManyExtensions [
         poetry2nix.overlay
