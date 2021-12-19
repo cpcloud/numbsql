@@ -179,6 +179,10 @@
                 numbsqlDevEnv39
                 poetry
                 prettierTOML
+                # useful for testing sqlite things with a sane CLI, i.e., with
+                # readline
+                sqlite-interactive
+                # sqlite is necssary to ensure the availability of libsqlite3
                 sqlite
               ];
               shellHook = self.checks.${system}.pre-commit-check.shellHook;
