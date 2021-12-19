@@ -56,10 +56,7 @@ upload_to_pypi = true
 upload_to_release = true
 build_command = "poetry build"
 commit_subject = "chore(release): {version}"
-commit_author = "github-actions <github-actions@github.com>"
-
-[tool.black]
-line_length = 88
+commit_author = "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
 
 [tool.isort]
 line_length = 88
