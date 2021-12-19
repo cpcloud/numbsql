@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v4.0.5 (2021-12-19)
+### Fix
+* Correct the build author ([`bd7432b`](https://github.com/cpcloud/numbsql/commit/bd7432b4897faf3d5dddbde158d1618d7911b0be))
+
 ## v4.0.4 (2021-12-09)
 ### Fix
 * **deps:** Bump to numba 0.54.1 ([`672c896`](https://github.com/cpcloud/numbsql/commit/672c8966fedfc354a0e20c9f7cd92fb96f6b3827))
