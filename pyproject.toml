@@ -39,13 +39,11 @@ addopts = [
   "--ignore=site-packages",
   "--ignore=dist-packages",
   "--ignore=.direnv",
+  "--ignore=examples",
   "--strict-markers",
   "--doctest-modules",
-  # this is here because pytest doesn't accept duplicate imports
-  # and nix installs the package before running tests
-  "--doctest-ignore-import-errors",
 ]
-norecursedirs = ["site-packages", "dist-packages", ".direnv"]
+norecursedirs = ["site-packages", "dist-packages", ".direnv", "examples"]
 
 [tool.poetry2conda]
 name = "numbsql"
