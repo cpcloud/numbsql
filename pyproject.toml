@@ -1,6 +1,5 @@
 [tool.poetry]
 name = "numbsql"
-packages = [{ include = "numbsql" }]
 homepage = "https://github.com/cpcloud/numbsql"
 repository = "https://github.com/cpcloud/numbsql"
 version = "4.0.4"
