@@ -66,8 +66,8 @@ jobs:
         deps:
           - numba: "0.53"
             llvmlite: "0.36"
-          - numba: "latest"
-            llvmlite: "latest"
+          - numba: "<0.55"
+            llvmlite: "<0.38"
         exclude:
           - os: macos-11
             python-version: "3.7.1"
