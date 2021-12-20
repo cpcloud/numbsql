@@ -63,6 +63,11 @@ jobs:
           - "3.7"
           - "3.8"
           - "3.9"
+        deps:
+          - numba: "0.53"
+            llvmlite: "0.36"
+          - numba: "latest"
+            llvmlite: "latest"
         exclude:
           - os: macos-11
             python-version: "3.7.1"
@@ -84,7 +89,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install poetry2conda
-        run: pip3 install poetry2conda
+        run: pip3 install poetry2conda poetry
+
+      - name: Pin numba and llvmlite
+        run: poetry add "numba@${{ matrix.deps.numba }}" "llvmlite@${{ matrix.deps.llvmlite }}"
 
       - name: Generate conda environment file
         run: poetry2conda --dev pyproject.toml - | tee environment.yaml
