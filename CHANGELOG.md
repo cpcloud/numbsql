@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v4.0.6 (2021-12-20)
+### Fix
+* Support more versions of numba/llvmlite ([`fa9a5a9`](https://github.com/cpcloud/numbsql/commit/fa9a5a9682f9d3e3511e03f9f6db04c9a44ff357))
+
 ## v4.0.5 (2021-12-19)
 ### Fix
 * Correct the build author ([`bd7432b`](https://github.com/cpcloud/numbsql/commit/bd7432b4897faf3d5dddbde158d1618d7911b0be))
