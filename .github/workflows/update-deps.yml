@@ -11,6 +11,7 @@ jobs:
       matrix:
         input:
           - flake-utils
+          - gitignore
           - nixpkgs
           - poetry2nix
           - pre-commit-hooks
