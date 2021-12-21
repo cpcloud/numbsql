@@ -4,6 +4,12 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
 
+    gitignore = {
+      url = "github:hercules-ci/gitignore.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
+
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     pre-commit-hooks = {
@@ -20,14 +26,16 @@
 
   outputs =
     { self
-    , nixpkgs
     , flake-utils
+    , gitignore
+    , nixpkgs
     , pre-commit-hooks
     , poetry2nix
     }:
     {
       overlay = nixpkgs.lib.composeManyExtensions [
         poetry2nix.overlay
+        gitignore.overlay
         (pkgs: super: {
           prettierTOML = pkgs.writeShellScriptBin "prettier" ''
             ${pkgs.nodePackages.prettier}/bin/prettier \
@@ -54,7 +62,7 @@
 
                     pyproject = ./pyproject.toml;
                     poetrylock = ./poetry.lock;
-                    src = pkgs.lib.cleanSource ./.;
+                    src = pkgs.gitignoreSource ./.;
 
                     buildInputs = [ pkgs.sqlite ];
 
