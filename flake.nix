@@ -32,6 +32,14 @@
     , pre-commit-hooks
     , poetry2nix
     }:
+    let
+      getOverrides = pkgs: pkgs.poetry2nix.overrides.withDefaults (
+        import ./poetry-overrides.nix {
+          inherit pkgs;
+          inherit (pkgs) lib stdenv;
+        }
+      );
+    in
     {
       overlay = nixpkgs.lib.composeManyExtensions [
         poetry2nix.overlay
@@ -42,31 +50,38 @@
             --plugin-search-dir "${pkgs.nodePackages.prettier-plugin-toml}/lib" \
             "$@"
           '';
-        } // (super.lib.listToAttrs (
+        } // super.lib.optionalAttrs
+          (super.stdenv.isDarwin && (
+            super.lib.versionAtLeast super.stdenv.buildPlatform.darwinMinVersion "11"
+          ))
+          {
+            # ctypes.util.find_library() now finds macOS 11+ system libraries
+            # when built on older macOS systems
+            # https://github.com/python/cpython/pull/28053
+            # TODO: remove this when nix upgrades python 3.9 to python 3.9.7+
+            python39 = super.python39.overrideAttrs (attrs: {
+              patches = (attrs.patches or [ ]) ++ [
+                ./patches/bpo-44689-ctypes.util.find_library-now-finds-macOS-1.patch
+              ];
+            });
+          } // (super.lib.listToAttrs (
           super.lib.concatMap
             (py:
               let
-                noDotPy = super.lib.replaceStrings [ "." ] [ "" ] py;
-                overrides = pkgs.poetry2nix.overrides.withDefaults (
-                  import ./poetry-overrides.nix {
-                    inherit pkgs;
-                    inherit (pkgs) lib stdenv;
-                  }
-                );
+                python = pkgs."python${py}";
               in
               [
                 {
-                  name = "numbsql${noDotPy}";
+                  name = "numbsql${py}";
                   value = pkgs.poetry2nix.mkPoetryApplication {
-                    python = pkgs."python${noDotPy}";
+                    inherit python;
 
-                    pyproject = ./pyproject.toml;
-                    poetrylock = ./poetry.lock;
+                    projectDir = ./.;
                     src = pkgs.gitignoreSource ./.;
 
                     buildInputs = [ pkgs.sqlite ];
 
-                    inherit overrides;
+                    overrides = getOverrides pkgs;
 
                     preCheck = pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
                       export DYLD_LIBRARY_PATH=${pkgs.sqlite.out}/lib
@@ -74,7 +89,7 @@
 
                     checkPhase = ''
                       runHook preCheck
-                      pytest --benchmark-disable --numprocesses auto
+                      pytest --numprocesses auto
                       runHook postCheck
                     '';
 
@@ -82,18 +97,18 @@
                   };
                 }
                 {
-                  name = "numbsqlDevEnv${noDotPy}";
+                  name = "numbsqlDevEnv${py}";
                   value = pkgs.poetry2nix.mkPoetryEnv {
-                    python = pkgs."python${noDotPy}";
+                    inherit python;
                     projectDir = ./.;
-                    inherit overrides;
+                    overrides = getOverrides pkgs;
                     editablePackageSources = {
                       numbsql = ./numbsql;
                     };
                   };
                 }
               ])
-            [ "3.7" "3.8" "3.9" ]
+            [ "37" "38" "39" ]
         )))
       ];
     } // (
@@ -110,8 +125,9 @@
           packages.numbsql37 = pkgs.numbsql37;
           packages.numbsql38 = pkgs.numbsql38;
           packages.numbsql39 = pkgs.numbsql39;
+          packages.numbsql = pkgs.numbsql39;
 
-          defaultPackage = packages.numbsql39;
+          defaultPackage = packages.numbsql;
 
           checks = {
             pre-commit-check = pre-commit-hooks.lib.${system}.run {
