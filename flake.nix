@@ -50,21 +50,29 @@
             --plugin-search-dir "${pkgs.nodePackages.prettier-plugin-toml}/lib" \
             "$@"
           '';
-        } // super.lib.optionalAttrs
-          (super.stdenv.isDarwin && (
-            super.lib.versionAtLeast super.stdenv.buildPlatform.darwinMinVersion "11"
-          ))
-          {
-            # ctypes.util.find_library() now finds macOS 11+ system libraries
-            # when built on older macOS systems
-            # https://github.com/python/cpython/pull/28053
-            # TODO: remove this when nix upgrades python 3.9 to python 3.9.7+
-            python39 = super.python39.overrideAttrs (attrs: {
-              patches = (attrs.patches or [ ]) ++ [
-                ./patches/bpo-44689-ctypes.util.find_library-now-finds-macOS-1.patch
-              ];
-            });
-          } // (super.lib.listToAttrs (
+        } // super.lib.optionalAttrs super.stdenv.isDarwin {
+          macosVersion = pkgs.lib.removeSuffix "\n" (
+            pkgs.lib.readFile (
+              pkgs.runCommand
+                "macos-version"
+                { }
+                ''/usr/bin/sw_vers -productVersion > $out''
+            )
+          );
+          # ctypes.util.find_library() now finds macOS 11+ system libraries
+          # when built on older macOS systems
+          # https://github.com/python/cpython/pull/28053
+          # TODO: remove this when nix upgrades python 3.9 to python 3.9.7+
+          python39 = super.python39.overrideAttrs (
+            attrs: (
+              pkgs.lib.optionalAttrs (pkgs.lib.versionAtLeast pkgs.macosVersion "11") {
+                patches = (attrs.patches or [ ]) ++ [
+                  ./patches/bpo-44689-ctypes.util.find_library-now-finds-macOS-1.patch
+                ];
+              }
+            )
+          );
+        } // (super.lib.listToAttrs (
           super.lib.concatMap
             (py:
               let
