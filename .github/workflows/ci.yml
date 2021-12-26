@@ -54,12 +54,14 @@ jobs:
           echo
           nix shell -f '<nixpkgs>' darwin.DarwinTools -c sw_vers
 
+      - name: Show the nix python version
+        run: nix shell -f '<nixpkgs>' python39 -c python --version
+
       - name: Check that python3.9 is 3.9.6
         if: ${{ matrix.python-version == '39' }}
         run: |
           set -euo pipefail
-
-          nix shell -f '<nixpkgs>' python39 -c python --version | grep '^Python 3\.9\.6$'
+          nix shell -f '<nixpkgs>' python39 -c python --version | grep --quiet '^Python 3\.9\.6$'
 
       - name: Build package and run tests
         run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
