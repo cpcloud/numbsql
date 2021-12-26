@@ -69,6 +69,10 @@
 
                     overrides = getOverrides pkgs;
 
+                    preCheck = pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
+                      export DYLD_LIBRARY_PATH=${pkgs.sqlite.out}/lib
+                    '';
+
                     checkPhase = ''
                       runHook preCheck
                       pytest --numprocesses auto
@@ -192,7 +196,9 @@
                 sqlite
               ];
               shellHook = self.checks.${system}.pre-commit-check.shellHook;
-            };
+            } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+            DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
+          };
         }
       )
     );
