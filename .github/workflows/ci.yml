@@ -1,3 +1,4 @@
+name: CI
 on:
   push:
     branches:
@@ -5,8 +6,6 @@ on:
   pull_request:
     branches:
       - main
-
-name: CI
 
 concurrency:
   group: ${{ github.repository }}-${{ github.head_ref || github.sha }}-${{ github.workflow }}
@@ -30,73 +29,68 @@ jobs:
             python-version: "37"
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v16
+      - uses: actions/checkout@v2
+      - uses: cachix/install-nix-action@v16
         with:
           nix_path: nixpkgs=channel:nixos-unstable-small
-
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v10
+      - uses: cachix/cachix-action@v10
         with:
           name: numbsql
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           extraPullNames: nix-community,poetry2nix
 
-      - name: Build package and run tests
-        run: nix build --print-build-logs --keep-going '.#numbsql${{ matrix.python-version }}'
+      - run: nix build -L --keep-going '.#numbsql${{ matrix.python-version }}' --no-link
+      - run: nix path-info -Shr '.#numbsql${{ matrix.python-version }}'
   conda:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - macos-10.15
-          - macos-11
+          - macos-latest
           - windows-latest
         python-version:
           - "3.7.1"
-          - "3.7"
           - "3.8"
           - "3.9"
         deps:
           - numba: "0.53"
             llvmlite: "0.36"
-          - numba: "<0.55"
-            llvmlite: "<0.38"
-        exclude:
-          - os: macos-11
+          - numba: null
+            llvmlite: null
+        include:
+          - os: macos-10.15
             python-version: "3.7.1"
           - os: windows-latest
+            python-version: "3.7.5"
+        exclude:
+          # macos-11 isn't supported on 3.7.x
+          - os: macos-latest
             python-version: "3.7.1"
-          - os: macos-11
-            python-version: "3.7"
-    runs-on: ${{ matrix.os }}
+          # windows + 3.7.1 has memory access violations, likely due to an
+          # incompatible sqlite binary + python libsqlite library version
+          #
+          # these are the kinds of errors that will keep you up at night
+          - os: windows-latest
+            python-version: "3.7.1"
     defaults:
       run:
         shell: bash -l {0}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install poetry2conda
-        run: pip3 install poetry2conda poetry
+      - run: pip3 install poetry2conda poetry
 
-      - name: Pin numba and llvmlite
-        run: poetry add --lock "numba@${{ matrix.deps.numba }}" "llvmlite@${{ matrix.deps.llvmlite }}"
+      - run: poetry add --lock "numba@${{ matrix.deps.numba }}" "llvmlite@${{ matrix.deps.llvmlite }}"
+        if: ${{ matrix.deps.numba != null && matrix.deps.llvmlite != null }}
 
-      - name: Generate conda environment file
-        run: poetry2conda --dev pyproject.toml - | tee environment.yaml
+      - run: poetry2conda --dev pyproject.toml - | tee environment.yaml
 
-      - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v2
         with:
           mamba-version: "*"
           miniforge-variant: Mambaforge
@@ -106,58 +100,46 @@ jobs:
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yaml
 
-      - name: Install the package locally
-        run: pip install .
-
-      - name: Run tests
-        run: pytest --verbose --benchmark-disable --numprocesses auto --durations 10
+      - run: pip install .
+      - run: pytest --numprocesses auto
   release:
+    runs-on: ubuntu-latest
     needs:
       - nix
       - conda
-    runs-on: ubuntu-latest
     concurrency: release
     steps:
-      - name: Generate a GitHub token
-        uses: tibdex/github-app-token@v1
+      - uses: tibdex/github-app-token@v1
         id: generate_token
         with:
           app_id: ${{ secrets.APP_ID }}
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         if: ${{ github.event_name != 'pull_request' }}
         with:
           fetch-depth: 0
           token: ${{ steps.generate_token.outputs.token }}
 
-      - name: Checkout PR
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         if: ${{ github.event_name == 'pull_request' }}
         with:
           fetch-depth: 0
 
-      - name: Configure git for semantic release
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
+      - run: git config --global user.name "github-actions"
+      - run: git config --global user.email "github-actions@github.com"
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: "3.x"
 
-      - name: Install poetry and semantic-release
-        run: pip install poetry python-semantic-release
+      - run: pip install poetry python-semantic-release
 
-      - name: Semantic release
+      - run: semantic-release publish --verbosity=DEBUG
         if: ${{ github.event_name != 'pull_request' }}
-        run: semantic-release publish --verbosity=DEBUG
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-      - name: Semantic release
+      - run: semantic-release publish --noop --verbosity=DEBUG
         if: ${{ github.event_name == 'pull_request' }}
-        run: semantic-release publish --noop --verbosity=DEBUG
