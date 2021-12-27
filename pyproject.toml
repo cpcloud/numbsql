@@ -43,6 +43,7 @@ addopts = [
   "--strict-markers",
   "--doctest-modules",
   "--benchmark-disable",
+  "--durations=10",
 ]
 norecursedirs = ["site-packages", "dist-packages", ".direnv", "examples"]
 
