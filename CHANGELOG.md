@@ -1,5 +1,17 @@
 # Release Notes
 
+# [5.0.0](https://github.com/cpcloud/numbsql/compare/v4.0.6...v5.0.0) (2022-01-08)
+
+
+### Bug Fixes
+
+* bump minimum version of numpy ([8704260](https://github.com/cpcloud/numbsql/commit/870426059e90b2578e3fcc89a0a9fac1e2b20013))
+
+
+### BREAKING CHANGES
+
+* Upgrade to numpy >=1.21
+
 ## v4.0.6 (2021-12-20)
 ### Fix
 * Support more versions of numba/llvmlite ([`fa9a5a9`](https://github.com/cpcloud/numbsql/commit/fa9a5a9682f9d3e3511e03f9f6db04c9a44ff357))
