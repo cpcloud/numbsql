@@ -195,7 +195,6 @@
           devShell = pkgs.mkShell
             {
               nativeBuildInputs = with pkgs; [
-                commitizen
                 numbsqlDevEnv39
                 poetry
                 prettierTOML
