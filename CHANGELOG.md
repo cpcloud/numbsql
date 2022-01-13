@@ -1,5 +1,12 @@
 # Release Notes
 
+## [5.0.1](https://github.com/cpcloud/numbsql/compare/v5.0.0...v5.0.1) (2022-01-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency llvmlite to >=0.36,<0.39 ([7d0097e](https://github.com/cpcloud/numbsql/commit/7d0097e3dad46adf92d8fe8fb478c9eb64df74da))
+
 # [5.0.0](https://github.com/cpcloud/numbsql/compare/v4.0.6...v5.0.0) (2022-01-08)
 
 
