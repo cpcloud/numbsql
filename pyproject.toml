@@ -2,7 +2,7 @@
 name = "numbsql"
 homepage = "https://github.com/cpcloud/numbsql"
 repository = "https://github.com/cpcloud/numbsql"
-version = "5.0.1"
+version = "5.0.2"
 description = "JITted SQLite user-defined scalar and aggregate functions"
 readme = "README.md"
 authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]

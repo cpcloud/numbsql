@@ -1,5 +1,12 @@
 # Release Notes
 
+## [5.0.2](https://github.com/cpcloud/numbsql/compare/v5.0.1...v5.0.2) (2022-01-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency numba to >=0.53,<0.56 ([14f0d92](https://github.com/cpcloud/numbsql/commit/14f0d9223f8ac81a08aeda3bfa134f79d530c9a1))
+
 ## [5.0.1](https://github.com/cpcloud/numbsql/compare/v5.0.0...v5.0.1) (2022-01-13)
 
 
