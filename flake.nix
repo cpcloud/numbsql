@@ -104,7 +104,7 @@
                   };
                 }
               ])
-            [ "37" "38" "39" ]
+            [ "37" "38" "39" "310" ]
         )))
       ];
     } // (
@@ -121,7 +121,8 @@
           packages.numbsql37 = pkgs.numbsql37;
           packages.numbsql38 = pkgs.numbsql38;
           packages.numbsql39 = pkgs.numbsql39;
-          packages.numbsql = pkgs.numbsql39;
+          packages.numbsql310 = pkgs.numbsql310;
+          packages.numbsql = pkgs.numbsql310;
 
           defaultPackage = packages.numbsql;
 
@@ -195,7 +196,7 @@
           devShell = pkgs.mkShell
             {
               nativeBuildInputs = with pkgs; [
-                numbsqlDevEnv39
+                numbsqlDevEnv310
                 poetry
                 prettierTOML
                 # useful for testing sqlite things with a sane CLI, i.e., with
