@@ -18,29 +18,43 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-10.15
-          - macos-11
+          - macos-latest
         python-version:
           - "37"
           - "38"
           - "39"
+          - "310"
         exclude:
-          - os: macos-11
+          - os: macos-latest
             python-version: "37"
+
+            # 3.10 cannot be built with nixos-unstable-small as of 2022-01-14
+          - os: macos-latest
+            python-version: "310"
+
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+
       - uses: cachix/install-nix-action@v16
         with:
           nix_path: nixpkgs=channel:nixos-unstable-small
+
       - uses: cachix/cachix-action@v10
         with:
           name: numbsql
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           extraPullNames: nix-community,poetry2nix
 
-      - run: nix build -L --keep-going '.#numbsql${{ matrix.python-version }}' --no-link
-      - run: nix path-info -Shr '.#numbsql${{ matrix.python-version }}'
+      - name: build and test
+        run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}'
+
+      - name: show closure size
+        run: |
+          set -euo pipefail
+
+          nix path-info -Shr '.#numbsql${{ matrix.python-version }}' | sort -h -k2
+
   conda:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -60,37 +74,63 @@ jobs:
           - numba: null
             llvmlite: null
         include:
-          - os: macos-10.15
-            python-version: "3.7.1"
-            # 3.7.5 is the oldest Python 3.7 available from the setup-python
-            # action
-            #
-            # see
-            # https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+          # 3.7.5 is the oldest Python 3.7 available from the setup-python
+          # action
+          #
+          # see
+          # https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
           - os: windows-latest
             python-version: "3.7.5"
+            deps:
+              numba: "0.53"
+              llvmlite: "0.36"
+
+          - os: windows-latest
+            python-version: "3.7.5"
+            deps:
+              numba: null
+              llvmlite: null
         exclude:
           # macos-11 isn't supported on 3.7.x
           - os: macos-latest
             python-version: "3.7.1"
+            deps:
+              numba: null
+              llvmlite: null
+
+          - os: macos-latest
+            python-version: "3.7.1"
+            deps:
+              numba: "0.53"
+              llvmlite: "0.36"
           # windows + 3.7.1 has memory access violations, likely due to an
           # incompatible sqlite binary + python libsqlite library version
           #
           # these are the kinds of errors that will keep you up at night
           - os: windows-latest
             python-version: "3.7.1"
+            deps:
+              numba: null
+              llvmlite: null
+
+          - os: windows-latest
+            python-version: "3.7.1"
+            deps:
+              numba: "0.53"
+              llvmlite: "0.36"
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
+        id: install_python
         with:
           python-version: ${{ matrix.python-version }}
 
       - run: pip3 install poetry2conda poetry
 
-      - run: poetry add --lock "numba@${{ matrix.deps.numba }}" "llvmlite@${{ matrix.deps.llvmlite }}"
+      - run: poetry add --lock "numba@${{ matrix.deps.numba }}" "llvmlite@${{ matrix.deps.llvmlite }}" --python "${{ steps.install_python.outputs.python-version }}"
         if: ${{ matrix.deps.numba != null && matrix.deps.llvmlite != null }}
 
       - run: poetry2conda --dev pyproject.toml - | tee environment.yaml
@@ -107,11 +147,32 @@ jobs:
 
       - run: pip install .
       - run: pytest --numprocesses auto
+
+  dry-run-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: cachix/install-nix-action@v16
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable-small
+
+      - uses: cachix/cachix-action@v10
+        with:
+          name: numbsql
+          extraPullNames: nix-community,poetry2nix
+
+      - name: dry run semantic-release
+        run: ./ci/release/dry_run.sh
+
   release:
     runs-on: ubuntu-latest
     needs:
-      - nix
       - conda
+      - dry-run-release
+      - nix
     steps:
       - uses: tibdex/github-app-token@v1
         id: generate_token
@@ -120,12 +181,6 @@ jobs:
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          fetch-depth: 0
-
-      - uses: actions/checkout@v2
-        if: ${{ github.event_name != 'pull_request' }}
         with:
           fetch-depth: 0
           token: ${{ steps.generate_token.outputs.token }}
@@ -139,12 +194,7 @@ jobs:
           name: numbsql
           extraPullNames: nix-community,poetry2nix
 
-      - name: dry run semantic-release
-        if: ${{ github.event_name == 'pull_request' }}
-        run: ./ci/release/dry_run.sh
-
       - name: run semantic-release
-        if: ${{ github.event_name != 'pull_request' }}
         run: ./ci/release/run.sh
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
