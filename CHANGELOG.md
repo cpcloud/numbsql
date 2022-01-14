@@ -1,5 +1,12 @@
 # Release Notes
 
+# [5.1.0](https://github.com/cpcloud/numbsql/compare/v5.0.2...v5.1.0) (2022-01-14)
+
+
+### Features
+
+* support python 3.10 ([dd916e7](https://github.com/cpcloud/numbsql/commit/dd916e78040b3d3dfe263d6452c5ce20d2d8fbe4))
+
 ## [5.0.2](https://github.com/cpcloud/numbsql/compare/v5.0.1...v5.0.2) (2022-01-14)
 
 
