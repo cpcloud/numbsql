@@ -20,4 +20,12 @@
   typing-extensions = super.typing-extensions.overridePythonAttrs (attrs: {
     buildInputs = (attrs.buildInputs or [ ]) ++ [ self.flit-core ];
   });
+
+  entrypoints = super.entrypoints.overridePythonAttrs (attrs: {
+    nativeBuildInputs = (attrs.nativeBuildInputs or [ ]) ++ [ self.flit ];
+  });
+
+  isort = super.isort.overridePythonAttrs (attrs: {
+    nativeBuildInputs = (attrs.nativeBuildInputs or [ ]) ++ [ self.poetry ];
+  });
 }
