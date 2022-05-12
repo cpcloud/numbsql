@@ -21,7 +21,7 @@ numba = ">=0.53,<0.56"
 numpy = ">=1.21,<2"
 
 [tool.poetry.dev-dependencies]
-black = "^21.9b0"
+black = "^22"
 flake8 = "^4"
 ipykernel = "^6"
 isort = "^5.9.3"
