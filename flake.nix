@@ -148,7 +148,7 @@
 
                 shfmt = {
                   enable = true;
-                  entry = "${pkgs.shfmt}/bin/shfmt -i 2 -sr -d -s -l";
+                  entry = lib.mkForce "${pkgs.shfmt}/bin/shfmt -i 2 -sr -d -s -l";
                   files = "\\.sh$";
                 };
 
@@ -195,6 +195,7 @@
 
           devShell = pkgs.mkShell
             {
+              name = "numbsql";
               nativeBuildInputs = with pkgs; [
                 numbsqlDevEnv310
                 poetry
