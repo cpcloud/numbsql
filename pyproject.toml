@@ -21,17 +21,18 @@ numba = ">=0.53,<0.56"
 numpy = ">=1.22,<2"
 
 [tool.poetry.dev-dependencies]
+Cython = "^0.29.30"
 black = "^22"
 flake8 = "^4"
 ipykernel = "^6"
 isort = "^5.9.3"
 mypy = "^0.961"
 pydocstyle = "^6.1.1"
-pyupgrade = "^2.29.1"
 pytest = "^7.0.0"
 pytest-benchmark = "^3.4.1"
 pytest-randomly = "^3.10.1"
 pytest-xdist = "^2.3.0"
+pyupgrade = "^2.29.1"
 testbook = "^0.4.2"
 
 [tool.pytest.ini_options]
