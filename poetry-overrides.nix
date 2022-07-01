@@ -8,4 +8,12 @@
   traitlets = super.traitlets.overridePythonAttrs (attrs: {
     nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ self.flit-core ];
   });
+
+  jupyter-client = super.jupyter-client.overridePythonAttrs (attrs: {
+    nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ self.hatchling ];
+  });
+
+  ipykernel = super.ipykernel.overridePythonAttrs (attrs: {
+    nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ self.hatchling ];
+  });
 }
