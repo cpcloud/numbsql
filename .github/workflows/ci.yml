@@ -65,6 +65,11 @@ jobs:
             llvmlite: "0.36"
           - numba: null
             llvmlite: null
+        exclude:
+          - python-version: "3.10"
+            deps:
+              numba: "0.53"
+              llvmlite: "0.36"
     defaults:
       run:
         shell: bash -l {0}
