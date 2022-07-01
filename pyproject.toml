@@ -51,16 +51,6 @@ norecursedirs = ["site-packages", "dist-packages", ".direnv", "examples"]
 [tool.poetry2conda]
 name = "numbsql"
 
-[tool.semantic_release]
-version_toml = "pyproject.toml:tool.poetry.version"
-version_variable = "numbsql/__init__.py:__version__"
-branch = "main"
-upload_to_pypi = true
-upload_to_release = true
-build_command = "poetry build"
-commit_subject = "chore(release): {version}"
-commit_author = "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-
 [tool.isort]
 line_length = 88
 profile = "black"
