@@ -20,13 +20,9 @@ jobs:
           - ubuntu-latest
           - macos-latest
         python-version:
-          - "37"
           - "38"
           - "39"
           - "310"
-        exclude:
-          - os: macos-latest
-            python-version: "37"
 
     runs-on: ${{ matrix.os }}
     steps:
