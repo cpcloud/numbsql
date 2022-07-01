@@ -28,10 +28,6 @@ jobs:
           - os: macos-latest
             python-version: "37"
 
-            # 3.10 cannot be built with nixos-unstable-small as of 2022-01-14
-          - os: macos-latest
-            python-version: "310"
-
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
