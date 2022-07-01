@@ -130,25 +130,12 @@
             pre-commit-check = pre-commit-hooks.lib.${system}.run {
               src = ./.;
               hooks = {
-                nix-linter = {
-                  enable = true;
-                  entry = lib.mkForce "${pkgs.nix-linter}/bin/nix-linter";
-                };
-
-                nixpkgs-fmt = {
-                  enable = true;
-                  entry = lib.mkForce "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check";
-                };
-
-                shellcheck = {
-                  enable = true;
-                  entry = "${pkgs.shellcheck}/bin/shellcheck";
-                  files = "\\.sh$";
-                };
+                nix-linter.enable = true;
+                nixpkgs-fmt.enable = true;
+                shellcheck.enable = true;
 
                 shfmt = {
                   enable = true;
-                  entry = lib.mkForce "${pkgs.shfmt}/bin/shfmt -i 2 -sr -d -s -l";
                   files = "\\.sh$";
                 };
 
