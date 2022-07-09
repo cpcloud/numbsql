@@ -2,6 +2,11 @@
   description = "Numba UD(A)Fs for SQLite";
 
   inputs = {
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+      flake = false;
+    };
+
     flake-utils = {
       url = "github:numtide/flake-utils";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -41,13 +46,11 @@
     , nixpkgs
     , poetry2nix
     , pre-commit-hooks
+    , ...
     }:
     let
       getOverrides = pkgs: pkgs.poetry2nix.overrides.withDefaults (
-        import ./poetry-overrides.nix {
-          inherit pkgs;
-          inherit (pkgs) lib stdenv;
-        }
+        import ./poetry-overrides.nix
       );
     in
     {
@@ -96,8 +99,8 @@
                   name = "numbsqlDevEnv${py}";
                   value = pkgs.poetry2nix.mkPoetryEnv {
                     inherit python;
-                    projectDir = ./.;
                     overrides = getOverrides pkgs;
+                    projectDir = ./.;
                     editablePackageSources = {
                       numbsql = ./numbsql;
                     };
@@ -141,7 +144,6 @@
 
                 prettier = {
                   enable = true;
-                  entry = lib.mkForce "${pkgs.prettierTOML}/bin/prettier --check";
                   types_or = [ "json" "toml" "yaml" ];
                 };
 
@@ -177,6 +179,29 @@
                   types = [ "python" ];
                 };
               };
+              settings.prettier.binPath = "${pkgs.prettierTOML}/bin/prettier";
+              settings.nix-linter.checks = [
+                "DIYInherit"
+                "EmptyInherit"
+                "EmptyLet"
+                "EtaReduce"
+                "LetInInheritRecset"
+                "ListLiteralConcat"
+                "NegateAtom"
+                "SequentialLet"
+                "SetLiteralUpdate"
+                "UnfortunateArgName"
+                "UnneededRec"
+                "UnusedArg"
+                "UnusedLetBind"
+                "UpdateEmptySet"
+                "BetaReduction"
+                "EmptyVariadicParamSet"
+                "UnneededAntiquote"
+                "no-FreeLetInFunc"
+                "no-AlphabeticalArgs"
+                "no-AlphabeticalBindings"
+              ];
             };
           };
 
@@ -196,6 +221,7 @@
               shellHook = self.checks.${system}.pre-commit-check.shellHook;
             } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
+            NIXPKGS_ALLOW_UNFREE = "1";
           };
         }
       )
