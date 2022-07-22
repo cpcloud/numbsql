@@ -1,5 +1,12 @@
 # Release Notes
 
+## [5.1.1](https://github.com/cpcloud/numbsql/compare/v5.1.0...v5.1.1) (2022-07-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency numpy to v1.22.0 [security] ([638180a](https://github.com/cpcloud/numbsql/commit/638180a58d5c79803106c2b71fe8737e26539f8c))
+
 # [5.1.0](https://github.com/cpcloud/numbsql/compare/v5.0.2...v5.1.0) (2022-01-14)
 
 
