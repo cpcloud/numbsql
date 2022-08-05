@@ -22,7 +22,7 @@ numpy = ">=1.21,<2"
 
 [tool.poetry.dev-dependencies]
 black = "^22"
-flake8 = "^4"
+flake8 = "^5"
 ipykernel = "^6"
 isort = "^5.9.3"
 mypy = "^0.971"
