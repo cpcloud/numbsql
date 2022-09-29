@@ -134,6 +134,7 @@
                 shfmt = {
                   enable = true;
                   files = "\\.sh$";
+                  entry = lib.mkForce "shfmt -i 2 -sr -s";
                 };
 
                 prettier = {
