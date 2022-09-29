@@ -101,7 +101,7 @@
                   };
                 }
               ])
-            [ "37" "38" "39" "310" ]
+            [ "38" "39" "310" ]
         )))
       ];
     } // (
@@ -115,7 +115,6 @@
           inherit (pkgs) lib;
         in
         rec {
-          packages.numbsql37 = pkgs.numbsql37;
           packages.numbsql38 = pkgs.numbsql38;
           packages.numbsql39 = pkgs.numbsql39;
           packages.numbsql310 = pkgs.numbsql310;
@@ -164,7 +163,7 @@
 
                 pyupgrade = {
                   enable = true;
-                  entry = "pyupgrade --py37-plus";
+                  entry = "pyupgrade --py38-plus";
                   types = [ "python" ];
                 };
 
