@@ -7,17 +7,11 @@
       flake = false;
     };
 
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    flake-utils.url = "github:numtide/flake-utils";
 
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
