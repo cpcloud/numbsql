@@ -82,5 +82,5 @@ show_error_context = true
 show_error_codes = true
 
 [build-system]
-requires = ["poetry-core", "setuptools"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
