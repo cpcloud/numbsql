@@ -9,4 +9,10 @@ in
       stdenv.isDarwin
       "-I${lib.getDev pkgs.libcxx}/include/c++/v1";
   });
+
+  nbformat = super.nbformat.overridePythonAttrs (attrs: {
+    nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [
+      self.hatch-nodejs-version
+    ];
+  });
 }
