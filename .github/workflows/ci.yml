@@ -110,6 +110,13 @@ jobs:
           name: numbsql
           extraPullNames: nix-community,poetry2nix
 
+      - name: setup git info
+        run: |
+          set -euo pipefail
+
+          git config user.name 'phillip-ground[bot]'
+          git config user.email 'phillip-ground[bot]@users.noreply.github.com'
+
       - name: dry run semantic-release
         run: ./ci/release/dry_run.sh
 
