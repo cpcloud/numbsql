@@ -153,10 +153,10 @@ def main() -> None:
         f"{python_defined}_python": query3,
     }
 
-    Result = NamedTuple(
-        "Result",
-        [("name", str), ("result", List[Tuple[str, float]]), ("duration", float)],
-    )
+    class Result(NamedTuple):
+        name: str
+        result: List[Tuple[str, float]]
+        duration: float
 
     results: List[Result] = []
 
