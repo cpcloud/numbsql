@@ -13,4 +13,8 @@ in
   nbformat = super.nbformat.overridePythonAttrs (attrs: {
     nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ self.setuptools ];
   });
+
+  nbclient = super.nbclient.overridePythonAttrs (attrs: {
+    nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ self.hatchling ];
+  });
 }
