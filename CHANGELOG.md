@@ -1,5 +1,23 @@
 # Release Notes
 
+
+## [6.0.0](https://github.com/cpcloud/numbsql/compare/v5.1.1...6.0.0) (2022-12-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* Upgrade to Python 3.8
+
+### Bug Fixes
+
+* fix and update semantic-release code ([fbc7572](https://github.com/cpcloud/numbsql/commit/fbc75720d238ca19aee343c2da4eaf962eb6fc80))
+
+
+### Refactors
+
+* drop support for Python 3.7 ([b5a699f](https://github.com/cpcloud/numbsql/commit/b5a699f253d7295c1db367ad87eff21b3ccf053f))
+* pyupgrade changes ([d37432d](https://github.com/cpcloud/numbsql/commit/d37432d9ba9cb006420ce19332dbfbdc5435a1b1))
+
 ## [5.1.1](https://github.com/cpcloud/numbsql/compare/v5.1.0...v5.1.1) (2022-07-22)
 
 
