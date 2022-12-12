@@ -126,6 +126,8 @@
             pre-commit-check = pre-commit-hooks.lib.${system}.run {
               src = ./.;
               hooks = {
+                black.enable = true;
+                flake8.enable = true;
                 nix-linter.enable = true;
                 nixpkgs-fmt.enable = true;
                 shellcheck.enable = true;
@@ -141,24 +143,11 @@
                   types_or = [ "json" "toml" "yaml" ];
                 };
 
-                black = {
-                  enable = true;
-                  entry = lib.mkForce "black --check";
-                  types = [ "python" ];
-                };
-
                 isort = {
                   enable = true;
                   language = "python";
                   entry = lib.mkForce "isort --check";
                   types_or = [ "cython" "pyi" "python" ];
-                };
-
-                flake8 = {
-                  enable = true;
-                  language = "python";
-                  entry = "flake8";
-                  types = [ "python" ];
                 };
 
                 pyupgrade = {
