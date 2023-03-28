@@ -21,13 +21,9 @@ numba = ">=0.53,<0.57"
 
 [tool.poetry.dev-dependencies]
 black = "^23"
-flake8 = "^6"
 pathspec = "^0.11.0"
 ipykernel = "^6"
-isort = "^5.9.3"
 mypy = "^1.0"
-pydocstyle = "^6.1.1"
-pyupgrade = "^3"
 pytest = "^7"
 pytest-benchmark = "^4"
 pytest-randomly = "^3.10.1"
@@ -50,15 +46,6 @@ norecursedirs = ["site-packages", "dist-packages", ".direnv", "examples"]
 
 [tool.poetry2conda]
 name = "numbsql"
-
-[tool.isort]
-line_length = 88
-profile = "black"
-
-[tool.pydocstyle]
-convention = "numpy"
-add_ignore = ["D105", "D213", "D203"]
-match-dir = "numbsql"
 
 [tool.mypy]
 ignore_missing_imports = true

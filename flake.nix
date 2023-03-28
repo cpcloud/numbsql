@@ -71,6 +71,7 @@
 
                     projectDir = ./.;
                     src = pkgs.gitignoreSource ./.;
+                    preferWheels = true;
 
                     buildInputs = [ pkgs.sqlite ];
 
@@ -95,13 +96,14 @@
                     inherit python;
                     overrides = getOverrides pkgs;
                     projectDir = ./.;
+                    preferWheels = true;
                     editablePackageSources = {
                       numbsql = ./numbsql;
                     };
                   };
                 }
               ])
-            [ "38" "39" "310" ]
+            [ "38" "39" "310" "311" ]
         )))
       ];
     } // (
@@ -127,10 +129,12 @@
               src = ./.;
               hooks = {
                 black.enable = true;
-                flake8.enable = true;
-                nix-linter.enable = true;
+                ruff.enable = true;
+                deadnix.enable = true;
                 nixpkgs-fmt.enable = true;
                 shellcheck.enable = true;
+                statix.enable = true;
+                mypy.enable = true;
 
                 shfmt = {
                   enable = true;
@@ -142,49 +146,8 @@
                   enable = true;
                   types_or = [ "json" "toml" "yaml" ];
                 };
-
-                isort = {
-                  enable = true;
-                  language = "python";
-                  entry = lib.mkForce "isort --check";
-                  types_or = [ "cython" "pyi" "python" ];
-                };
-
-                pyupgrade = {
-                  enable = true;
-                  entry = "pyupgrade --py38-plus";
-                  types = [ "python" ];
-                };
-
-                mypy = {
-                  enable = true;
-                  entry = "mypy";
-                  types = [ "python" ];
-                };
               };
               settings.prettier.binPath = "${pkgs.prettierTOML}/bin/prettier";
-              settings.nix-linter.checks = [
-                "DIYInherit"
-                "EmptyInherit"
-                "EmptyLet"
-                "EtaReduce"
-                "LetInInheritRecset"
-                "ListLiteralConcat"
-                "NegateAtom"
-                "SequentialLet"
-                "SetLiteralUpdate"
-                "UnfortunateArgName"
-                "UnneededRec"
-                "UnusedArg"
-                "UnusedLetBind"
-                "UpdateEmptySet"
-                "BetaReduction"
-                "EmptyVariadicParamSet"
-                "UnneededAntiquote"
-                "no-FreeLetInFunc"
-                "no-AlphabeticalArgs"
-                "no-AlphabeticalBindings"
-              ];
             };
           };
 
@@ -201,7 +164,7 @@
                 # sqlite is necssary to ensure the availability of libsqlite3
                 sqlite
               ];
-              shellHook = self.checks.${system}.pre-commit-check.shellHook;
+              inherit (self.checks.${system}.pre-commit-check) shellHook;
             } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
             NIXPKGS_ALLOW_UNFREE = "1";
