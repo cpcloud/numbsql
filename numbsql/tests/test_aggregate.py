@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 
 import pytest
 from numba.experimental import jitclass
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 from pytest_benchmark.fixture import BenchmarkFixture
 from testbook import testbook
 from testbook.client import TestbookNotebookClient
@@ -198,7 +198,7 @@ def con(con: sqlite3.Connection) -> sqlite3.Connection:
     create_aggregate(con, "avg_numba", 1, Avg)
     create_aggregate(con, "bogus_count", 0, BogusCount)
     create_aggregate(con, "winavg_numba", 1, WinAvg)
-    con.create_aggregate("winavg_python", 1, WinAvgPython)
+    con.create_aggregate("winavg_python", 1, WinAvgPython)  # type: ignore[arg-type]
     return con
 
 
@@ -282,8 +282,8 @@ def test_aggregate_window_numba(con: sqlite3.Connection, func: str) -> None:
 def large_con(large_con: sqlite3.Connection) -> sqlite3.Connection:
     create_aggregate(large_con, "avg_numba", 1, Avg)
     create_aggregate(large_con, "winavg_numba", 1, WinAvg)
-    large_con.create_aggregate("avg_python", 1, AvgPython)
-    large_con.create_aggregate("winavg_python", 1, WinAvgPython)
+    large_con.create_aggregate("avg_python", 1, AvgPython)  # type: ignore[arg-type]
+    large_con.create_aggregate("winavg_python", 1, WinAvgPython)  # type: ignore[arg-type]
     return large_con
 
 
