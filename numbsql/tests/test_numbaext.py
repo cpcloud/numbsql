@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from numba import TypingError, boolean, int64, njit
 

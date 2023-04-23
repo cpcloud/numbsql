@@ -168,6 +168,7 @@
             } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
             NIXPKGS_ALLOW_UNFREE = "1";
+            JUPYTER_PLATFORM_DIRS = "1";
           };
         }
       )

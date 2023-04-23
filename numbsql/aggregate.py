@@ -1,4 +1,6 @@
-import inspect
+from __future__ import annotations
+
+import typing
 from typing import Tuple, Type
 
 from numba import cfunc, types, void
@@ -9,7 +11,7 @@ from .numbaext import (
     init,
     is_not_null_pointer,
     make_arg_tuple,
-    python_signature_to_numba_signature,
+    python_type_hints_to_numba_signature,
     reset_init,
     sizeof,
     sqlite3_result,
@@ -43,14 +45,14 @@ def sqlite_udaf(cls: Type) -> Type:
     instance_type = class_type.instance_type
 
     init_func = class_type.jit_methods["__init__"]
-    init_signature = python_signature_to_numba_signature(
-        inspect.signature(cls.__init__), self_type=instance_type
+    init_signature = python_type_hints_to_numba_signature(
+        typing.get_type_hints(class_type.methods["__init__"]), self_type=instance_type
     )
     init_func.compile(init_signature)
 
     step_func = class_type.jit_methods["step"]
-    step_signature = python_signature_to_numba_signature(
-        inspect.signature(cls.step),
+    step_signature = python_type_hints_to_numba_signature(
+        typing.get_type_hints(class_type.methods["step"]),
         self_type=instance_type,
     )
     step_func.compile(step_signature)
@@ -69,8 +71,8 @@ def sqlite_udaf(cls: Type) -> Type:
             agg_ctx.step(*args)
 
     finalize_func = class_type.jit_methods["finalize"]
-    finalize_signature = python_signature_to_numba_signature(
-        inspect.signature(cls.finalize), self_type=instance_type
+    finalize_signature = python_type_hints_to_numba_signature(
+        typing.get_type_hints(class_type.methods["finalize"]), self_type=instance_type
     )
     finalize_func.compile(finalize_signature)
 
