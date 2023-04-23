@@ -20,7 +20,7 @@ llvmlite = ">=0.36,<0.40"
 numba = ">=0.53,<0.57"
 
 [tool.poetry.dev-dependencies]
-black = "^23.1.0"
+black = { version = "^23.1.0", extras = ["jupyter"] }
 ipykernel = "^6.22.0"
 mypy = "^1.1.1"
 packaging = "^23.0"
