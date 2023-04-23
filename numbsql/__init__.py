@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sqlite3
 from ctypes import byref, c_bool, py_object, pythonapi
 from typing import Any, Callable

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ctypes
 import ctypes.util
 import sqlite3
@@ -14,10 +16,9 @@ from ctypes import (
     c_ubyte,
     c_void_p,
 )
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, TYPE_CHECKING
 
 from llvmlite.ir.instructions import ExtractValue, Value
-from llvmlite.llvmpy.core import Builder
 from numba import cfunc, extending, float64, int32, int64, optional, types
 from numba.core.base import BaseContext
 from numba.core.typing.context import Context
@@ -25,6 +26,9 @@ from numba.core.typing.templates import Signature
 from numba.types import string, void, voidptr
 
 from .exceptions import MissingLibrary
+
+if TYPE_CHECKING:
+    from llvmlite.ir.builder import IRBuilder
 
 SQLITE_OK = sqlite3.SQLITE_OK
 SQLITE_VERSION = sqlite3.sqlite_version
@@ -104,7 +108,7 @@ def extract_raw_unicode_data(
     raw_chars_type: types.UnicodeType,
 ) -> Tuple[
     Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value]], ExtractValue],
+    Callable[[BaseContext, IRBuilder, Signature, Tuple[Value]], ExtractValue],
 ]:
     """Pull out the data and length from a Numba unicode string."""
     if isinstance(raw_chars_type, types.UnicodeType):
@@ -112,7 +116,7 @@ def extract_raw_unicode_data(
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value],
         ) -> ExtractValue:

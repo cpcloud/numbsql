@@ -5,9 +5,10 @@ of varying levels of danger and complexity needed to make this monstrosity
 work correctly.
 """
 
+from __future__ import annotations
+
 import contextlib
-import inspect
-from typing import Any, Callable, Generator, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Generator, MutableMapping, Tuple
 
 import numba
 from llvmlite import ir
@@ -19,7 +20,6 @@ from llvmlite.ir.instructions import (
     LoadInstr,
     Value,
 )
-from llvmlite.llvmpy.core import Builder
 from numba import extending, types
 from numba.core import cgutils, imputils, pythonapi
 from numba.core.base import BaseContext
@@ -34,6 +34,9 @@ from .sqlite import (
     sqlite3_value_type,
     strlen,
 )
+
+if TYPE_CHECKING:
+    from llvmlite.ir.builder import IRBuilder
 
 
 def _add_linking_libs(context: BaseContext, call: CallInstr) -> None:
@@ -64,7 +67,7 @@ def unsafe_cast(
     dst: types.ClassType,
 ) -> Tuple[
     Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value, Value]], LoadInstr],
+    Callable[[BaseContext, IRBuilder, Signature, Tuple[Value, Value]], LoadInstr],
 ]:
     """Cast a void pointer to a `jitclass` type.
 
@@ -88,7 +91,7 @@ def unsafe_cast(
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value, Value],
         ) -> LoadInstr:
@@ -129,7 +132,7 @@ def init(
     user_data: types.Integer,
 ) -> Tuple[
     Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value, Value]], None],
+    Callable[[BaseContext, IRBuilder, Signature, Tuple[Value, Value]], None],
 ]:
     """Initialize a `jitclass` by calling its constructor."""
     if isinstance(inst_typ, types.ClassInstanceType) and isinstance(
@@ -139,7 +142,7 @@ def init(
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value, Value],
         ) -> None:
@@ -171,40 +174,24 @@ def init(
     raise TypeError(f"Unable to initialize type {inst_typ}")
 
 
-def python_signature_to_numba_signature(
-    signature: inspect.Signature,
-    *,
-    self_type: Optional[types.ClassInstanceType] = None,
+def python_type_hints_to_numba_signature(
+    type_hints: MutableMapping[str, Any], *, self_type: types.ClassInstanceType
 ) -> Signature:
     """Convert a Python `inspect.Signature` object into a numba `Signature`."""
-    input_types = []
-    parameters = iter(signature.parameters.items())
-
-    try:
-        first_name, first_type = next(parameters)
-    except StopIteration:
-        pass
-    else:
-        input_types.append(
-            extending.as_numba_type(self_type if first_name == "self" else first_type)
-        )
-
-    return_ann = signature.return_annotation
-    return_type = extending.as_numba_type(
-        return_ann if return_ann is not None else types.void
+    return_type = extending.as_numba_type(type_hints.pop("return"))
+    return return_type(
+        extending.as_numba_type(self_type),
+        *map(extending.as_numba_type, type_hints.values()),
     )
-
-    input_types.extend(
-        extending.as_numba_type(param.annotation) for _, param in parameters
-    )
-    return return_type(*input_types)
 
 
 @extending.intrinsic  # type: ignore[misc]
 def reset_init(
     typingctx: Context,
     user_data: types.Integer,
-) -> Tuple[Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value]], None]]:
+) -> Tuple[
+    Signature, Callable[[BaseContext, IRBuilder, Signature, Tuple[Value]], None]
+]:
     """Reset the user data when `finalize` is called.
 
     This call ensures that the constructor is called the next time the `step`
@@ -216,7 +203,7 @@ def reset_init(
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value],
         ) -> None:
@@ -239,7 +226,9 @@ def reset_init(
 def safe_decref(
     typingctx: Context,
     pyobject_type: types.RawPointer,
-) -> Tuple[Signature, Callable[[BaseContext, Builder, Signature, Tuple[Value]], None]]:
+) -> Tuple[
+    Signature, Callable[[BaseContext, IRBuilder, Signature, Tuple[Value]], None]
+]:
     """Safely decrement the reference count of a Python object.
 
     Notes
@@ -257,7 +246,7 @@ def safe_decref(
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value],
         ) -> None:
@@ -282,7 +271,7 @@ def make_arg_tuple(
 ) -> Tuple[
     Signature,
     Callable[
-        [BaseContext, Builder, Signature, Tuple[Value, Value]],
+        [BaseContext, IRBuilder, Signature, Tuple[Value, Value]],
         InsertValue,
     ],
 ]:
@@ -298,7 +287,7 @@ def make_arg_tuple(
 
     def codegen(
         context: BaseContext,
-        builder: Builder,
+        builder: IRBuilder,
         signature: Signature,
         args: Tuple[Value, Value],
     ) -> InsertValue:
@@ -437,7 +426,7 @@ def make_arg_tuple(
 
 def map_sqlite_string_to_numba_uni_str(
     context: BaseContext,
-    builder: Builder,
+    builder: IRBuilder,
     *,
     data: Value,
 ) -> LoadInstr:
@@ -505,7 +494,7 @@ def sizeof(
     typingctx: Context, src: types.ClassType
 ) -> Tuple[
     Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value]], Constant],
+    Callable[[BaseContext, IRBuilder, Signature, Tuple[Value]], Constant],
 ]:
     """Return the size in bytes of a type."""
     if isinstance(src, types.ClassType):
@@ -513,7 +502,7 @@ def sizeof(
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value],
         ) -> Constant:
@@ -531,14 +520,14 @@ def is_not_null_pointer(
     typingctx: Context, raw_pointer_type: types.Integer
 ) -> Tuple[
     Signature,
-    Callable[[BaseContext, Builder, Signature, Tuple[Value]], ICMPInstr],
+    Callable[[BaseContext, IRBuilder, Signature, Tuple[Value]], ICMPInstr],
 ]:
     if isinstance(raw_pointer_type, types.Integer):
         sig = types.boolean(raw_pointer_type)
 
         def codegen(
             context: BaseContext,
-            builder: Builder,
+            builder: IRBuilder,
             signature: Signature,
             args: Tuple[Value],
         ) -> ICMPInstr:

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import functools
-import inspect
+import typing
 from typing import Any, Callable, Optional
 
 from numba import cfunc, njit
@@ -45,12 +47,9 @@ def sqlite_udf(
     if func is None:
         return functools.partial(sqlite_udf, nogil=nogil, **njit_kwargs)
 
-    python_signature = inspect.signature(func)
-    return_type = as_numba_type(python_signature.return_annotation)
-    argument_types = (
-        as_numba_type(param.annotation)
-        for param in python_signature.parameters.values()
-    )
+    python_signature = typing.get_type_hints(func)
+    return_type = as_numba_type(python_signature.pop("return"))
+    argument_types = map(as_numba_type, python_signature.values())
     numba_signature = return_type(*argument_types)
     compiled_func = njit(numba_signature, nogil=nogil, **njit_kwargs)(func)
 
