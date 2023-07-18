@@ -74,6 +74,11 @@ jobs:
             deps:
               - numba: null
               - llvmlite: null
+          - os: windows-latest
+            python-version: "3.11"
+            deps:
+              - numba: null
+              - llvmlite: null
     defaults:
       run:
         shell: bash -l {0}
