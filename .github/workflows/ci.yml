@@ -22,11 +22,12 @@ jobs:
           - "38"
           - "39"
           - "310"
+          - "311"
         include:
           - os: macos-latest
             python-version: "38"
           - os: macos-latest
-            python-version: "310"
+            python-version: "311"
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -67,6 +68,12 @@ jobs:
             llvmlite: "0.36"
           - numba: null
             llvmlite: null
+        include:
+          - os: ubuntu-latest
+            python-version: "3.11"
+            deps:
+              - numba: null
+              - llvmlite: null
     defaults:
       run:
         shell: bash -l {0}
