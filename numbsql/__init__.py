@@ -45,7 +45,7 @@ __all__ = (
     "sqlite_udaf",
 )
 
-__version__ = "6.0.0"
+__version__ = "6.0.1"
 
 
 def create_function(

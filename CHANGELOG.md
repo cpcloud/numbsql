@@ -1,6 +1,19 @@
 # Release Notes
 
 
+## [6.0.1](https://github.com/cpcloud/numbsql/compare/6.0.0...6.0.1) (2023-07-18)
+
+
+### Bug Fixes
+
+* **deps:** support numba@0.57 ([1e34377](https://github.com/cpcloud/numbsql/commit/1e34377bdea0ef07b44e116fef96b878989b9c04))
+
+
+### Refactors
+
+* replace `[@generated](https://github.com/generated)_jit` with recommended `[@extending](https://github.com/extending).overload` alternative ([460d991](https://github.com/cpcloud/numbsql/commit/460d99178d5bf28df6c05c2a70bac4a0d1bfd9e7))
+* use typing.get_type_hints instead of signature ([75160c0](https://github.com/cpcloud/numbsql/commit/75160c087812b9d546746b4be2c7bae1eb56907b))
+
 ## [6.0.0](https://github.com/cpcloud/numbsql/compare/v5.1.1...6.0.0) (2022-12-06)
 
 
