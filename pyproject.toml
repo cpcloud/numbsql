@@ -44,7 +44,11 @@ addopts = [
   "--benchmark-disable",
 ]
 norecursedirs = [".direnv", "examples"]
-filterwarnings = ["error", "ignore:Jupyter is migrating:DeprecationWarning"]
+filterwarnings = [
+  "error",
+  "ignore:Jupyter is migrating:DeprecationWarning",
+  "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
+]
 
 [tool.poetry2conda]
 name = "numbsql"
