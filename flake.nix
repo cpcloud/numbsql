@@ -77,7 +77,9 @@
 
                     overrides = getOverrides pkgs;
 
-                    preCheck = pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
+                    preCheck = ''
+                      export HOME="$(mktemp -d)"
+                    '' + pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
                       export DYLD_LIBRARY_PATH=${pkgs.sqlite.out}/lib
                     '';
 
