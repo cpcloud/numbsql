@@ -483,8 +483,12 @@ def map_sqlite_string_to_numba_uni_str(
     return uni_str._getvalue()
 
 
-@numba.generated_jit(nopython=True, nogil=True)  # type: ignore[misc]
-def sqlite3_result(ctx: types.Integer, value: Any) -> Callable[[Any, Any], Any]:
+def sqlite3_result(ctx: types.Integer, value: Any):  # type: ignore[no-untyped-def]
+    raise NotImplementedError(type(value))
+
+
+@extending.overload(sqlite3_result)  # type: ignore[misc]
+def ol_sqlite3_result(ctx, value):  # type: ignore[no-untyped-def]
     func = SQLITE3_RESULT_SETTERS[value]
     return lambda ctx, value: func(ctx, value)
 
