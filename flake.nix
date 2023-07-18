@@ -122,7 +122,8 @@
           packages.numbsql38 = pkgs.numbsql38;
           packages.numbsql39 = pkgs.numbsql39;
           packages.numbsql310 = pkgs.numbsql310;
-          packages.numbsql = pkgs.numbsql310;
+          packages.numbsql311 = pkgs.numbsql311;
+          packages.numbsql = pkgs.numbsql311;
 
           defaultPackage = packages.numbsql;
 
@@ -157,7 +158,7 @@
             {
               name = "numbsql";
               nativeBuildInputs = with pkgs; [
-                numbsqlDevEnv310
+                numbsqlDevEnv311
                 poetry
                 prettierTOML
                 # useful for testing sqlite things with a sane CLI, i.e., with
