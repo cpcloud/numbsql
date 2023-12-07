@@ -107,6 +107,8 @@ jobs:
 
       - run: pip install .
       - run: pytest --numprocesses auto
+        env:
+          NUMBA_CAPTURED_ERRORS: new_style
 
   dry-run-release:
     runs-on: ubuntu-latest

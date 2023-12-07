@@ -77,6 +77,8 @@
 
                     overrides = getOverrides pkgs;
 
+                    NUMBA_CAPTURED_ERRORS = "new_style";
+
                     preCheck = ''
                       export HOME="$(mktemp -d)"
                     '' + pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
