@@ -17,7 +17,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
 llvmlite = ">=0.36,<0.41"
-numba = ">=0.53,<0.58"
+numba = ">=0.58,<0.59"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^23.1.0", extras = ["jupyter"] }
