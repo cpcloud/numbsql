@@ -59,25 +59,16 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-        python-version:
-          - "3.9"
-          - "3.10"
         deps:
-          - numba: "0.53"
+          - python-version: "3.9"
+            numba: "0.53"
             llvmlite: "0.36"
-          - numba: null
+          - python-version: "3.10"
+            numba: null
             llvmlite: null
-        include:
-          - os: ubuntu-latest
-            python-version: "3.11"
-            deps:
-              - numba: null
-              - llvmlite: null
-          - os: windows-latest
-            python-version: "3.11"
-            deps:
-              - numba: null
-              - llvmlite: null
+          - python-version: "3.11"
+            numba: null
+            llvmlite: null
     defaults:
       run:
         shell: bash -l {0}
@@ -86,7 +77,7 @@ jobs:
       - uses: actions/setup-python@v5
         id: install_python
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.deps.python-version }}
 
       - run: pip3 install poetry2conda poetry
 
@@ -102,7 +93,7 @@ jobs:
           miniforge-version: latest
           channel-priority: strict
           activate-environment: numbsql
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.deps.python-version }}
           environment-file: environment.yaml
 
       - run: pip install .
