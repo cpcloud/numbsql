@@ -1,6 +1,17 @@
 # Release Notes
 
 
+## [7.0.0](https://github.com/cpcloud/numbsql/compare/6.0.1...7.0.0) (2023-12-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **python:** Python <3.9 is no longer supported
+
+### Refactors
+
+* **python:** bump lower bound to python 3.9 ([7c6aab3](https://github.com/cpcloud/numbsql/commit/7c6aab367670e8e925d9295b3b09e2f33c6b9892))
+
 ## [6.0.1](https://github.com/cpcloud/numbsql/compare/6.0.0...6.0.1) (2023-07-18)
 
 
