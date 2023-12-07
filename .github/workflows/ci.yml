@@ -89,7 +89,7 @@ jobs:
 
       - run: poetry2conda --dev pyproject.toml - | tee environment.yaml
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           mamba-version: "*"
           miniforge-variant: Mambaforge
