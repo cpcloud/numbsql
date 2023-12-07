@@ -16,11 +16,10 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
-llvmlite = ">=0.36,<0.41"
-numba = ">=0.53,<0.58"
+llvmlite = ">=0.36,<0.42"
+numba = ">=0.53,<0.59"
 
 [tool.poetry.dev-dependencies]
-black = { version = "^23.1.0", extras = ["jupyter"] }
 ipykernel = "^6.22.0"
 mypy = "^1.1.1"
 packaging = "^23.0"
@@ -28,7 +27,7 @@ pytest = "^7.2.2"
 pytest-benchmark = "^4.0.0"
 pytest-randomly = "^3.12.0"
 pytest-xdist = "^3.2.1"
-ruff = ">=0.0.262,<1"
+ruff = ">=0.1.7,<1"
 testbook = ">=0.4.2,<1"
 
 [tool.ruff]

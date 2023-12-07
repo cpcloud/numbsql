@@ -130,13 +130,18 @@
             pre-commit-check = pre-commit-hooks.lib.${system}.run {
               src = ./.;
               hooks = {
-                black.enable = true;
                 ruff.enable = true;
                 deadnix.enable = true;
                 nixpkgs-fmt.enable = true;
                 shellcheck.enable = true;
                 statix.enable = true;
                 mypy.enable = true;
+
+                ruff-format = {
+                  enable = true;
+                  types = [ "python" ];
+                  entry = "${pkgs.ruff}/bin/ruff format";
+                };
 
                 shfmt = {
                   enable = true;
