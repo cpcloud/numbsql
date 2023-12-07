@@ -105,7 +105,7 @@
                   };
                 }
               ])
-            [ "38" "39" "310" "311" ]
+            [ "39" "310" "311" ]
         )))
       ];
     } // (
@@ -119,7 +119,6 @@
           inherit (pkgs) lib;
         in
         rec {
-          packages.numbsql38 = pkgs.numbsql38;
           packages.numbsql39 = pkgs.numbsql39;
           packages.numbsql310 = pkgs.numbsql310;
           packages.numbsql311 = pkgs.numbsql311;

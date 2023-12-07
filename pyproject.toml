@@ -9,13 +9,13 @@ authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 maintainers = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
 classifiers = [
   "Intended Audience :: Developers",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4"
+python = ">=3.9,<4"
 llvmlite = ">=0.36,<0.41"
 numba = ">=0.53,<0.58"
 
