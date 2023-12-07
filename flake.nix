@@ -48,8 +48,8 @@
       );
     in
     {
-      overlay = nixpkgs.lib.composeManyExtensions [
-        poetry2nix.overlay
+      overlays.default = nixpkgs.lib.composeManyExtensions [
+        poetry2nix.overlays.default
         gitignore.overlay
         (pkgs: super: {
           prettierTOML = pkgs.writeShellScriptBin "prettier" ''
@@ -114,7 +114,7 @@
         let
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [ self.overlay ];
+            overlays = [ self.overlays.default ];
           };
           inherit (pkgs) lib;
         in

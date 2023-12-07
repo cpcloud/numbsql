@@ -13,9 +13,6 @@ in
       stdenv.isDarwin
       "-I${lib.getDev pkgs.libcxx}/include/c++/v1";
   });
-  # `wheel` cannot be used as a wheel to unpack itself, since that would
-  # require itself (infinite recursion)
-  wheel = super.wheel.override { preferWheel = false; };
 } // super.lib.listToAttrs (
   map
     (name: {
