@@ -19,13 +19,12 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - "38"
           - "39"
           - "310"
           - "311"
         include:
           - os: macos-latest
-            python-version: "38"
+            python-version: "39"
           - os: macos-latest
             python-version: "311"
 
@@ -61,8 +60,8 @@ jobs:
           - ubuntu-latest
           - windows-latest
         python-version:
-          - "3.8"
           - "3.9"
+          - "3.10"
         deps:
           - numba: "0.53"
             llvmlite: "0.36"
