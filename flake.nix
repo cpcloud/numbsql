@@ -172,6 +172,7 @@
                 sqlite
               ];
               inherit (self.checks.${system}.pre-commit-check) shellHook;
+              NUMBA_CAPTURED_ERRORS = "new_style";
             } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
             NIXPKGS_ALLOW_UNFREE = "1";
