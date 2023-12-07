@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -p gnugrep unzip poetry nix -i bash
+#!nix-shell -p cacert gnugrep unzip poetry nix -i bash
 # shellcheck shell=bash
 
 set -euo pipefail
