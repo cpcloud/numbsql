@@ -17,7 +17,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
 llvmlite = ">=0.36,<0.42"
-numba = ">=0.53,<0.59"
+numba = ">=0.59,<0.60"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^6.22.0"
