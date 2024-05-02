@@ -138,7 +138,7 @@ jobs:
       - dry-run-release
       - nix
     steps:
-      - uses: actions/create-github-app-token@v1.9.3
+      - uses: actions/create-github-app-token@v1.10.0
         id: generate_token
         with:
           app-id: ${{ secrets.APP_ID }}
