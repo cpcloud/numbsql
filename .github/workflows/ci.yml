@@ -22,11 +22,12 @@ jobs:
           - "39"
           - "310"
           - "311"
+          - "312"
         include:
           - os: macos-latest
             python-version: "39"
           - os: macos-latest
-            python-version: "311"
+            python-version: "312"
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -72,6 +73,10 @@ jobs:
               NUMBA_CAPTURED_ERRORS: new_style
             deps:
               python-version: "3.11"
+          - env:
+              NUMBA_CAPTURED_ERRORS: new_style
+            deps:
+              python-version: "3.12"
     defaults:
       run:
         shell: bash -l {0}
