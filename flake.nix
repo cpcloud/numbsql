@@ -137,6 +137,7 @@
                 shellcheck.enable = true;
                 statix.enable = true;
                 mypy.enable = true;
+                taplo.enable = true;
 
                 ruff-format = {
                   enable = true;
@@ -152,10 +153,9 @@
 
                 prettier = {
                   enable = true;
-                  types_or = [ "json" "toml" "yaml" ];
+                  types_or = [ "json" "yaml" ];
                 };
               };
-              settings.prettier.binPath = "${pkgs.prettierTOML}/bin/prettier";
             };
           };
 
