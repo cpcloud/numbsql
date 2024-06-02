@@ -163,7 +163,7 @@
             {
               name = "numbsql";
               nativeBuildInputs = with pkgs; [
-                numbsqlDevEnv311
+                numbsqlDevEnv312
                 poetry
                 prettierTOML
                 # useful for testing sqlite things with a sane CLI, i.e., with
