@@ -121,6 +121,8 @@
           packages.numbsql39 = pkgs.numbsql39;
           packages.numbsql310 = pkgs.numbsql310;
           packages.numbsql311 = pkgs.numbsql311;
+          packages.numbsql312 = pkgs.numbsql312;
+
           packages.numbsql = pkgs.numbsql311;
 
           defaultPackage = packages.numbsql;
