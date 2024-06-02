@@ -123,7 +123,7 @@
           packages.numbsql311 = pkgs.numbsql311;
           packages.numbsql312 = pkgs.numbsql312;
 
-          packages.numbsql = pkgs.numbsql311;
+          packages.numbsql = pkgs.numbsql312;
 
           defaultPackage = packages.numbsql;
 
