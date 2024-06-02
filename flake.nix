@@ -167,7 +167,7 @@
                 # useful for testing sqlite things with a sane CLI, i.e., with
                 # readline
                 sqlite-interactive
-                # sqlite is necssary to ensure the availability of libsqlite3
+                # sqlite is necessary to ensure the availability of libsqlite3
                 sqlite
               ];
               inherit (self.checks.${system}.pre-commit-check) shellHook;
