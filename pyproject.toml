@@ -16,7 +16,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
-llvmlite = ">=0.36,<0.42"
+llvmlite = ">=0.42,<0.43"
 numba = ">=0.53,<0.59"
 
 [tool.poetry.dev-dependencies]
