@@ -157,11 +157,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1717774136,
-        "narHash": "sha256-comOhXDFUrbVba47gPenVBKy2foM3m3qOqpcP8umWDA=",
+        "lastModified": 1718489899,
+        "narHash": "sha256-xtTFZHbyBR1XEj7V6j93cxWa+h1jdeL5fzwTCNykJ1c=",
         "owner": "nix-community",
         "repo": "poetry2nix",
-        "rev": "370da3b6fefc6c11367463b68d010f9950aaa80c",
+        "rev": "7c31cdee488d3e73e17da3a289329b3f54a6d451",
         "type": "github"
       },
       "original": {
@@ -240,11 +240,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1717278143,
-        "narHash": "sha256-u10aDdYrpiGOLoxzY/mJ9llST9yO8Q7K/UlROoNxzDw=",
+        "lastModified": 1717850719,
+        "narHash": "sha256-npYqVg+Wk4oxnWrnVG7416fpfrlRhp/lQ6wQ4DHI8YE=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "3eb96ca1ae9edf792a8e0963cc92fddfa5a87706",
+        "rev": "4fc1c45a5f50169f9f29f6a98a438fb910b834ed",
         "type": "github"
       },
       "original": {
