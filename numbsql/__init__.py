@@ -214,6 +214,8 @@ def create_aggregate(
             )
         if rc != SQLITE_OK:
             raise sqlite3.OperationalError(sqlite3_errmsg(sqlite_db))
+    except OSError:
+        raise
     except Exception:
         # catch every exception so that we can decrement the reference count
         # of `is_initialized`, and prevent a memory leak
