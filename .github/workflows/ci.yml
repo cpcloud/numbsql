@@ -71,7 +71,7 @@ jobs:
         run: uv run python -c 'import sqlite3; print(sqlite3.sqlite_version)'
 
       - name: show C API libversion pre installation
-        run: uv run python -c 'from numba.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
+        run: uv run python -c 'from numbsql.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
 
       - name: show library pre installation
         run: uv run python -c 'import ctypes.util as u; print(u.find_library("sqlite3"))'
@@ -84,7 +84,7 @@ jobs:
         run: sqlite3 -version
 
       - name: show C API libversion post installation
-        run: uv run python -c 'from numba.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
+        run: uv run python -c 'from numbsql.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
 
       - name: show library post installation
         run: uv run python -c 'import ctypes.util as u; print(u.find_library("sqlite3"))'
