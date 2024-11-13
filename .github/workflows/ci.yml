@@ -83,6 +83,10 @@ jobs:
       - name: show os sqlite version
         run: sqlite3 -version
 
+      - name: show sqlite3 path
+        shell: bash
+        run: which sqlite3
+
       - name: show C API libversion post installation
         run: uv run python -c 'from numbsql.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
 
