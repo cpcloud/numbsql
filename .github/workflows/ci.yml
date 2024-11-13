@@ -74,6 +74,7 @@ jobs:
         run: uv run python -c 'from numbsql.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
 
       - name: show library pre installation
+        if: matrix.os == 'windows-latest'
         run: uv run python -c 'import ctypes.util as u; print(u.find_library("sqlite3"))'
 
       - name: install sqlite on windows
@@ -91,6 +92,7 @@ jobs:
         run: uv run python -c 'from numbsql.sqlite import sqlite3_libversion; print(sqlite3_libversion().decode())'
 
       - name: show library post installation
+        if: matrix.os == 'windows-latest'
         run: uv run python -c 'import ctypes.util as u; print(u.find_library("sqlite3"))'
 
       - name: run tests
