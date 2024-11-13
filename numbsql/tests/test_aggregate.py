@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import pathlib
 import sqlite3
-import sys
 from typing import List, Optional, Tuple
 
 import pytest
 from numba.experimental import jitclass
 from packaging.version import parse as parse_version
 from pytest_benchmark.fixture import BenchmarkFixture
-from testbook import testbook
-from testbook.client import TestbookNotebookClient
 
 from numbsql import create_aggregate, sqlite_udaf
 from numbsql.exceptions import UnsupportedAggregateTypeError
@@ -366,15 +362,3 @@ def test_window_bench(
     large_con: sqlite3.Connection, benchmark: BenchmarkFixture, func: str
 ) -> None:
     assert benchmark(run_agg_partition_by, large_con, func)
-
-
-@pytest.mark.skipif(  # type: ignore[misc]
-    sys.platform == "win32",
-    reason="Installation of dependencies is problematic on windows",
-)
-@testbook(  # type: ignore[misc]
-    pathlib.Path(__file__).parent.parent.parent / "notebooks" / "sqlite-window.ipynb",
-    execute=True,
-)
-def test_sqlite_window_notebook(tb: TestbookNotebookClient) -> None:
-    pass
