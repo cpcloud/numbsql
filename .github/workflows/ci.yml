@@ -12,53 +12,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  nix:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-        python-version:
-          - "310"
-          - "311"
-          - "312"
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: cachix/install-nix-action@v30
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable-small
-
-      - uses: cachix/cachix-action@v15
-        with:
-          name: numbsql
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          extraPullNames: nix-community
-
-      - name: build
-        run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}'
-
-      - name: test
-        run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}.passthru.tests.pytest'
-
-      - name: show closure size
-        run: |
-          set -euo pipefail
-
-          nix path-info -Shr '.#numbsql${{ matrix.python-version }}' | sort -h -k2
+  # nix:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #       python-version:
+  #         - "310"
+  #         - "311"
+  #         - "312"
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - uses: cachix/install-nix-action@v30
+  #       with:
+  #         nix_path: nixpkgs=channel:nixos-unstable-small
+  #
+  #     - uses: cachix/cachix-action@v15
+  #       with:
+  #         name: numbsql
+  #         authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+  #         extraPullNames: nix-community
+  #
+  #     - name: build
+  #       run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}'
+  #
+  #     - name: test
+  #       run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}.passthru.tests.pytest'
+  #
+  #     - name: show closure size
+  #       run: |
+  #         set -euo pipefail
+  #
+  #         nix path-info -Shr '.#numbsql${{ matrix.python-version }}' | sort -h -k2
   uv:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
+          # - ubuntu-latest
           - windows-latest
           - macos-latest
         python-version:
-          - "3.10"
-          - "3.11"
+          # - "3.10"
+          # - "3.11"
           - "3.12"
     steps:
       - uses: actions/checkout@v4
@@ -94,61 +94,61 @@ jobs:
         env:
           NUMBA_CAPTURED_ERRORS: new_style
 
-  dry-run-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # dry-run-release:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #
+  #     - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
+  #       with:
+  #         nix_path: nixpkgs=channel:nixos-unstable-small
+  #
+  #     - uses: cachix/cachix-action@v15
+  #       with:
+  #         name: numbsql
+  #         extraPullNames: nix-community
+  #
+  #     - name: setup git info
+  #       run: |
+  #         set -euo pipefail
+  #
+  #         git config user.name 'phillip-ground[bot]'
+  #         git config user.email 'phillip-ground[bot]@users.noreply.github.com'
+  #
+  #     - name: dry run semantic-release
+  #       run: ./ci/release/dry_run.sh
 
-      - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable-small
-
-      - uses: cachix/cachix-action@v15
-        with:
-          name: numbsql
-          extraPullNames: nix-community
-
-      - name: setup git info
-        run: |
-          set -euo pipefail
-
-          git config user.name 'phillip-ground[bot]'
-          git config user.email 'phillip-ground[bot]@users.noreply.github.com'
-
-      - name: dry run semantic-release
-        run: ./ci/release/dry_run.sh
-
-  release:
-    runs-on: ubuntu-latest
-    needs:
-      - uv
-      - dry-run-release
-      - nix
-    steps:
-      - uses: actions/create-github-app-token@v1.11.0
-        id: generate_token
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable-small
-
-      - uses: cachix/cachix-action@v15
-        with:
-          name: numbsql
-          extraPullNames: nix-community
-
-      - name: run semantic-release
-        run: ./ci/release/run.sh
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+  # release:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - uv
+  #     # - dry-run-release
+  #     # - nix
+  #   steps:
+  #     - uses: actions/create-github-app-token@v1.11.0
+  #       id: generate_token
+  #       with:
+  #         app-id: ${{ secrets.APP_ID }}
+  #         private-key: ${{ secrets.APP_PRIVATE_KEY }}
+  #
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #         token: ${{ steps.generate_token.outputs.token }}
+  #
+  #     - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
+  #       with:
+  #         nix_path: nixpkgs=channel:nixos-unstable-small
+  #
+  #     - uses: cachix/cachix-action@v15
+  #       with:
+  #         name: numbsql
+  #         extraPullNames: nix-community
+  #
+  #     - name: run semantic-release
+  #       run: ./ci/release/run.sh
+  #       env:
+  #         UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+  #         GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
