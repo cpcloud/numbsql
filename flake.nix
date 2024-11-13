@@ -24,8 +24,8 @@
       };
     };
 
-    pre-commit-hooks = {
-      url = "github:cachix/pre-commit-hooks.nix";
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -36,7 +36,7 @@
     , gitignore
     , nixpkgs
     , poetry2nix
-    , pre-commit-hooks
+    , git-hooks
     , ...
     }:
     let
@@ -128,7 +128,7 @@
           defaultPackage = packages.numbsql;
 
           checks = {
-            pre-commit-check = pre-commit-hooks.lib.${system}.run {
+            pre-commit = git-hooks.lib.${system}.run {
               src = ./.;
               hooks = {
                 ruff.enable = true;
@@ -172,7 +172,7 @@
                 # sqlite is necessary to ensure the availability of libsqlite3
                 sqlite
               ];
-              inherit (self.checks.${system}.pre-commit-check) shellHook;
+              inherit (self.checks.${system}.pre-commit) shellHook;
               NUMBA_CAPTURED_ERRORS = "new_style";
             } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
             DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
