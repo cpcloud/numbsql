@@ -12,7 +12,7 @@ from _pytest.tmpdir import TempPathFactory
 
 
 @pytest.fixture(scope="session")  # type: ignore[misc]
-def con() -> sqlite3.Connection:
+def con() -> Generator[sqlite3.Connection, None, None]:
     con = sqlite3.connect(":memory:")
 
     con.execute(
@@ -64,7 +64,8 @@ def con() -> sqlite3.Connection:
     random.shuffle(null_rows)
     con.executemany("INSERT INTO null_t (key, value) VALUES (?, ?)", null_rows)
     con.executemany("INSERT INTO t (key, value) VALUES (?, ?)", rows)
-    return con
+    yield con
+    con.close()
 
 
 @pytest.fixture(  # type: ignore[misc]
@@ -116,7 +117,6 @@ def large_con(
         "INSERT INTO large_t (key, dense_key, string_key, value) VALUES (?, ?, ?, ?)",
         rows,
     )
-    try:
-        yield con
-    finally:
-        con.execute("DROP TABLE large_t")
+    yield con
+    con.execute("DROP TABLE large_t")
+    con.close()

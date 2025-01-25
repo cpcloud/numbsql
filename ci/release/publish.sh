@@ -1,7 +1,7 @@
 #!/usr/bin/env nix-shell
-#!nix-shell --pure --keep POETRY_PYPI_TOKEN_PYPI -p cacert poetry -i bash
+#!nix-shell --pure --keep UV_PUBLISH_TOKEN -p cacert uv -i bash
 # shellcheck shell=bash
 
 set -euo pipefail
 
-poetry publish
+uv publish

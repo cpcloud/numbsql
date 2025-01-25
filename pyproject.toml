@@ -1,35 +1,32 @@
-[tool.poetry]
+[project]
 name = "numbsql"
-homepage = "https://github.com/cpcloud/numbsql"
-repository = "https://github.com/cpcloud/numbsql"
 version = "7.1.0"
+requires-python = ">=3.9,<4"
 description = "JITted SQLite user-defined scalar and aggregate functions"
 readme = "README.md"
-authors = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
-maintainers = ["Phillip Cloud <417981+cpcloud@users.noreply.github.com>"]
+license = "Apache-2.0"
+authors = [
+  { name = "Phillip Cloud", email = "417981+cpcloud@users.noreply.github.com" },
+]
+maintainers = [
+  { name = "Phillip Cloud", email = "417981+cpcloud@users.noreply.github.com" },
+]
 classifiers = [
   "Intended Audience :: Developers",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
+dependencies = ["llvmlite>=0.36,<0.45", "numba>=0.53,<0.62"]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4"
-llvmlite = ">=0.36,<0.44"
-numba = ">=0.53,<0.61"
+[project.urls]
+Homepage = "https://github.com/cpcloud/numbsql"
+Repository = "https://github.com/cpcloud/numbsql"
+Issues = "https://github.com/cpcloud/numbsql/issues"
 
-[tool.poetry.dev-dependencies]
-ipykernel = "^6.22.0"
-mypy = "^1.1.1"
-packaging = "^23.0"
-pytest = "^8.0.0"
-pytest-benchmark = "^5.0.0"
-pytest-randomly = "^3.12.0"
-pytest-xdist = "^3.2.1"
-ruff = ">=0.4.7,<1"
-testbook = ">=0.4.2,<1"
+[dependency-groups]
+dev = ["mypy>=1.1.1,<2", "packaging>=24.2", "ruff>=0.9,<1"]
+tests = ["pytest>=8,<9", "pytest-benchmark>=5,<6", "pytest-randomly>=3.12,<4"]
 
 [tool.ruff.lint]
 ignore = ["E501"]
@@ -49,9 +46,6 @@ filterwarnings = [
   "ignore:Jupyter is migrating:DeprecationWarning",
   "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
 ]
-
-[tool.poetry2conda]
-name = "numbsql"
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -75,5 +69,11 @@ show_error_context = true
 show_error_codes = true
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["numbsql"]
+
+[tool.hatch.build.targets.sdist]
+packages = ["numbsql"]

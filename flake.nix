@@ -16,11 +16,25 @@
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
-    poetry2nix = {
-      url = "github:nix-community/poetry2nix";
+    pyproject-nix = {
+      url = "github:nix-community/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    uv2nix = {
+      url = "github:adisbladis/uv2nix";
       inputs = {
+        pyproject-nix.follows = "pyproject-nix";
         nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
+      };
+    };
+
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs = {
+        pyproject-nix.follows = "pyproject-nix";
+        uv2nix.follows = "uv2nix";
+        nixpkgs.follows = "nixpkgs";
       };
     };
 
@@ -35,77 +49,16 @@
     , flake-utils
     , gitignore
     , nixpkgs
-    , poetry2nix
+    , uv2nix
     , git-hooks
+    , pyproject-nix
+    , pyproject-build-systems
     , ...
     }:
-    let
-      getOverrides = pkgs: pkgs.poetry2nix.overrides.withDefaults (
-        import ./poetry-overrides.nix
-      );
-    in
     {
       overlays.default = nixpkgs.lib.composeManyExtensions [
-        poetry2nix.overlays.default
         gitignore.overlay
-        (pkgs: super: {
-          prettierTOML = pkgs.writeShellScriptBin "prettier" ''
-            ${pkgs.nodePackages.prettier}/bin/prettier \
-            --plugin-search-dir "${pkgs.nodePackages.prettier-plugin-toml}/lib" \
-            "$@"
-          '';
-        } // (super.lib.listToAttrs (
-          super.lib.concatMap
-            (py:
-              let
-                python = pkgs."python${py}";
-              in
-              [
-                {
-                  name = "numbsql${py}";
-                  value = pkgs.poetry2nix.mkPoetryApplication {
-                    inherit python;
-
-                    projectDir = ./.;
-                    src = pkgs.gitignoreSource ./.;
-                    preferWheels = true;
-
-                    buildInputs = [ pkgs.sqlite ];
-
-                    overrides = getOverrides pkgs;
-
-                    NUMBA_CAPTURED_ERRORS = "new_style";
-
-                    preCheck = ''
-                      export HOME="$(mktemp -d)"
-                    '' + pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
-                      export DYLD_LIBRARY_PATH=${pkgs.sqlite.out}/lib
-                    '';
-
-                    checkPhase = ''
-                      runHook preCheck
-                      pytest --numprocesses auto
-                      runHook postCheck
-                    '';
-
-                    pythonImportsCheck = [ "numbsql" ];
-                  };
-                }
-                {
-                  name = "numbsqlDevEnv${py}";
-                  value = pkgs.poetry2nix.mkPoetryEnv {
-                    inherit python;
-                    overrides = getOverrides pkgs;
-                    projectDir = ./.;
-                    preferWheels = true;
-                    editablePackageSources = {
-                      numbsql = ./numbsql;
-                    };
-                  };
-                }
-              ])
-            [ "39" "310" "311" "312" ]
-        )))
+        (import ./nix/overlay.nix { inherit uv2nix pyproject-nix pyproject-build-systems; })
       ];
     } // (
       flake-utils.lib.eachDefaultSystem (
@@ -118,7 +71,6 @@
           inherit (pkgs) lib;
         in
         rec {
-          packages.numbsql39 = pkgs.numbsql39;
           packages.numbsql310 = pkgs.numbsql310;
           packages.numbsql311 = pkgs.numbsql311;
           packages.numbsql312 = pkgs.numbsql312;
@@ -161,11 +113,10 @@
 
           devShell = pkgs.mkShell
             {
-              name = "numbsql";
+              inherit (pkgs.numbsqlDevEnv312) name;
               nativeBuildInputs = with pkgs; [
                 numbsqlDevEnv312
-                poetry
-                prettierTOML
+                uv
                 # useful for testing sqlite things with a sane CLI, i.e., with
                 # readline
                 sqlite-interactive

@@ -42,7 +42,6 @@ def sqlite_udf(
     2
     >>> add_one(None) is None
     True
-
     """
     if func is None:
         return functools.partial(sqlite_udf, nogil=nogil, **njit_kwargs)

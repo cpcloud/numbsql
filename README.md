@@ -10,14 +10,15 @@ integers might be unsafe, then you shouldn't use this library.
 
 ## Requirements
 
-* Python `>=3.9`
+* Python `>=3.10`
 * `numba`
+* `llvmlite`
 
-Use `nix-shell` from the repository to avoid dependency hell.
+Use `nix develop` from the repository root to avoid dependency hell.
 
 ## Installation
 
-* `poetry install`
+* `pip install numbsql`
 
 ## Examples
 
