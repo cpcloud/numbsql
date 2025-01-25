@@ -137,10 +137,9 @@ def main() -> None:
 
     con.create_aggregate(python_defined, 1, cls.class_type.class_def)
 
-    query1 = f"select key, {builtin}(value) as builtin_{builtin} from t " f"group by 1"
+    query1 = f"select key, {builtin}(value) as builtin_{builtin} from t group by 1"
     query2 = (
-        f"select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} "
-        f"from t group by 1"
+        f"select key, {cfunc_defined}(value) as cfunc_{cfunc_defined} from t group by 1"
     )
     query3 = (
         f"select key, {python_defined}(value) as python_{python_defined}"

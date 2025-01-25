@@ -19,21 +19,14 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - "39"
           - "310"
           - "311"
           - "312"
-        include:
-          - os: macos-latest
-            python-version: "39"
-          - os: macos-latest
-            python-version: "312"
-
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: cachix/install-nix-action@v30 # v30
+      - uses: cachix/install-nix-action@v30
         with:
           nix_path: nixpkgs=channel:nixos-unstable-small
 
@@ -41,74 +34,41 @@ jobs:
         with:
           name: numbsql
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          extraPullNames: nix-community,poetry2nix
+          extraPullNames: nix-community
 
-      - name: build and test
+      - name: build
         run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}'
+
+      - name: test
+        run: nix build --no-link --keep-going '.#numbsql${{ matrix.python-version }}.passthru.tests.pytest'
 
       - name: show closure size
         run: |
           set -euo pipefail
 
           nix path-info -Shr '.#numbsql${{ matrix.python-version }}' | sort -h -k2
-
-  conda:
+  uv:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - windows-latest
-        spec:
-          - deps:
-              python-version: "3.9"
-              numba: "0.53"
-              llvmlite: "0.36"
-          - env:
-              NUMBA_CAPTURED_ERRORS: new_style
-            deps:
-              python-version: "3.10"
-          - env:
-              NUMBA_CAPTURED_ERRORS: new_style
-            deps:
-              python-version: "3.11"
-          - env:
-              NUMBA_CAPTURED_ERRORS: new_style
-            deps:
-              python-version: "3.12"
-    defaults:
-      run:
-        shell: bash -l {0}
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        id: install_python
         with:
-          python-version: ${{ matrix.spec.deps.python-version }}
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v3
 
-      - run: pip3 install poetry2conda poetry
-
-      - run: poetry add --lock "numba@${{ matrix.spec.deps.numba }}" "llvmlite@${{ matrix.spec.deps.llvmlite }}" --python "${{ steps.install_python.outputs.python-version }}"
-        if: ${{ matrix.spec.deps.numba != null && matrix.spec.deps.llvmlite != null }}
-
-      - run: poetry2conda --dev pyproject.toml - | tee environment.yaml
-
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          mamba-version: "*"
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          channel-priority: strict
-          activate-environment: numbsql
-          python-version: ${{ matrix.spec.deps.python-version }}
-          environment-file: environment.yaml
-
-      - run: pip install .
-
-      - run: pytest --numprocesses auto
+      - name: run tests
+        run: uv run --group tests pytest -vv
         env:
-          NUMBA_CAPTURED_ERRORS: ${{ matrix.spec.env.NUMBA_CAPTURED_ERRORS }}
+          NUMBA_CAPTURED_ERRORS: new_style
 
   dry-run-release:
     runs-on: ubuntu-latest
@@ -124,7 +84,7 @@ jobs:
       - uses: cachix/cachix-action@v15
         with:
           name: numbsql
-          extraPullNames: nix-community,poetry2nix
+          extraPullNames: nix-community
 
       - name: setup git info
         run: |
@@ -139,7 +99,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs:
-      - conda
+      - uv
       - dry-run-release
       - nix
     steps:
@@ -161,10 +121,10 @@ jobs:
       - uses: cachix/cachix-action@v15
         with:
           name: numbsql
-          extraPullNames: nix-community,poetry2nix
+          extraPullNames: nix-community
 
       - name: run semantic-release
         run: ./ci/release/run.sh
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}

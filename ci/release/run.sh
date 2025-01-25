@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -p cacert poetry git nodejs nix -i bash
+#!nix-shell -p cacert uv git nodejs nix -i bash
 # shellcheck shell=bash
 
 set -euo pipefail
