@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -I nixpkgs=channel:nixos-unstable-small --pure --keep UV_PUBLISH_TOKEN -p uv python3 -i bash
+#!nix-shell -I nixpkgs=channel:nixos-unstable-small --pure --keep UV_PUBLISH_TOKEN -p uv which python3 -i bash
 # shellcheck shell=bash
 
 set -euo pipefail
