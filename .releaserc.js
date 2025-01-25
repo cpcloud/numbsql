@@ -80,6 +80,7 @@ module.exports = {
       {
         assets: [
           "pyproject.toml",
+          "uv.lock",
           "CHANGELOG.md",
           "numbsql/__init__.py",
         ],
