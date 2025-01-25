@@ -10,7 +10,7 @@ integers might be unsafe, then you shouldn't use this library.
 
 ## Requirements
 
-* Python `>=3.7`
+* Python `>=3.9`
 * `numba`
 
 Use `nix-shell` from the repository to avoid dependency hell.
