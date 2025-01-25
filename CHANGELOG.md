@@ -1,6 +1,18 @@
 # Release Notes
 
 
+## [8.0.0](https://github.com/cpcloud/numbsql/compare/7.1.0...8.0.0) (2025-01-25)
+
+### ⚠ BREAKING CHANGES
+
+* **python:** drop support for python 3.9
+
+* **python:** drop support for python 3.9 ([1bc8e09](https://github.com/cpcloud/numbsql/commit/1bc8e0976025a778b39778ee14b447b436df507f))
+
+### Features
+
+* **deps:** bump llvmlite and numba versions ([26d0e53](https://github.com/cpcloud/numbsql/commit/26d0e53c25f333b9e10a020f36449b90fe38bcc6))
+
 ## [7.1.0](https://github.com/cpcloud/numbsql/compare/7.0.0...7.1.0) (2024-06-02)
 
 ### Features
