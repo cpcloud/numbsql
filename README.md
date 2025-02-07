@@ -41,6 +41,19 @@ def add_one(x: Optional[int]) -> Optional[int]:
     return None
 ```
 
+#### Calling your scalar function
+
+Similar to scalar functions, we register the function with a `sqlite3.Connection` object:
+
+```python
+>>> import sqlite3
+>>> from numbsql import create_function
+>>> con = sqlite3.connect(":memory:")
+>>> create_function(con, "add_one", 1, add_one)
+>>> con.execute("SELECT add_one(1)").fetchall()
+[(2,)]
+```
+
 
 ### Aggregate Functions
 
@@ -127,9 +140,13 @@ Similar to scalar functions, we register the function with a `sqlite3.Connection
 
 ```python
 >>> import sqlite3
->>> from numbsql import create_aggregate, create_function
+>>> from numbsql import create_aggregate
 >>> con = sqlite3.connect(":memory:")
->>> create_function(con, "add_one", 1, add_one)
->>> con.execute("SELECT add_one(1)").fetchall()
-[(2,)]
+>>> create_aggregate(con, "winavg", 1, WinAvg)
+>>> con.execute("CREATE TABLE t (x INTEGER, y TEXT)")
+>>> con.execute("INSERT INTO t VALUES (1, 'a'), (2, 'a'), (3, 'b')")
+>>> con.execute("SELECT winavg(x) FROM t").fetchall()
+[(2.0,)]
+>>> con.execute("SELECT winavg(x) OVER (PARTITION BY y) FROM t").fetchall()
+[(1.5,), (3.0,)]
 ```
