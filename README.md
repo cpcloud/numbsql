@@ -150,3 +150,30 @@ Similar to scalar functions, we register the function with a `sqlite3.Connection
 >>> con.execute("SELECT winavg(x) OVER (PARTITION BY y) FROM t").fetchall()
 [(1.5,), (3.0,)]
 ```
+
+
+#### Goodies
+
+**Some** string operations are available:
+
+```python
+from typing import Optional
+
+from numbsql import sqlite_udf
+
+
+@sqlite_udf
+def numbsql_len(s: Optional[str]) -> Optional[int]:
+    return len(s) if s is not None else None
+```
+
+```python
+>>> import sqlite3
+>>> from numbsql import create_function
+>>> con = sqlite3.connect(":memory:")
+>>> create_function(con, "numbsql_len", 1, numbsql_len)
+>>> con.execute("CREATE TABLE t (name TEXT)")
+>>> con.execute("INSERT INTO t VALUES ('Alice', 'Bob', 'Susan', 'Joe')")
+>>> con.execute("SELECT numbsql_len(x) FROM t").fetchall()
+[(5,), (3,), (5,), (3,)]
+```
