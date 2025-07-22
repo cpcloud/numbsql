@@ -39,11 +39,7 @@ SQLITE_UTF16 = 4
 SQLITE_NULL = 5
 SQLITE_DETERMINISTIC = 0x000000800
 
-sqlite3_path: Optional[str] = ctypes.util.find_library("sqlite3")
-if sqlite3_path is None:  # pragma: no cover
-    raise MissingLibrary("libsqlite3")
-
-libsqlite3 = ctypes.cdll[sqlite3_path]
+libsqlite3 = ctypes.cdll["libsqlite3.so"]
 
 if sys.platform != "win32":
     libc_path: Optional[str] = ctypes.util.find_library("c")
