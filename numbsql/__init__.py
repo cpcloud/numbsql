@@ -88,6 +88,7 @@ def create_function(
     [(2,)]
     >>> con.execute("SELECT add_one(NULL)").fetchall()
     [(None,)]
+    >>> con.close()
 
     """
     sqlite_db = get_sqlite_db(con)
