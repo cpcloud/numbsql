@@ -1,6 +1,17 @@
 # Release Notes
 
 
+## [8.1.0](https://github.com/cpcloud/numbsql/compare/8.0.0...8.1.0) (2025-07-22)
+
+### Features
+
+* **python:** support for python 3.13 ([5ddf4c7](https://github.com/cpcloud/numbsql/commit/5ddf4c7ae1a22e48760aa171e2643feeb2ba8404))
+
+### Documentation
+
+* add str examples to readme ([02effcd](https://github.com/cpcloud/numbsql/commit/02effcd26c06f225e1737f5208c0bf5512109ccc))
+* call `con.close()` more aggressively ([f3c3934](https://github.com/cpcloud/numbsql/commit/f3c3934a507275faa66ccd1fb9b2696640ac8151))
+
 ## [8.0.0](https://github.com/cpcloud/numbsql/compare/7.1.0...8.0.0) (2025-01-25)
 
 ### ⚠ BREAKING CHANGES
