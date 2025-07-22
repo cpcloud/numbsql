@@ -46,3 +46,5 @@ if __name__ == "__main__":
     print(result1 == result2)
     print(f"t1 == {t1:.2f}")
     print(f"t2 == {t1:.2f}")
+
+    con.close()

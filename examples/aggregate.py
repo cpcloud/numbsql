@@ -183,6 +183,7 @@ def main() -> None:
 
     width = max(map(len, strings))
     print("\n".join(string.rjust(width, " ")) for string in strings)
+    con.close()
 
 
 if __name__ == "__main__":
