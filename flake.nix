@@ -60,77 +60,85 @@
         gitignore.overlay
         (import ./nix/overlay.nix { inherit uv2nix pyproject-nix pyproject-build-systems; })
       ];
-    } // (
-      flake-utils.lib.eachDefaultSystem (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ self.overlays.default ];
-          };
-          inherit (pkgs) lib;
-        in
-        rec {
-          packages.numbsql310 = pkgs.numbsql310;
-          packages.numbsql311 = pkgs.numbsql311;
-          packages.numbsql312 = pkgs.numbsql312;
+    }
+    // (flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlays.default ];
+        };
+        inherit (pkgs) lib;
+      in
+      rec {
+        packages.numbsql310 = pkgs.numbsql310;
+        packages.numbsql311 = pkgs.numbsql311;
+        packages.numbsql312 = pkgs.numbsql312;
+        packages.numbsql313 = pkgs.numbsql313;
 
-          packages.numbsql = pkgs.numbsql312;
+        packages.numbsql = pkgs.numbsql313;
 
-          defaultPackage = packages.numbsql;
+        defaultPackage = packages.numbsql;
 
-          checks = {
-            pre-commit = git-hooks.lib.${system}.run {
-              src = ./.;
-              hooks = {
-                ruff.enable = true;
-                deadnix.enable = true;
-                nixpkgs-fmt.enable = true;
-                shellcheck.enable = true;
-                statix.enable = true;
-                mypy.enable = true;
-                taplo.enable = true;
+        checks = {
+          pre-commit = git-hooks.lib.${system}.run {
+            src = ./.;
+            hooks = {
+              ruff.enable = true;
+              deadnix.enable = true;
+              nixpkgs-fmt.enable = true;
+              shellcheck.enable = true;
+              statix.enable = true;
+              mypy.enable = true;
+              taplo.enable = true;
 
-                ruff-format = {
-                  enable = true;
-                  types = [ "python" ];
-                  entry = "${pkgs.ruff}/bin/ruff format";
-                };
+              ruff-format = {
+                enable = true;
+                types = [ "python" ];
+                entry = "${pkgs.ruff}/bin/ruff format";
+              };
 
-                shfmt = {
-                  enable = true;
-                  files = "\\.sh$";
-                  entry = lib.mkForce "shfmt -i 2 -sr -s";
-                };
+              shfmt = {
+                enable = true;
+                files = "\\.sh$";
+                entry = lib.mkForce "shfmt -i 2 -sr -s";
+              };
 
-                prettier = {
-                  enable = true;
-                  types_or = [ "json" "yaml" ];
-                };
+              prettier = {
+                enable = true;
+                types_or = [
+                  "json"
+                  "yaml"
+                ];
               };
             };
           };
+        };
 
-          devShell = pkgs.mkShell
+        devShell =
+          let
+            sqlite3LdLibraryPath = lib.makeLibraryPath [ pkgs.sqlite ];
+            env = pkgs.numbsqlDevEnv313;
+          in
+          pkgs.mkShell
             {
-              inherit (pkgs.numbsqlDevEnv312) name;
+              inherit (env) name;
               nativeBuildInputs = with pkgs; [
-                numbsqlDevEnv312
+                env
                 uv
                 # useful for testing sqlite things with a sane CLI, i.e., with
                 # readline
                 sqlite-interactive
-                # sqlite is necessary to ensure the availability of libsqlite3
-                sqlite
               ];
               inherit (self.checks.${system}.pre-commit) shellHook;
               NUMBA_CAPTURED_ERRORS = "new_style";
-            } // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
-            DYLD_LIBRARY_PATH = "${pkgs.sqlite.out}/lib";
+              LD_LIBRARY_PATH = sqlite3LdLibraryPath;
+            }
+          // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
+            DYLD_LIBRARY_PATH = sqlite3LdLibraryPath;
             NIXPKGS_ALLOW_UNFREE = "1";
             JUPYTER_PLATFORM_DIRS = "1";
           };
-        }
-      )
-    );
+      }
+    ));
 }
