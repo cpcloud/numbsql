@@ -84,10 +84,12 @@ in
   numbsql310 = mkEnv pkgs.python310;
   numbsql311 = mkEnv pkgs.python311;
   numbsql312 = mkEnv pkgs.python312;
+  numbsql313 = mkEnv pkgs.python313;
 
   numbsqlDevEnv310 = mkDevEnv pkgs.python310;
   numbsqlDevEnv311 = mkDevEnv pkgs.python311;
   numbsqlDevEnv312 = mkDevEnv pkgs.python312;
+  numbsqlDevEnv313 = mkDevEnv pkgs.python313;
 
   ibisSmallDevEnv = mkEnv'
     {
@@ -96,7 +98,7 @@ in
       };
       editable = false;
     }
-    pkgs.python312;
+    pkgs.python313;
 
   uv = uv2nix.packages.${pkgs.system}.uv-bin;
 }

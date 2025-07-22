@@ -21,6 +21,6 @@ lib.mapAttrs (name: spec: addBuildSystems prev.${name} spec) buildSystemOverride
 
   numba = prev.numba.overrideAttrs (attrs: {
     nativeBuildInputs = attrs.nativeBuildInputs or [ ] ++ [ final.setuptools ];
-    buildInputs = attrs.buildInputs or [ ] ++ [ pkgs.tbb_2022_0 ];
+    buildInputs = attrs.buildInputs or [ ] ++ [ pkgs.tbb_2022 ];
   });
 }
