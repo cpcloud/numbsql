@@ -18,7 +18,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
-dependencies = ["llvmlite>=0.36,<0.45", "numba>=0.53,<0.62"]
+dependencies = ["llvmlite>=0.46,<0.47", "numba>=0.53,<0.62"]
 
 [project.urls]
 Homepage = "https://github.com/cpcloud/numbsql"
